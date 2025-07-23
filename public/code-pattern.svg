@@ -1,0 +1,38 @@
+<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="code-pattern" patternUnits="userSpaceOnUse" width="400" height="400">
+      <rect width="400" height="400" fill="none"/>
+      
+      <!-- Code brackets and symbols -->
+      <text x="10" y="30" font-family="monospace" font-size="14" fill="currentColor">&lt;div className="profile"&gt;</text>
+      <text x="30" y="60" font-family="monospace" font-size="14" fill="currentColor">&lt;Header /&gt;</text>
+      <text x="30" y="90" font-family="monospace" font-size="14" fill="currentColor">&lt;ProjectList&gt;</text>
+      <text x="50" y="120" font-family="monospace" font-size="14" fill="currentColor">{projects.map(project => (</text>
+      <text x="70" y="150" font-family="monospace" font-size="14" fill="currentColor">&lt;ProjectCard</text>
+      <text x="90" y="180" font-family="monospace" font-size="14" fill="currentColor">key={project.id}</text>
+      <text x="90" y="210" font-family="monospace" font-size="14" fill="currentColor">title={project.title}</text>
+      <text x="90" y="240" font-family="monospace" font-size="14" fill="currentColor">description={project.desc}</text>
+      <text x="90" y="270" font-family="monospace" font-size="14" fill="currentColor">github={project.repo}</text>
+      <text x="70" y="300" font-family="monospace" font-size="14" fill="currentColor">/&gt;</text>
+      <text x="50" y="330" font-family="monospace" font-size="14" fill="currentColor">))}</text>
+      <text x="30" y="360" font-family="monospace" font-size="14" fill="currentColor">&lt;/ProjectList&gt;</text>
+      <text x="10" y="390" font-family="monospace" font-size="14" fill="currentColor">&lt;/div&gt;</text>
+      
+      <!-- Function declaration -->
+      <text x="200" y="30" font-family="monospace" font-size="14" fill="currentColor">function DevProfile() {</text>
+      <text x="220" y="60" font-family="monospace" font-size="14" fill="currentColor">const [skills, setSkills] = useState([]);</text>
+      <text x="220" y="90" font-family="monospace" font-size="14" fill="currentColor">useEffect(() => {</text>
+      <text x="240" y="120" font-family="monospace" font-size="14" fill="currentColor">fetchGithubData();</text>
+      <text x="240" y="150" font-family="monospace" font-size="14" fill="currentColor">loadProjects();</text>
+      <text x="220" y="180" font-family="monospace" font-size="14" fill="currentColor">}, []);</text>
+      <text x="220" y="210" font-family="monospace" font-size="14" fill="currentColor">return (</text>
+      <text x="240" y="240" font-family="monospace" font-size="14" fill="currentColor">&lt;Layout&gt;</text>
+      <text x="260" y="270" font-family="monospace" font-size="14" fill="currentColor">&lt;ProfileContent /&gt;</text>
+      <text x="240" y="300" font-family="monospace" font-size="14" fill="currentColor">&lt;/Layout&gt;</text>
+      <text x="220" y="330" font-family="monospace" font-size="14" fill="currentColor">);</text>
+      <text x="200" y="360" font-family="monospace" font-size="14" fill="currentColor">}</text>
+    </pattern>
+  </defs>
+  
+  <rect width="400" height="400" fill="url(#code-pattern)"/>
+</svg>

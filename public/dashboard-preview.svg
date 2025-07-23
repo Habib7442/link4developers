@@ -1,0 +1,80 @@
+<svg width="1200" height="675" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="675" fill="#1a1a1a"/>
+  
+  <!-- Browser frame -->
+  <rect x="50" y="50" width="1100" height="575" rx="8" fill="#2a2a2a"/>
+  
+  <!-- Browser header -->
+  <rect x="50" y="50" width="1100" height="40" rx="8" fill="#3a3a3a"/>
+  
+  <!-- Browser buttons -->
+  <circle cx="80" cy="70" r="8" fill="#ff5f57"/>
+  <circle cx="110" cy="70" r="8" fill="#febc2e"/>
+  <circle cx="140" cy="70" r="8" fill="#28c840"/>
+  
+  <!-- URL bar -->
+  <rect x="180" y="60" width="800" height="20" rx="4" fill="#4a4a4a"/>
+  
+  <!-- Sidebar -->
+  <rect x="50" y="90" width="250" height="535" fill="#252525"/>
+  
+  <!-- Logo -->
+  <rect x="80" y="120" width="40" height="40" rx="8" fill="#6366f1"/>
+  <text x="130" y="145" font-family="Arial" font-size="20" font-weight="bold" fill="white">Link4Coders</text>
+  
+  <!-- Sidebar menu items -->
+  <rect x="70" y="200" width="210" height="40" rx="4" fill="#333333"/>
+  <text x="100" y="225" font-family="Arial" font-size="14" fill="white">Dashboard</text>
+  
+  <rect x="70" y="250" width="210" height="40" rx="4" fill="transparent"/>
+  <text x="100" y="275" font-family="Arial" font-size="14" fill="#888888">Projects</text>
+  
+  <rect x="70" y="300" width="210" height="40" rx="4" fill="transparent"/>
+  <text x="100" y="325" font-family="Arial" font-size="14" fill="#888888">Skills</text>
+  
+  <rect x="70" y="350" width="210" height="40" rx="4" fill="transparent"/>
+  <text x="100" y="375" font-family="Arial" font-size="14" fill="#888888">Analytics</text>
+  
+  <rect x="70" y="400" width="210" height="40" rx="4" fill="transparent"/>
+  <text x="100" y="425" font-family="Arial" font-size="14" fill="#888888">Settings</text>
+  
+  <!-- Main content area -->
+  <rect x="320" y="120" width="800" height="100" rx="8" fill="#333333"/>
+  <text x="350" y="160" font-family="Arial" font-size="18" font-weight="bold" fill="white">Welcome to your Link4Coders dashboard!</text>
+  <text x="350" y="190" font-family="Arial" font-size="14" fill="#cccccc">Customize your profile, add projects, and track your visitor analytics all in one place.</text>
+  
+  <!-- Stats cards -->
+  <rect x="320" y="240" width="250" height="120" rx="8" fill="#333333"/>
+  <text x="350" y="280" font-family="Arial" font-size="14" fill="#888888">Profile Views</text>
+  <text x="350" y="320" font-family="Arial" font-size="28" font-weight="bold" fill="white">1,234</text>
+  
+  <rect x="590" y="240" width="250" height="120" rx="8" fill="#333333"/>
+  <text x="620" y="280" font-family="Arial" font-size="14" fill="#888888">Link Clicks</text>
+  <text x="620" y="320" font-family="Arial" font-size="28" font-weight="bold" fill="white">567</text>
+  
+  <rect x="860" y="240" width="250" height="120" rx="8" fill="#333333"/>
+  <text x="890" y="280" font-family="Arial" font-size="14" fill="#888888">Project Views</text>
+  <text x="890" y="320" font-family="Arial" font-size="28" font-weight="bold" fill="white">892</text>
+  
+  <!-- Project cards -->
+  <text x="320" y="400" font-family="Arial" font-size="18" font-weight="bold" fill="white">Recent Projects</text>
+  
+  <rect x="320" y="420" width="250" height="180" rx="8" fill="#333333"/>
+  <rect x="320" y="420" width="250" height="100" rx="8" fill="#444444"/>
+  <text x="340" y="550" font-family="Arial" font-size="16" font-weight="bold" fill="white">E-Commerce Platform</text>
+  <text x="340" y="575" font-family="Arial" font-size="12" fill="#cccccc">React, Node.js, MongoDB</text>
+  
+  <rect x="590" y="420" width="250" height="180" rx="8" fill="#333333"/>
+  <rect x="590" y="420" width="250" height="100" rx="8" fill="#444444"/>
+  <text x="610" y="550" font-family="Arial" font-size="16" font-weight="bold" fill="white">Weather App</text>
+  <text x="610" y="575" font-family="Arial" font-size="12" fill="#cccccc">JavaScript, CSS, Weather API</text>
+  
+  <rect x="860" y="420" width="250" height="180" rx="8" fill="#333333"/>
+  <rect x="860" y="420" width="250" height="100" rx="8" fill="#444444"/>
+  <text x="880" y="550" font-family="Arial" font-size="16" font-weight="bold" fill="white">Task Management Tool</text>
+  <text x="880" y="575" font-family="Arial" font-size="12" fill="#cccccc">Vue.js, Firebase</text>
+  
+  <!-- Link4Coders text -->
+  <text x="600" y="650" font-family="Arial" font-size="14" text-anchor="middle" fill="white">Link4Coders Dashboard Preview</text>
+</svg>

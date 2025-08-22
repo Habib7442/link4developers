@@ -1,77 +1,241 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from './button';
-import { EarlyAccessForm } from './early-access-form';
-import { DashboardImage } from './dashboard-image';
+import { PreviewCard } from './preview-card';
+import ChainLinkIcon from '../icons/ChainLinkIcon';
+import ArrowRightIcon from '../icons/ArrowRightIcon';
+import { AuthModal } from './auth-modal';
+import { useAuthStore } from '@/stores/auth-store';
+import { LayoutDashboard, User } from 'lucide-react';
 
 export function HeroSection() {
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const { user, loading } = useAuthStore();
+  const router = useRouter();
+
+  const handleCTAClick = () => {
+    if (user) {
+      // Navigate to dashboard
+      router.push('/dashboard');
+    } else {
+      // Open authentication modal
+      setIsAuthModalOpen(true);
+    }
+  };
+
   return (
-    <section className="relative py-20 overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent -z-10" />
-      
-      {/* Code pattern background */}
-      <div className="absolute inset-0 opacity-[0.03] -z-10">
-        <div className="absolute inset-0 bg-[url('/code-pattern.svg')] bg-repeat bg-center" />
-      </div>
-      
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-          <div className="inline-block px-4 py-1.5 mb-6 rounded-full bg-primary/10 text-primary text-sm font-medium">
-            Coming Soon - Join the Waitlist
-          </div>
-          
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-            The Ultimate <span className="text-primary">Link-in-Bio</span> Platform for Developers
-          </h1>
-          
-          <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-3xl">
-            Showcase your projects, skills, and contributions in a way that matters to recruiters and fellow developers. Stand out with interactive code snippets, GitHub integration, and more.
-          </p>
-          
-          <div className="w-full max-w-md mb-12">
-            <EarlyAccessForm />
-          </div>
-          
-          <div className="flex flex-wrap justify-center gap-4 mb-12">
-            <div className="flex items-center space-x-2">
-              <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-700 border-2 border-white dark:border-gray-900 flex items-center justify-center text-xs font-medium">
-                    {i}
+    <>
+      <section
+        className="relative w-full h-[600px] sm:h-[879px] bg-[#18181a] overflow-hidden"
+        style={{
+          backgroundImage: 'url(/background-grid.svg)',
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
+      {/* Responsive container */}
+      <div className="relative w-full max-w-[1440px] h-[600px] sm:h-[879px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-20">
+
+        {/* Mobile Layout (below 640px) */}
+        <div className="sm:hidden flex flex-col items-center justify-center h-full text-center px-4 py-4">
+          {/* User Status Indicator - Mobile */}
+          {user && (
+            <div className="mb-4">
+              <div className="flex items-center gap-2 glassmorphic rounded-[12px] px-3 py-2 shadow-[0px_8px_16px_rgba(0,0,0,0.20)]">
+                {user.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.full_name || user.email}
+                    className="w-5 h-5 rounded-full"
+                  />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] flex items-center justify-center">
+                    <User className="w-3 h-3 text-[#18181a]" />
                   </div>
-                ))}
+                )}
+                <span className="text-[12px] font-medium tracking-[-0.36px] font-sharp-grotesk text-white">
+                  Signed in as {user.full_name || user.email}
+                </span>
               </div>
-              <span className="text-sm text-gray-600 dark:text-gray-400">Join 400+ developers</span>
             </div>
-            
-            <div className="flex items-center space-x-1">
-              <div className="flex text-yellow-400">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <svg key={i} className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <span className="text-sm text-gray-600 dark:text-gray-400">Rated 4.9/5</span>
-            </div>
+          )}
+
+          {/* Main Headline Text - Mobile */}
+          <div className="mb-4">
+            <h1 className="text-[36px] leading-[42px] font-normal tracking-[-1.8px] font-sharp-grotesk gradient-text-primary">
+              One link{' '}
+              <span className="inline-flex items-center rotate-12">
+                <ChainLinkIcon width={36} height={36} />
+              </span>{' '}
+              for
+              <br />
+              everything you{' '}
+              <span className="font-semibold italic gradient-text-accent">build.</span>
+            </h1>
           </div>
-          
-          <div className="relative w-full max-w-5xl mx-auto rounded-xl overflow-hidden shadow-2xl">
-            <div className="aspect-[16/9] bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
-              <DashboardImage />
-            </div>
-            
-            {/* Browser frame overlay */}
-            <div className="absolute top-0 left-0 right-0 h-8 bg-gray-200 dark:bg-gray-700 rounded-t-xl flex items-center px-4">
-              <div className="flex space-x-2">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-              </div>
-              <div className="ml-4 bg-white dark:bg-gray-800 rounded-full h-5 w-1/2 max-w-xs" />
-            </div>
+
+          {/* Description - Mobile */}
+          <div className="mb-6 max-w-sm">
+            <p className="text-[14px] font-light leading-[20px] tracking-[-0.28px] text-[#7a7a83] font-sharp-grotesk">
+              {user
+                ? `Welcome back, ${user.full_name || user.email?.split('@')[0]}! Ready to showcase your latest projects?`
+                : 'Your dev portfolio, repos, runnable snippets, blog, and projects — all in one developer-first bio.'
+              }
+            </p>
+          </div>
+
+          {/* CTA Button - Mobile */}
+          <div className="w-full max-w-xs">
+            <Button
+              onClick={handleCTAClick}
+              disabled={loading}
+              size="default"
+              className={`font-medium text-[14px] tracking-[-0.42px] font-sharp-grotesk rounded-[12px] shadow-[0px_8px_20px_rgba(0,0,0,0.30)] h-[44px] w-full flex items-center justify-center transition-all duration-300 ${
+                user
+                  ? 'bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] text-[#18181a] hover:from-[#29ADFF] hover:to-[#54E0FF]'
+                  : 'bg-white text-[#18181a] hover:bg-gray-100'
+              } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-[#18181a] border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  {user ? (
+                    <>
+                      <LayoutDashboard width={16} height={12} className="mr-2" />
+                      Go to Dashboard
+                    </>
+                  ) : (
+                    <>
+                      <User width={16} height={12} className="mr-2" />
+                      Create Your Profile
+                    </>
+                  )}
+                  <ArrowRightIcon width={16} height={12} className="ml-2" />
+                </>
+              )}
+            </Button>
           </div>
         </div>
+
+        {/* Desktop Layout (640px and above) */}
+        <div className="hidden sm:block">
+          {/* User Status Indicator */}
+          {user && (
+            <div
+              className="absolute"
+              style={{ left: 'clamp(1rem, 10.3vw, 149px)', top: '235px' }}
+            >
+              <div className="flex items-center gap-2 glassmorphic rounded-[12px] px-4 py-2 shadow-[0px_8px_16px_rgba(0,0,0,0.20)]">
+                {user.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.full_name || user.email}
+                    className="w-6 h-6 rounded-full"
+                  />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] flex items-center justify-center">
+                    <User className="w-3 h-3 text-[#18181a]" />
+                  </div>
+                )}
+                <span className="text-[14px] font-medium tracking-[-0.42px] font-sharp-grotesk text-white">
+                  Signed in as {user.full_name || user.email}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Main Headline Text */}
+          <div
+            className="absolute"
+            style={{ left: 'clamp(1rem, 10.3vw, 149px)', top: '275px', width: 'min(457px, 32vw)', height: '158px' }}
+          >
+            <h1 className="text-[66.22px] font-normal leading-[78.80px] tracking-[-3.97px] font-sharp-grotesk gradient-text-primary whitespace-nowrap">
+              One link{' '}
+              <span className="inline-flex items-center rotate-12">
+                <ChainLinkIcon width={66} height={66} />
+              </span>{' '}
+              for
+              <br />
+              everything you{' '}
+              <span className="font-semibold italic gradient-text-accent">build.</span>
+            </h1>
+          </div>
+
+          {/* Description */}
+          <div
+            className="absolute"
+            style={{ left: 'clamp(1rem, 10.3vw, 149px)', top: '456px', width: 'min(630px, 44vw)', height: '74px' }}
+          >
+            <p className="text-[24.85px] font-light leading-[36.54px] tracking-[-0.75px] text-[#7a7a83] font-sharp-grotesk">
+              {user
+                ? `Welcome back, ${user.full_name || user.email?.split('@')[0]}! Ready to showcase your latest projects?`
+                : 'Your dev portfolio, repos, runnable snippets, blog, and projects — all in one developer-first bio.'
+              }
+            </p>
+          </div>
+
+          {/* CTA Button */}
+          <div
+            className="absolute"
+            style={{ left: 'clamp(1rem, 10.4vw, 150px)', top: '575px', width: 'min(320px, 22vw)', height: '60px' }}
+          >
+            <Button
+              onClick={handleCTAClick}
+              disabled={loading}
+              size="default"
+              className={`font-medium text-[20px] tracking-[-0.6px] font-sharp-grotesk rounded-[15px] shadow-[0px_12px_32px_rgba(0,0,0,0.40)] h-full w-full flex items-center justify-center transition-all duration-300 ${
+                user
+                  ? 'bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] text-[#18181a] hover:from-[#29ADFF] hover:to-[#54E0FF]'
+                  : 'bg-white text-[#18181a] hover:bg-gray-100'
+              } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {loading ? (
+                <div className="w-6 h-6 border-2 border-[#18181a] border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  {user ? (
+                    <>
+                      <LayoutDashboard width={24} height={18} className="mr-2" />
+                      Go to Dashboard
+                    </>
+                  ) : (
+                    <>
+                      <User width={24} height={18} className="mr-2" />
+                      Create Your Profile
+                    </>
+                  )}
+                  <ArrowRightIcon width={24} height={18} className="ml-2" />
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Right Side Preview Container */}
+          <div
+            className="absolute"
+            style={{
+              left: 'clamp(calc(100% - 444px - 2rem), 58.8vw, 846px)',
+              top: '235px',
+              width: 'min(444px, 31vw)',
+              height: '536px'
+            }}
+          >
+            <PreviewCard className="w-full h-full" />
+          </div>
+        </div>
+
       </div>
-    </section>
+      </section>
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        defaultMode="signup"
+      />
+    </>
   );
 }

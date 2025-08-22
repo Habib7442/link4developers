@@ -36,11 +36,15 @@ export function FeaturesSection() {
   ];
 
   return (
-    <section className="py-20 bg-gray-50 dark:bg-gray-950">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl font-bold mb-4">Features Built for Developers</h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400">
+    <section className="relative w-full bg-[#18181a] py-20 overflow-hidden">
+      <div className="relative w-full max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-20">
+
+        {/* Section Header */}
+        <div className="text-center mb-16">
+          <h2 className="text-[48px] font-normal leading-[56px] tracking-[-2.88px] font-sharp-grotesk gradient-text-primary mb-6">
+            Features Built for Developers
+          </h2>
+          <p className="text-[20px] font-light leading-[30px] tracking-[-0.6px] text-[#7a7a83] font-sharp-grotesk max-w-[600px] mx-auto">
             Link4Coders is designed specifically for developers, with features that showcase your technical skills and projects effectively.
           </p>
         </div>

@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Sharp+Grotesk:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -8,6 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-sharp-grotesk: var(--font-sharp-grotesk);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -37,6 +39,9 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-glass-bg: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
+  --color-surface-elevated: var(--surface-elevated);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -44,72 +49,226 @@
 }
 
 :root {
+  --font-sharp-grotesk: 'Sharp Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.55 0.25 250); /* Vibrant blue */
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.65 0.28 30); /* Vibrant orange accent */
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.55 0.25 250); /* Match primary for focus rings */
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: #18181a;
+  --foreground: #ffffff;
+  --card: #1f2937;
+  --card-foreground: #f9fafb;
+  --popover: #1f2937;
+  --popover-foreground: #f9fafb;
+  --primary: #54e0ff;
+  --primary-foreground: #18181a;
+  --secondary: #374151;
+  --secondary-foreground: #f9fafb;
+  --muted: #374151;
+  --muted-foreground: #7a7a83;
+  --accent: #29adff;
+  --accent-foreground: #18181a;
+  --destructive: #ef4444;
+  --border: #33373b;
+  --input: #374151;
+  --ring: #54e0ff;
+  --glass-bg: rgba(0, 0, 0, 0.20);
+  --glass-border: #33373b;
+  --surface-elevated: #28282b;
+  --chart-1: #54e0ff;
+  --chart-2: #29adff;
+  --chart-3: #67e8f9;
+  --chart-4: #a7f3d0;
+  --chart-5: #fde68a;
+  --sidebar: #1f2937;
+  --sidebar-foreground: #f9fafb;
+  --sidebar-primary: #54e0ff;
+  --sidebar-primary-foreground: #f9fafb;
+  --sidebar-accent: #374151;
+  --sidebar-accent-foreground: #f9fafb;
+  --sidebar-border: #374151;
+  --sidebar-ring: #54e0ff;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.65 0.28 250); /* Brighter blue for dark mode */
-  --primary-foreground: oklch(0.145 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.7 0.3 30); /* Brighter orange for dark mode */
-  --accent-foreground: oklch(0.145 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #18181a;
+  --foreground: #ffffff;
+  --card: #1e1e20;
+  --card-foreground: #ffffff;
+  --popover: #1e1e20;
+  --popover-foreground: #ffffff;
+  --primary: #54e0ff;
+  --primary-foreground: #18181a;
+  --secondary: #28282b;
+  --secondary-foreground: #ffffff;
+  --muted: #28282b;
+  --muted-foreground: #7a7a83;
+  --accent: #29adff;
+  --accent-foreground: #18181a;
+  --destructive: #ef4444;
+  --border: #33373b;
+  --input: #33373b;
+  --ring: #54e0ff;
+  --glass-bg: rgba(0, 0, 0, 0.20);
+  --glass-border: #33373b;
+  --surface-elevated: #28282b;
+  --chart-1: #54e0ff;
+  --chart-2: #29adff;
+  --chart-3: #67e8f9;
+  --chart-4: #a7f3d0;
+  --chart-5: #fde68a;
+  --sidebar: #1e1e20;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #54e0ff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #28282b;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #33373b;
+  --sidebar-ring: #54e0ff;
+  --glass-bg: rgba(30, 30, 32, 0.8);
+  --glass-border: rgba(51, 55, 59, 0.5);
+}
+
+@layer utilities {
+  .gradient-text-primary {
+    background: linear-gradient(90deg, rgba(227,250,255,1) 0%, rgba(255,255,255,1) 48.56%, rgba(227,250,255,1) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-text-accent {
+    background: linear-gradient(180deg, rgba(84,224,255,1) 0%, rgba(41,173,255,1) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glassmorphic {
+    background-color: var(--glass-bg);
+    backdrop-filter: blur(14px);
+    border: 0.5px solid var(--glass-border);
+  }
+
+  .font-sharp-grotesk {
+    font-family: var(--font-sharp-grotesk);
+  }
+
+  /* Custom Scrollbar Styling for Glassmorphic Design */
+  /* Main scrollbar for dashboard sidebar and content areas */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(84, 224, 255, 0.3) rgba(40, 40, 43, 0.5);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(40, 40, 43, 0.3);
+    border-radius: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(84, 224, 255, 0.4);
+    border-radius: 4px;
+    border: 1px solid rgba(51, 55, 59, 0.5);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(84, 224, 255, 0.6);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-corner {
+    background: rgba(40, 40, 43, 0.3);
+  }
+
+  /* Hidden Scrollbar Alternative */
+  .hidden-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .hidden-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Thin Custom Scrollbar for Smaller Areas */
+  /* For dropdowns, textareas, and smaller scrollable components */
+  .thin-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(84, 224, 255, 0.2) rgba(40, 40, 43, 0.3);
+  }
+
+  .thin-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .thin-scrollbar::-webkit-scrollbar-track {
+    background: rgba(40, 40, 43, 0.2);
+    border-radius: 3px;
+  }
+
+  .thin-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(84, 224, 255, 0.3);
+    border-radius: 3px;
+  }
+
+  .thin-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(84, 224, 255, 0.5);
+  }
+
+  /* Custom scrollbar for modal dialogs */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(26, 26, 28, 0.5);
+    border-radius: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(84, 224, 255, 0.3);
+    border-radius: 4px;
+    border: 1px solid rgba(42, 42, 42, 0.5);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(84, 224, 255, 0.5);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:active {
+    background: rgba(84, 224, 255, 0.7);
+  }
+
+  /* Firefox scrollbar styling */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(84, 224, 255, 0.3) rgba(26, 26, 28, 0.5);
+  }
+
+  /* Scroll fade effect for modal */
+  .scroll-fade-bottom {
+    position: relative;
+  }
+
+  .scroll-fade-bottom::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(transparent, rgba(26, 26, 28, 0.8));
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .scroll-fade-bottom.has-scroll::after {
+    opacity: 1;
+  }
 }
 
 @layer base {
@@ -117,6 +276,6 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sharp-grotesk;
   }
 }

@@ -1,0 +1,4 @@
+import * as React from "react";
+import type { SVGProps } from "react";
+const Component = (props: SVGProps<SVGSVGElement>) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 30.948 33.328" {...props}><defs><linearGradient xmlns="http://www.w3.org/2000/svg" id="prefix__a" x1={15.474} x2={15.474} y1={0} y2={33.328} gradientUnits="userSpaceOnUse"><stop stopColor="#7C7C88" /><stop offset={1} stopColor="#28282B" /></linearGradient></defs><path xmlns="http://www.w3.org/2000/svg" fill="url(#prefix__a)" d="M28.185 11.979c3.684 2.083 3.684 7.289 0 9.37L8.29 32.597C4.606 34.679 0 32.075 0 27.91V5.419C0 1.254 4.606-1.35 8.29.733z" /></svg>;
+export default Component;

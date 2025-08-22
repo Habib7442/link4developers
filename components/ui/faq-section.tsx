@@ -12,21 +12,23 @@ function FaqItem({ question, answer }: FaqItemProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="border-b border-gray-200 dark:border-gray-800 py-4">
+    <div className="glassmorphic rounded-[16px] p-6 shadow-[0px_8px_16px_rgba(0,0,0,0.20)] mb-4">
       <button
-        className="flex justify-between items-center w-full text-left font-medium py-2"
+        className="flex justify-between items-center w-full text-left py-2"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span>{question}</span>
-        {isOpen ? (
-          <ChevronUp className="h-5 w-5 text-gray-500" />
-        ) : (
-          <ChevronDown className="h-5 w-5 text-gray-500" />
-        )}
+        <span className="text-[18px] font-medium leading-[22px] tracking-[-0.54px] font-sharp-grotesk text-white pr-4">{question}</span>
+        <div className="flex-shrink-0">
+          {isOpen ? (
+            <ChevronUp className="h-5 w-5 text-[#54E0FF]" />
+          ) : (
+            <ChevronDown className="h-5 w-5 text-[#54E0FF]" />
+          )}
+        </div>
       </button>
       {isOpen && (
-        <div className="mt-2 text-gray-600 dark:text-gray-400">
-          <p>{answer}</p>
+        <div className="mt-4 pt-4 border-t border-[#33373b]">
+          <p className="text-[16px] font-light leading-[24px] tracking-[-0.48px] text-[#7a7a83] font-sharp-grotesk">{answer}</p>
         </div>
       )}
     </div>
@@ -62,11 +64,15 @@ export function FaqSection() {
   ];
 
   return (
-    <section className="py-20">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl font-bold mb-4">Frequently Asked Questions</h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400">
+    <section className="relative w-full bg-[#18181a] py-20 overflow-hidden">
+      <div className="relative w-full max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-20">
+
+        {/* Section Header */}
+        <div className="text-center mb-16">
+          <h2 className="text-[48px] font-normal leading-[56px] tracking-[-2.88px] font-sharp-grotesk gradient-text-primary mb-6">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-[20px] font-light leading-[30px] tracking-[-0.6px] text-[#7a7a83] font-sharp-grotesk max-w-[600px] mx-auto">
             Have questions about Link4Coders? Find answers to common questions below.
           </p>
         </div>

@@ -11,6 +11,7 @@ import { RichLinkPreview } from '@/components/rich-preview/rich-link-preview'
 import { UserLinkWithPreview } from '@/lib/types/rich-preview'
 import { SocialMediaSection } from '@/components/social-media/social-media-section'
 import { getFontFamilyWithFallbacks, loadGoogleFont } from '@/lib/utils/font-loader'
+import { getSectionStyles, getSectionTypographyStyle } from '@/lib/utils/section-styling'
 import { 
   MapPin, 
   Building, 
@@ -317,7 +318,13 @@ export function DeveloperDarkTemplate({ user, links, appearanceSettings, categor
       <div className="max-w-2xl mx-auto px-4 py-8">
         
         {/* Profile Header */}
-        <div className="glassmorphic rounded-[20px] p-8 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)] mb-8 text-center">
+        <div 
+          className="glassmorphic rounded-[20px] p-8 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)] mb-8 text-center"
+          style={{
+            ...getSectionStyles('profile', appearanceSettings),
+            borderRadius: `${getSectionStyles('profile', appearanceSettings).sectionColors.card_border_radius || 20}px`
+          }}
+        >
           
           {/* Avatar */}
           <div className="mb-6">
@@ -325,13 +332,29 @@ export function DeveloperDarkTemplate({ user, links, appearanceSettings, categor
               <Image
                 src={user.avatar_url}
                 alt={`${user.full_name || user.github_username}'s avatar`}
-                width={120}
-                height={120}
-                className="w-[120px] h-[120px] rounded-full mx-auto object-cover border-2 border-[#33373b]"
+                width={appearanceSettings?.profile_avatar_size || 120}
+                height={appearanceSettings?.profile_avatar_size || 120}
+                className="rounded-full mx-auto object-cover border-2"
+                style={{
+                  width: `${appearanceSettings?.profile_avatar_size || 120}px`,
+                  height: `${appearanceSettings?.profile_avatar_size || 120}px`,
+                  borderColor: appearanceSettings?.border_color || '#33373b'
+                }}
               />
             ) : (
-              <div className="w-[120px] h-[120px] rounded-full mx-auto bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] flex items-center justify-center">
-                <span className="text-[48px] font-bold text-[#18181a] font-sharp-grotesk">
+              <div 
+                className="rounded-full mx-auto bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] flex items-center justify-center"
+                style={{
+                  width: `${appearanceSettings?.profile_avatar_size || 120}px`,
+                  height: `${appearanceSettings?.profile_avatar_size || 120}px`
+                }}
+              >
+                <span 
+                  className="font-bold text-[#18181a] font-sharp-grotesk"
+                  style={{
+                    fontSize: `${Math.floor((appearanceSettings?.profile_avatar_size || 120) * 0.4)}px`
+                  }}
+                >
                   {(user.full_name || user.github_username || 'U')[0].toUpperCase()}
                 </span>
               </div>
@@ -423,7 +446,6 @@ export function DeveloperDarkTemplate({ user, links, appearanceSettings, categor
                     socialLinks={categoryLinks}
                     onLinkClick={handleLinkClick}
                     variant="default"
-                    className="mb-2"
                     appearanceSettings={appearanceSettings}
                   />
                 )
@@ -433,18 +455,25 @@ export function DeveloperDarkTemplate({ user, links, appearanceSettings, categor
               const CategoryIcon = getCategoryIcon(category, categoryIcons)
               
               return (
-                <div key={category} className="glassmorphic rounded-[20px] p-6 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)]">
+                <div 
+                  key={category} 
+                  className="glassmorphic rounded-[20px] p-6 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)]"
+                  style={{
+                    ...getSectionStyles(category, appearanceSettings),
+                    borderRadius: `${getSectionStyles(category, appearanceSettings).sectionColors.card_border_radius || 20}px`
+                  }}
+                >
                   
                   {/* Category Header */}
                   <div className="flex items-center gap-3 mb-4">
                     <CategoryIcon
                       className="w-5 h-5"
-                      style={{ color: appearanceSettings?.text_accent_color || '#54E0FF' }}
+                      style={{ color: getSectionStyles(category, appearanceSettings).sectionColors.accent_color || '#54E0FF' }}
                     />
                     <h2
                       className="font-medium tracking-[-0.6px]"
                       style={{
-                        ...getTypographyStyle('heading'),
+                        ...getSectionTypographyStyle(category, 'heading', appearanceSettings),
                         fontSize: `${(appearanceSettings?.font_size_heading || 32) * 0.625}px` // 20px when base is 32px
                       }}
                     >
@@ -455,14 +484,21 @@ export function DeveloperDarkTemplate({ user, links, appearanceSettings, categor
                   {/* Rich Link Previews */}
                   <div className="space-y-4">
                     {categoryLinks.map((link) => (
-                      <RichLinkPreview
+                      <div
                         key={link.id}
-                        link={link}
-                        onClick={() => handleLinkClick(link)}
-                        onRefresh={handleRefreshPreview}
-                        variant="default"
-                        showRefreshButton={true}
-                      />
+                        style={{
+                          ...getSectionStyles(category, appearanceSettings),
+                          borderRadius: `${getSectionStyles(category, appearanceSettings).sectionColors.card_border_radius || 12}px`
+                        }}
+                      >
+                        <RichLinkPreview
+                          link={link}
+                          onClick={() => handleLinkClick(link)}
+                          onRefresh={handleRefreshPreview}
+                          variant="default"
+                          showRefreshButton={true}
+                        />
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -470,7 +506,13 @@ export function DeveloperDarkTemplate({ user, links, appearanceSettings, categor
             })}
           </div>
         ) : (
-          <div className="glassmorphic rounded-[20px] p-8 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)] text-center">
+          <div 
+            className="glassmorphic rounded-[20px] p-8 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)] text-center"
+            style={{
+              ...getSectionStyles('profile', appearanceSettings),
+              borderRadius: `${getSectionStyles('profile', appearanceSettings).sectionColors.card_border_radius || 20}px`
+            }}
+          >
             <h2
               className="font-medium tracking-[-0.72px] mb-4"
               style={{
@@ -492,7 +534,14 @@ export function DeveloperDarkTemplate({ user, links, appearanceSettings, categor
         {/* Powered by Link4Coders Footer */}
         {!user.is_premium && (
           <div className="mt-8 text-center">
-            <div className="glassmorphic rounded-[12px] p-4 shadow-[0px_8px_15px_rgba(0,0,0,0.20)] inline-block">
+            <div 
+              className="glassmorphic rounded-[12px] p-4 shadow-[0px_8px_15px_rgba(0,0,0,0.20)] inline-block"
+              style={{
+                backgroundColor: 'rgba(0, 0, 0, 0.20)',
+                borderColor: 'rgba(51, 55, 59, 0.5)',
+                borderRadius: '12px'
+              }}
+            >
               <p
                 className="font-light"
                 style={{

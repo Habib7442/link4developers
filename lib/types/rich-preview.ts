@@ -1,7 +1,7 @@
 // Rich Preview Types for Link4Coders
 // Defines the structure for GitHub and Open Graph metadata
 
-export type PreviewType = 'github_repo' | 'webpage' | 'unknown'
+export type PreviewType = 'github_repo' | 'webpage' | 'blog_post' | 'unknown'
 export type PreviewStatus = 'pending' | 'success' | 'failed' | 'expired'
 
 // Base interface for all preview metadata
@@ -93,6 +93,13 @@ export interface UserLinkWithPreview {
   preview_fetched_at?: string
   preview_expires_at?: string
   preview_status: PreviewStatus
+  // Universal icon fields
+  custom_icon_url?: string
+  uploaded_icon_url?: string
+  icon_variant?: string
+  use_custom_icon?: boolean
+  icon_selection_type?: 'default' | 'platform' | 'upload' | 'url'
+  platform_detected?: string
 }
 
 // GitHub API Response Types

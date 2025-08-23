@@ -1,6 +1,6 @@
 import { TemplateConfig, TemplateId } from '@/lib/supabase'
 
-// Template configurations for the 3 free MVP templates
+// Template configurations for the free MVP templates + premium GTA 6 theme
 export const TEMPLATE_CONFIGS: Record<TemplateId, TemplateConfig> = {
   'developer-dark': {
     id: 'developer-dark',
@@ -42,37 +42,38 @@ export const TEMPLATE_CONFIGS: Record<TemplateId, TemplateConfig> = {
   'minimalist-light': {
     id: 'minimalist-light',
     name: 'Minimalist Light',
-    description: 'Clean and minimal light theme that puts your content first. Perfect for a professional look.',
+    description: 'Clean and elegant light theme with excellent contrast and professional styling. Perfect for showcasing your work.',
     category: 'free',
     preview_image: '/templates/minimalist-light.png',
     features: [
-      'Clean light theme',
-      'Minimal design approach',
-      'Content-focused layout',
-      'High contrast for accessibility',
-      'Professional appearance'
+      'Clean light theme with gradient background',
+      'Excellent contrast for accessibility',
+      'Elegant card-based layout',
+      'Professional styling throughout',
+      'Smooth hover animations',
+      'Mobile responsive design'
     ],
     color_scheme: {
-      primary: '#2563eb',
-      secondary: '#1d4ed8',
-      accent: '#3b82f6',
-      background: '#ffffff',
-      surface: '#f8fafc',
-      text_primary: '#1e293b',
-      text_secondary: '#64748b',
-      border: '#e2e8f0'
+      primary: '#3b82f6',
+      secondary: '#6366f1',
+      accent: '#8b5cf6',
+      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+      surface: '#ffffff',
+      text_primary: '#1f2937',
+      text_secondary: '#6b7280',
+      border: '#e5e7eb'
     },
     layout: {
       header_style: 'centered',
-      link_style: 'buttons',
+      link_style: 'cards',
       spacing: 'spacious',
-      avatar_size: 'medium'
+      avatar_size: 'large'
     },
     typography: {
       heading_font: 'Sharp Grotesk',
       body_font: 'Sharp Grotesk',
-      heading_size: '28px',
-      body_size: '15px'
+      heading_size: '32px',
+      body_size: '16px'
     }
   },
 
@@ -111,6 +112,43 @@ export const TEMPLATE_CONFIGS: Record<TemplateId, TemplateConfig> = {
       heading_size: '24px',
       body_size: '14px'
     }
+  },
+
+  'gta-vice-city': {
+    id: 'gta-vice-city',
+    name: 'Miami Nights',
+    description: 'Experience the neon-soaked streets of Miami with vibrant sunset gradients and retro-futuristic styling.',
+    category: 'free',
+    preview_image: '/templates/gta-vice-city.png',
+    features: [
+      'Miami neon aesthetics',
+      'Tropical sunset gradients',
+      'Retro-futuristic design',
+      'Ocean-inspired styling',
+      'Animated neon effects'
+    ],
+    color_scheme: {
+      primary: '#FF6EC7', // Hot pink/magenta
+      secondary: '#FF1493', // Deep pink
+      accent: '#00FFFF', // Cyan
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)',
+      surface: 'rgba(255, 110, 199, 0.15)',
+      text_primary: '#FFFFFF',
+      text_secondary: '#E0E0E0',
+      border: '#FF6EC7'
+    },
+    layout: {
+      header_style: 'centered',
+      link_style: 'cards',
+      spacing: 'normal',
+      avatar_size: 'large'
+    },
+    typography: {
+      heading_font: 'Orbitron',
+      body_font: 'Rajdhani',
+      heading_size: '36px',
+      body_size: '18px'
+    }
   }
 }
 
@@ -143,7 +181,8 @@ export const getDefaultTemplateId = (): TemplateId => {
 export const TEMPLATE_COMPONENTS = {
   'developer-dark': 'DeveloperDarkTemplate',
   'minimalist-light': 'MinimalistLightTemplate',
-  'github-focus': 'GitHubFocusTemplate'
+  'github-focus': 'GitHubFocusTemplate',
+  'gta-vice-city': 'GTAViceCityTemplate'
 } as const
 
 export type TemplateComponentName = typeof TEMPLATE_COMPONENTS[TemplateId]

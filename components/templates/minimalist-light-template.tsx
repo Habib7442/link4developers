@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { User, UserAppearanceSettings } from '@/lib/supabase'
 import { UserLink, LinkCategory, LINK_CATEGORIES } from '@/lib/services/link-service'
-import { ApiLinkService } from '@/lib/services/api-link-service'
-import { CategoryOrderService } from '@/lib/services/category-order-service'
 import { Button } from '@/components/ui/button'
 import { RichLinkPreview } from '@/components/rich-preview/rich-link-preview'
 import { UserLinkWithPreview } from '@/lib/types/rich-preview'
 import { SocialMediaSection } from '@/components/social-media/social-media-section'
-import { getFontFamilyWithFallbacks, loadGoogleFont } from '@/lib/utils/font-loader'
+import { getFontFamilyWithFallbacks } from '@/lib/utils/font-loader'
+import { getSectionStyles, getSectionTypographyStyle } from '@/lib/utils/section-styling'
+import { useLinksStore } from '@/stores/links-store'
 import { 
   MapPin, 
   Building, 
@@ -25,7 +25,8 @@ import {
   Award,
   Share2,
   Copy,
-  Check
+  Check,
+  Heart
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CategoryIconService, CategoryIconConfig } from '@/lib/services/category-icon-service'
@@ -38,16 +39,60 @@ interface MinimalistLightTemplateProps {
   categoryOrder?: LinkCategory[]
 }
 
-// Icon mapping for different link types
-const getIconForType = (iconType: string) => {
-  switch (iconType) {
-    case 'github': return Github
-    case 'linkedin': return Linkedin
-    case 'twitter': return Twitter
-    case 'email': return Mail
-    case 'website': return Globe
-    default: return ExternalLink
+// Function to get the appropriate icon for a link
+const getLinkIcon = (link: UserLinkWithPreview) => {
+  // Check for uploaded icon
+  if (link.icon_selection_type === 'upload' && link.uploaded_icon_url) {
+    return (
+      <Image
+        src={link.uploaded_icon_url}
+        alt={`${link.title} icon`}
+        width={20}
+        height={20}
+        className="w-5 h-5 object-contain"
+      />
+    )
   }
+
+  // Check for custom URL icon
+  if (link.icon_selection_type === 'url' && link.custom_icon_url) {
+    return (
+      <Image
+        src={link.custom_icon_url}
+        alt={`${link.title} icon`}
+        width={20}
+        height={20}
+        className="w-5 h-5 object-contain"
+      />
+    )
+  }
+
+  // Check for platform icon (social media)
+  if (link.icon_selection_type === 'platform' && link.category === 'social' && link.platform_detected) {
+    return (
+      <Image
+        src={`/icons/${link.platform_detected}/${link.icon_variant || 'default'}.png`}
+        alt={`${link.platform_detected} icon`}
+        width={20}
+        height={20}
+        className="w-5 h-5 object-contain"
+      />
+    )
+  }
+
+  // Default icons based on category with light theme styling
+  const defaultIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+    personal: ExternalLink,
+    projects: Github,
+    blogs: BookOpen,
+    achievements: Award,
+    contact: Mail,
+    social: Globe,
+    custom: ExternalLink
+  }
+
+  const IconComponent = defaultIcons[link.category] || ExternalLink
+  return <IconComponent className="w-5 h-5 text-gray-700" />
 }
 
 // Category icon mapping
@@ -55,10 +100,12 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
   // Check if user has custom icon for this category
   const customIcon = customIcons[category]
   if (customIcon) {
-    return () => <CategoryIconPreview config={customIcon} size={20} />
+    const CategoryIconComponent = () => <CategoryIconPreview config={customIcon} size={24} />
+    CategoryIconComponent.displayName = `CategoryIcon-${category}`
+    return CategoryIconComponent
   }
 
-  // Fallback to default icon
+  // Fallback to default icon with light theme styling
   const config = LINK_CATEGORIES[category]
   switch (config?.icon) {
     case 'Github': return Github
@@ -71,52 +118,35 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
 
 export function MinimalistLightTemplate({ user, links, appearanceSettings, categoryOrder: propCategoryOrder }: MinimalistLightTemplateProps) {
   const [copied, setCopied] = useState(false)
-  const [categoryIcons, setCategoryIcons] = useState<Record<LinkCategory, CategoryIconConfig>>({} as Record<LinkCategory, CategoryIconConfig>)
-  const [categoryOrder, setCategoryOrder] = useState<LinkCategory[]>(propCategoryOrder || CategoryOrderService.DEFAULT_ORDER)
-
-  // Load fonts when appearance settings change
-  useEffect(() => {
-    if (!appearanceSettings) return
-
-    const fontsToLoad = []
-    if (appearanceSettings.primary_font && appearanceSettings.primary_font !== 'Sharp Grotesk') {
-      fontsToLoad.push(appearanceSettings.primary_font)
-    }
-    if (appearanceSettings.secondary_font && appearanceSettings.secondary_font !== 'Sharp Grotesk' && appearanceSettings.secondary_font !== appearanceSettings.primary_font) {
-      fontsToLoad.push(appearanceSettings.secondary_font)
-    }
-
-    if (fontsToLoad.length > 0) {
-      fontsToLoad.forEach(font => {
-        loadGoogleFont(font).catch(error => {
-          console.error(`Failed to load font ${font}:`, error)
-        })
-      })
-    }
-  }, [appearanceSettings?.primary_font, appearanceSettings?.secondary_font])
-
-  // Load category icons and order
+  
+  // Use Zustand store for state management
+  const { categoryIcons, categoryOrder, loadCategoryIcons } = useLinksStore()
+  
+  // Load category icons when component mounts
   useEffect(() => {
     if (user?.id) {
-      CategoryIconService.getAllCategoryIcons(user.id)
-        .then(icons => setCategoryIcons(icons))
-        .catch(error => console.error('Error loading category icons:', error))
-
-      // Only load category order if not provided as prop
-      if (!propCategoryOrder) {
-        CategoryOrderService.getCategoryOrder(user.id)
-          .then(order => setCategoryOrder(order))
-          .catch(error => console.error('Error loading category order:', error))
-      }
+      loadCategoryIcons(user.id)
     }
-  }, [user?.id, propCategoryOrder])
+  }, [user?.id, loadCategoryIcons])
 
-  // Update category order when prop changes
-  useEffect(() => {
-    if (propCategoryOrder) {
-      setCategoryOrder(propCategoryOrder)
+  const handleLinkClick = (link: UserLinkWithPreview) => {
+    // Open link
+    window.open(link.url, '_blank', 'noopener,noreferrer')
+  }
+
+  const handleShare = async () => {
+    const profileUrl = `${window.location.origin}/${user.profile_slug || user.github_username}`
+    
+    try {
+      await navigator.clipboard.writeText(profileUrl)
+      setCopied(true)
+      toast.success('Profile URL copied to clipboard!')
+      setTimeout(() => setCopied(false), 2000)
+    } catch (error) {
+      console.error('Failed to copy URL:', error)
+      toast.error('Failed to copy URL')
     }
-  }, [propCategoryOrder])
+  }
 
   // Generate background style from appearance settings
   const getBackgroundStyle = (): React.CSSProperties => {
@@ -154,300 +184,256 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
     return style
   }
 
-  // Generate typography styles from appearance settings
+  // Generate typography styles from appearance settings with light theme defaults
   const getTypographyStyle = (type: 'heading' | 'subheading' | 'body' | 'accent' | 'link', isHover = false): React.CSSProperties => {
-    if (!appearanceSettings) {
-      // Default styles for light theme
-      const defaults = {
-        heading: { fontFamily: 'Sharp Grotesk', fontSize: '32px', color: '#1f2937', lineHeight: '38px' },
-        subheading: { fontFamily: 'Sharp Grotesk', fontSize: '18px', color: '#3b82f6', lineHeight: '24px' },
-        body: { fontFamily: 'Sharp Grotesk', fontSize: '16px', color: '#6b7280', lineHeight: '24px' },
-        accent: { fontFamily: 'Sharp Grotesk', fontSize: '14px', color: '#6b7280', lineHeight: '20px' },
-        link: { fontFamily: 'Sharp Grotesk', fontSize: '16px', color: '#3b82f6', lineHeight: '24px' }
-      }
-      return defaults[type]
-    }
-
-    const style: React.CSSProperties = {}
-
-    // Apply font family
-    if (type === 'heading' || type === 'subheading') {
-      style.fontFamily = getFontFamilyWithFallbacks(appearanceSettings.primary_font || 'Sharp Grotesk')
-    } else {
-      style.fontFamily = getFontFamilyWithFallbacks(appearanceSettings.secondary_font || 'Sharp Grotesk')
-    }
-
-    // Apply font size
-    switch (type) {
-      case 'heading':
-        style.fontSize = `${appearanceSettings.font_size_heading || 32}px`
-        style.lineHeight = `${appearanceSettings.line_height_heading || 1.2}`
-        break
-      case 'subheading':
-        style.fontSize = `${appearanceSettings.font_size_subheading || 18}px`
-        style.lineHeight = `${appearanceSettings.line_height_base || 1.5}`
-        break
-      case 'body':
-      case 'accent':
-      case 'link':
-        style.fontSize = `${appearanceSettings.font_size_base || 16}px`
-        style.lineHeight = `${appearanceSettings.line_height_base || 1.5}`
-        break
-    }
-
-    // Apply colors
-    switch (type) {
-      case 'heading':
-        style.color = appearanceSettings.text_primary_color || '#1f2937'
-        break
-      case 'subheading':
-        style.color = appearanceSettings.text_accent_color || '#3b82f6'
-        break
-      case 'body':
-      case 'accent':
-        style.color = appearanceSettings.text_secondary_color || '#6b7280'
-        break
-      case 'link':
-        style.color = isHover
-          ? (appearanceSettings.link_hover_color || '#2563eb')
-          : (appearanceSettings.link_color || '#3b82f6')
-        break
-    }
-
-    return style
+    // Always use light theme safe colors to ensure visibility
+    return getSectionTypographyStyle('profile', type, appearanceSettings, isHover, 'light')
   }
 
-  const handleLinkClick = async (link: UserLinkWithPreview) => {
-    // Track the click for analytics
-    await ApiLinkService.trackLinkClick(link.id)
 
-    // Open the link
-    window.open(link.url, '_blank', 'noopener,noreferrer')
-  }
-
-  const handleRefreshPreview = async (linkId: string) => {
-    try {
-      await ApiLinkService.refreshLinkPreview(user.id, linkId)
-      // Optionally trigger a re-fetch of the links data
-      window.location.reload() // Simple approach for now
-    } catch (error) {
-      console.error('Failed to refresh preview:', error)
-    }
-  }
-
-  const handleShare = async () => {
-    const profileUrl = window.location.href
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${user.full_name || user.github_username}'s Profile`,
-          text: user.bio || `Check out ${user.full_name || user.github_username}'s developer profile`,
-          url: profileUrl
-        })
-      } catch (error) {
-        // Fallback to copy
-        copyToClipboard(profileUrl)
-      }
-    } else {
-      copyToClipboard(profileUrl)
-    }
-  }
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopied(true)
-      toast.success('Profile URL copied to clipboard!')
-      setTimeout(() => setCopied(false), 2000)
-    } catch (error) {
-      toast.error('Failed to copy URL')
-    }
-  }
 
   // Get active links for display
   const hasLinks = Object.values(links).some(categoryLinks => categoryLinks.length > 0)
 
+  const joinedDate = user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long' 
+  }) : ''
+
+  // Filter out empty categories and apply custom order
+  const orderedCategories = (propCategoryOrder || categoryOrder).filter(category => {
+    const categoryLinks = links[category]
+    return categoryLinks && categoryLinks.length > 0
+  })
+
   return (
-    <div className="min-h-screen" style={getBackgroundStyle()}>
-      <div className="max-w-2xl mx-auto px-4 py-12">
-        
-        {/* Profile Header */}
-        <div className="bg-white border border-gray-200 rounded-[24px] p-10 shadow-sm mb-10 text-center">
-          
+    <div 
+      className="min-h-screen relative"
+      style={getBackgroundStyle()}
+    >
+      {/* Subtle overlay pattern */}
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(148, 163, 184, 0.15) 1px, transparent 0)',
+          backgroundSize: '32px 32px'
+        }}></div>
+      </div>
+      
+      <div className="relative z-10 container mx-auto px-6 py-12 max-w-2xl">
+        {/* Header Section */}
+        <div 
+          className="text-center mb-12 bg-white border border-gray-200 rounded-xl p-8 shadow-sm"
+        >
           {/* Avatar */}
-          <div className="mb-8">
-            {user.avatar_url ? (
-              <Image
-                src={user.avatar_url}
-                alt={`${user.full_name || user.github_username}'s avatar`}
-                width={100}
-                height={100}
-                className="w-[100px] h-[100px] rounded-full mx-auto object-cover border-2 border-gray-200"
-              />
-            ) : (
-              <div className="w-[100px] h-[100px] rounded-full mx-auto bg-gradient-to-r from-blue-600 to-blue-700 flex items-center justify-center">
-                <span className="text-[36px] font-bold text-white font-sharp-grotesk">
-                  {(user.full_name || user.github_username || 'U')[0].toUpperCase()}
-                </span>
-              </div>
-            )}
+          <div className="relative inline-block mb-6">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-600 blur-lg opacity-20 scale-110"></div>
+            <Image
+              src={user.avatar_url || '/default-avatar.png'}
+              alt={user.full_name || user.github_username || 'User'}
+              width={appearanceSettings?.profile_avatar_size || 120}
+              height={appearanceSettings?.profile_avatar_size || 120}
+              className="relative rounded-full border-4 border-white shadow-xl backdrop-blur-sm"
+            />
           </div>
 
-          {/* Name and Title */}
-          <h1 className="text-[28px] font-semibold leading-[34px] tracking-[-0.84px] font-sharp-grotesk text-gray-900 mb-3">
-            {user.full_name || user.github_username || 'Developer'}
+          {/* Name */}
+          <h1 
+            className="text-3xl font-bold mb-3"
+            style={getTypographyStyle('heading')}
+          >
+            {user.full_name || user.github_username}
           </h1>
-          
+
+          {/* Title */}
           {user.profile_title && (
-            <p className="text-[16px] font-medium leading-[22px] tracking-[-0.48px] text-blue-600 font-sharp-grotesk mb-6">
+            <p 
+              className="text-lg font-medium mb-4"
+              style={getTypographyStyle('subheading')}
+            >
               {user.profile_title}
             </p>
           )}
 
           {/* Bio */}
           {user.bio && (
-            <p className="text-[15px] font-normal leading-[22px] tracking-[-0.45px] text-gray-600 font-sharp-grotesk mb-8 max-w-lg mx-auto">
+            <p 
+              className="text-base mb-6 leading-relaxed max-w-lg mx-auto"
+              style={getTypographyStyle('body')}
+            >
               {user.bio}
             </p>
           )}
 
-          {/* Meta Information */}
-          <div className="flex flex-wrap items-center justify-center gap-6 text-[13px] text-gray-500 font-sharp-grotesk mb-8">
+          {/* Location, Company, Join Date */}
+          <div 
+            className="flex flex-wrap justify-center items-center gap-6 mb-8"
+            style={getTypographyStyle('accent')}
+          >
             {user.location && (
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-4 h-4" />
-                <span>{user.location}</span>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-gray-700" />
+                <span className="text-sm font-medium">{user.location}</span>
               </div>
             )}
             {user.company && (
-              <div className="flex items-center gap-1.5">
-                <Building className="w-4 h-4" />
-                <span>{user.company}</span>
+              <div className="flex items-center gap-2">
+                <Building className="w-4 h-4 text-gray-700" />
+                <span className="text-sm font-medium">{user.company}</span>
               </div>
             )}
-            <div className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4" />
-              <span>Joined {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
-            </div>
+            {joinedDate && (
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-gray-700" />
+                <span className="text-sm font-medium">Joined {joinedDate}</span>
+              </div>
+            )}
           </div>
 
           {/* Share Button */}
           <Button
             onClick={handleShare}
-            className="bg-blue-600 hover:bg-blue-700 text-white border-0 px-6 py-2.5 rounded-full font-medium"
+            className="font-medium px-8 py-3 rounded-full hover:scale-105 transition-all duration-300 shadow-lg mb-8"
+            style={{
+              backgroundColor: appearanceSettings?.link_color || '#3b82f6',
+              color: appearanceSettings?.text_primary_color || '#ffffff',
+              backgroundImage: !appearanceSettings?.link_color ? 'linear-gradient(45deg, #3b82f6, #8b5cf6)' : undefined,
+              boxShadow: '0 4px 20px rgba(59, 130, 246, 0.3)'
+            }}
           >
             {copied ? (
               <>
-                <Check className="w-4 h-4 mr-2" />
+                <Check className="w-5 h-5 mr-2" />
                 Copied!
               </>
             ) : (
               <>
-                <Share2 className="w-4 h-4 mr-2" />
+                <Share2 className="w-5 h-5 mr-2" />
                 Share Profile
               </>
             )}
           </Button>
         </div>
 
-        {/* All Categories Section - Respecting Category Order */}
-        {hasLinks ? (
-          <div className="space-y-8">
-            {categoryOrder.map((category) => {
-              const categoryLinks = links[category] || []
-              if (categoryLinks.length === 0) return null
+        {/* Links Section */}
+        <div className="space-y-8">
+          {orderedCategories.map((category) => {
+            const categoryLinks = links[category]
+            const config = LINK_CATEGORIES[category]
+            const IconComponent = getCategoryIcon(category, categoryIcons)
 
-              // Handle social media category specially
-              if (category === 'social') {
-                return (
-                  <SocialMediaSection
-                    key={category}
-                    socialLinks={categoryLinks}
-                    onLinkClick={handleLinkClick}
-                    variant="light"
-                    className="mb-2"
-                    appearanceSettings={appearanceSettings}
-                  />
-                )
-              }
-
-              const categoryConfig = LINK_CATEGORIES[category]
-              const CategoryIcon = getCategoryIcon(category, categoryIcons)
-              
+            // Handle social media category specially
+            if (category === 'social') {
               return (
-                <div key={category} className="bg-white border border-gray-200 rounded-[20px] p-8 shadow-sm">
-                  
-                  {/* Category Header */}
-                  <div className="flex items-center gap-3 mb-6">
-                    <CategoryIcon className="w-5 h-5 text-blue-600" />
-                    <h2 className="text-[18px] font-semibold leading-[22px] tracking-[-0.54px] font-sharp-grotesk text-gray-900">
-                      {categoryConfig?.label || category}
-                    </h2>
-                  </div>
-
-                  {/* Rich Link Previews */}
-                  <div className="space-y-4">
-                    {categoryLinks.map((link) => (
-                      <RichLinkPreview
-                        key={link.id}
-                        link={link}
-                        onClick={() => handleLinkClick(link)}
-                        onRefresh={handleRefreshPreview}
-                        variant="default"
-                        showRefreshButton={true}
-                        theme="light"
-                        className="bg-gray-50 hover:bg-gray-100 border-gray-200"
-                      />
-                    ))}
-                  </div>
-                </div>
+                <SocialMediaSection
+                  key={category}
+                  socialLinks={categoryLinks}
+                  onLinkClick={handleLinkClick}
+                  variant="light"
+                  appearanceSettings={appearanceSettings}
+                />
               )
-            })}
-          </div>
-        ) : (
-          <div className="bg-white border border-gray-200 rounded-[20px] p-10 shadow-sm text-center">
-            <h2 className="text-[20px] font-semibold leading-[24px] tracking-[-0.6px] font-sharp-grotesk text-gray-900 mb-4">
+            }
+
+            return (
+              <div key={category} className="mb-10">
+                {/* Category Header */}
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
+                    <IconComponent 
+                      className="w-6 h-6 text-gray-700" 
+                      style={{ color: '#374151' }}
+                    />
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {config.label}
+                  </h2>
+                </div>
+
+                {/* Category Links */}
+                <div className="space-y-4">
+                  {categoryLinks.map((link) => (
+                    <div key={link.id}>
+                      {link.metadata?.type === 'github_repo' || link.metadata?.type === 'webpage' || link.metadata?.type === 'blog_post' ? (
+                        <div className="group">
+                          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg">
+                            <RichLinkPreview 
+                              link={link} 
+                              onClick={() => handleLinkClick(link)}
+                              theme="light"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleLinkClick(link)}
+                          className="w-full group"
+                        >
+                          <div 
+                            className="bg-white border border-gray-200 rounded-xl p-6 text-left transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:border-blue-300"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="flex-shrink-0 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                                <div style={{ color: '#374151' }}>
+                                  {getLinkIcon(link)}
+                                </div>
+                              </div>
+                              <div className="flex-grow min-w-0">
+                                <h3 className="text-lg font-semibold mb-1 text-gray-900 transition-colors group-hover:text-blue-600">
+                                  {link.title}
+                                </h3>
+                                {link.description && (
+                                  <p className="text-sm text-gray-600 line-clamp-2">
+                                    {link.description}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex-shrink-0">
+                                <ExternalLink 
+                                  className="w-5 h-5 text-gray-700 transition-colors"
+                                  style={{ color: '#374151' }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* No Links Message */}
+        {!hasLinks && (
+          <div className="bg-white border border-gray-200 rounded-xl p-10 shadow-sm text-center">
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">
               No Links Yet
             </h2>
-            <p className="text-[15px] font-normal leading-[22px] tracking-[-0.45px] text-gray-500 font-sharp-grotesk">
-              This developer hasn't added any links to their profile yet.
+            <p className="text-gray-600">
+              This developer hasn&apos;t added any links to their profile yet.
             </p>
           </div>
         )}
 
-        {/* Powered by Link4Coders Footer */}
+        {/* Footer */}
         {!user.is_premium && (
-          <div className="mt-12 text-center">
-            <div className="bg-gray-50 border border-gray-200 rounded-[12px] p-4 shadow-sm inline-block">
-              <p className="text-[13px] font-normal text-gray-500 font-sharp-grotesk">
-                Powered by{' '}
-                <a 
-                  href="https://link4coders.com?ref=profile" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-700 transition-colors font-medium"
-                  onClick={() => {
-                    // Track branding click for analytics
-                    if (typeof window !== 'undefined' && window.gtag) {
-                      window.gtag('event', 'branding_click', {
-                        event_category: 'engagement',
-                        event_label: 'powered_by_footer'
-                      })
-                    }
-                  }}
-                >
-                  Link4Coders
-                </a>
-                {' '}✨
-              </p>
-              <p className="text-[11px] text-gray-400 font-sharp-grotesk mt-1">
-                Create your developer profile for free
-              </p>
+          <div className="text-center mt-16 pt-8 border-t border-gray-200">
+            <div className="flex items-center justify-center gap-2 text-gray-600">
+              <Heart className="w-4 h-4 text-red-500" />
+              <span className="text-sm font-medium">Powered by</span>
+              <a 
+                href="https://link4coders.com?ref=profile" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                Link4Coders
+              </a>
             </div>
           </div>
         )}
-        
       </div>
     </div>
   )

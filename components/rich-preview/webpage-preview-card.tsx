@@ -72,7 +72,8 @@ const getLinkIcon = (link: UserLinkWithPreview) => {
   }
 
   const IconComponent = defaultIcons[link.category] || Globe
-  return <IconComponent className="w-4 h-4" />
+  // Use inline style to force dark color in light theme regardless of appearance settings
+  return <IconComponent className="w-4 h-4" style={{ color: '#374151' }} />
 }
 
 interface WebpagePreviewCardProps {
@@ -114,7 +115,7 @@ export function WebpagePreviewCard({
           "group relative w-full rounded-2xl p-4 transition-all duration-300 text-left shadow-sm",
           isLight
             ? "bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-            : "bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/[0.08] hover:from-white/[0.12] hover:to-white/[0.04] hover:border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.16)]",
+            : "glassmorphic shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)] hover:shadow-[0px_20px_35px_rgba(0,0,0,0.40)]",
           className
         )}
       >
@@ -177,7 +178,7 @@ export function WebpagePreviewCard({
         "group relative w-full rounded-3xl overflow-hidden transition-all duration-500 text-left transform hover:scale-[1.02]",
         isLight
           ? "bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 shadow-sm hover:shadow-md"
-          : "bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/[0.08] hover:from-white/[0.12] hover:to-white/[0.04] hover:border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_20px_60px_rgba(0,0,0,0.2)]",
+          : "glassmorphic shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)] hover:shadow-[0px_20px_40px_rgba(0,0,0,0.40)]",
         className
       )}
     >
@@ -357,7 +358,7 @@ export function BasicLinkCard({
           )}>
             <div className={cn(
               isLight ? "text-gray-500" : "text-gray-400"
-            )}>
+            )} style={{ color: isLight ? '#6b7280' : undefined }}>
               {getLinkIcon(link)}
             </div>
           </div>
@@ -409,7 +410,7 @@ export function BasicLinkCard({
           <div className={cn(
             "w-6 h-6 flex items-center justify-center",
             isLight ? "text-gray-500" : "text-gray-400"
-          )}>
+          )} style={{ color: isLight ? '#6b7280' : undefined }}>
             {getLinkIcon(link)}
           </div>
         </div>

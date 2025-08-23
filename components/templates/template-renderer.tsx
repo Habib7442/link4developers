@@ -10,6 +10,7 @@ import { getTemplateConfig } from '@/lib/templates/template-config'
 import { DeveloperDarkTemplate } from './developer-dark-template'
 import { MinimalistLightTemplate } from './minimalist-light-template'
 import { GitHubFocusTemplate } from './github-focus-template'
+import { GTAViceCityTemplate } from './gta-vice-city-template'
 
 interface TemplateRendererProps {
   user: User
@@ -34,6 +35,9 @@ const TemplateRendererComponent = ({ user, links, templateId, appearanceSettings
 
     case 'github-focus':
       return <GitHubFocusTemplate user={user} links={links} appearanceSettings={appearanceSettings} categoryOrder={categoryOrder} />
+
+    case 'gta-vice-city':
+      return <GTAViceCityTemplate user={user} links={links} appearanceSettings={appearanceSettings} categoryOrder={categoryOrder} />
 
     case 'developer-dark':
     default:

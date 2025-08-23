@@ -41,7 +41,7 @@ export interface User {
 }
 
 // Template system types
-export type TemplateId = 'developer-dark' | 'minimalist-light' | 'github-focus'
+export type TemplateId = 'developer-dark' | 'minimalist-light' | 'github-focus' | 'gta-vice-city'
 
 export interface TemplateConfig {
   id: TemplateId

@@ -87,7 +87,7 @@ export function BlogPostCard({
           'p-4',
           isLight
             ? 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-            : 'border-white/10 bg-black/20 backdrop-blur-sm hover:border-white/20 hover:bg-black/30',
+            : 'glassmorphic shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)] hover:shadow-[0px_20px_35px_rgba(0,0,0,0.40)]',
           className
         )}
       >
@@ -159,7 +159,7 @@ export function BlogPostCard({
         variant === 'detailed' ? 'p-6' : 'p-4',
         isLight
           ? 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-          : 'border-white/10 bg-black/20 backdrop-blur-sm hover:border-white/20 hover:bg-black/30',
+          : 'glassmorphic shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)] hover:shadow-[0px_20px_35px_rgba(0,0,0,0.40)]',
         className
       )}
     >

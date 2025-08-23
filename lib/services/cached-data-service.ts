@@ -129,6 +129,12 @@ export const getTemplateConfig = cache(async (templateId: string) => {
       name: 'GitHub Focus',
       description: 'A GitHub-inspired theme for open source developers',
       isPremium: true
+    },
+    'gta-vice-city': {
+      id: 'gta-vice-city',
+      name: 'Miami Nights',
+      description: 'Experience the neon-soaked streets of Miami with vibrant sunset gradients',
+      isPremium: false
     }
   }
   

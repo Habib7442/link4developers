@@ -63,7 +63,7 @@ export function RichLinkPreview({
         variant === 'compact' && "rounded-2xl p-4",
         isLight
           ? "bg-white border border-gray-200"
-          : "bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.12)]",
+          : "glassmorphic shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)]",
         className
       )}>
         <div className="flex items-center gap-4">
@@ -104,7 +104,7 @@ export function RichLinkPreview({
         variant === 'compact' && "rounded-2xl p-4",
         isLight
           ? "bg-white border border-red-200"
-          : "bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-red-500/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)]",
+          : "glassmorphic shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)] border-red-500/20",
         className
       )}>
         <div className="flex items-center gap-4">

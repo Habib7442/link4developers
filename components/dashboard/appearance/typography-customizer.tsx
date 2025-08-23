@@ -193,6 +193,103 @@ export function TypographyCustomizer({ settings, onUpdate }: TypographyCustomize
         </div>
       </div>
 
+      {/* Font Sizing */}
+      <div className="space-y-4">
+        <h3 className="text-[18px] font-medium text-white font-sharp-grotesk flex items-center gap-2">
+          <Type className="w-5 h-5" />
+          Font Sizes
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <Label className="text-white font-sharp-grotesk mb-2 block">
+              Heading Size
+            </Label>
+            <Slider
+              value={[settings.font_size_heading]}
+              onValueChange={([value]) => onUpdate({ font_size_heading: value })}
+              min={20}
+              max={48}
+              step={2}
+              className="w-full"
+            />
+            <span className="text-[12px] text-[#7a7a83] font-sharp-grotesk">
+              {settings.font_size_heading}px
+            </span>
+          </div>
+
+          <div>
+            <Label className="text-white font-sharp-grotesk mb-2 block">
+              Subheading Size
+            </Label>
+            <Slider
+              value={[settings.font_size_subheading]}
+              onValueChange={([value]) => onUpdate({ font_size_subheading: value })}
+              min={14}
+              max={28}
+              step={2}
+              className="w-full"
+            />
+            <span className="text-[12px] text-[#7a7a83] font-sharp-grotesk">
+              {settings.font_size_subheading}px
+            </span>
+          </div>
+
+          <div>
+            <Label className="text-white font-sharp-grotesk mb-2 block">
+              Body Text Size
+            </Label>
+            <Slider
+              value={[settings.font_size_base]}
+              onValueChange={([value]) => onUpdate({ font_size_base: value })}
+              min={12}
+              max={24}
+              step={1}
+              className="w-full"
+            />
+            <span className="text-[12px] text-[#7a7a83] font-sharp-grotesk">
+              {settings.font_size_base}px
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-white font-sharp-grotesk mb-2 block">
+              Heading Line Height
+            </Label>
+            <Slider
+              value={[settings.line_height_heading]}
+              onValueChange={([value]) => onUpdate({ line_height_heading: value })}
+              min={1.0}
+              max={2.0}
+              step={0.1}
+              className="w-full"
+            />
+            <span className="text-[12px] text-[#7a7a83] font-sharp-grotesk">
+              {settings.line_height_heading}
+            </span>
+          </div>
+
+          <div>
+            <Label className="text-white font-sharp-grotesk mb-2 block">
+              Body Line Height
+            </Label>
+            <Slider
+              value={[settings.line_height_base]}
+              onValueChange={([value]) => onUpdate({ line_height_base: value })}
+              min={1.0}
+              max={2.5}
+              step={0.1}
+              className="w-full"
+            />
+            <span className="text-[12px] text-[#7a7a83] font-sharp-grotesk">
+              {settings.line_height_base}
+            </span>
+          </div>
+        </div>
+      </div>
+
 
 
       {/* Color Scheme */}

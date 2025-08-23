@@ -92,7 +92,7 @@ export function GitHubRepoCard({
           "group relative w-full rounded-2xl p-4 transition-all duration-300 text-left shadow-sm",
           isLight
             ? "bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-            : "bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/[0.08] hover:from-white/[0.12] hover:to-white/[0.04] hover:border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.16)]",
+            : "glassmorphic shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)] hover:shadow-[0px_20px_35px_rgba(0,0,0,0.40)]",
           className
         )}
       >
@@ -157,7 +157,7 @@ export function GitHubRepoCard({
         "group relative w-full rounded-3xl p-6 transition-all duration-500 text-left overflow-hidden transform hover:scale-[1.02]",
         isLight
           ? "bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 shadow-sm hover:shadow-md"
-          : "bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/[0.08] hover:from-white/[0.12] hover:to-white/[0.04] hover:border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_20px_60px_rgba(0,0,0,0.2)]",
+          : "glassmorphic shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)] hover:shadow-[0px_20px_40px_rgba(0,0,0,0.40)]",
         className
       )}
     >

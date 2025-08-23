@@ -11,6 +11,7 @@ import { RichLinkPreview } from '@/components/rich-preview/rich-link-preview'
 import { UserLinkWithPreview } from '@/lib/types/rich-preview'
 import { SocialMediaSection } from '@/components/social-media/social-media-section'
 import { getFontFamilyWithFallbacks, loadGoogleFont } from '@/lib/utils/font-loader'
+import { getSectionStyles, getSectionTypographyStyle } from '@/lib/utils/section-styling'
 import { 
   MapPin, 
   Building, 
@@ -382,7 +383,6 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
                     socialLinks={categoryLinks}
                     onLinkClick={handleLinkClick}
                     variant="github"
-                    className="mb-2"
                     appearanceSettings={appearanceSettings}
                   />
                 )
@@ -392,12 +392,18 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
               const CategoryIcon = getCategoryIcon(category, categoryIcons)
               
               return (
-                <div key={category} className="bg-[#161b22] border border-[#30363d] rounded-[12px] overflow-hidden">
+                <div 
+                  key={category} 
+                  className="bg-[#161b22] border border-[#30363d] rounded-[12px] overflow-hidden"
+                >
                   
                   {/* Category Header */}
                   <div className="bg-[#21262d] border-b border-[#30363d] px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <CategoryIcon className="w-4 h-4 text-[#2ea043]" />
+                      <CategoryIcon 
+                        className="w-4 h-4" 
+                        style={{ color: '#2ea043' }}
+                      />
                       <h2 className="text-[14px] font-semibold leading-[18px] font-sharp-grotesk text-[#f0f6fc]">
                         {categoryConfig?.label || category}
                       </h2>

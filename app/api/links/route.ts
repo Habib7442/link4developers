@@ -24,6 +24,8 @@ const createLinkHandler = async (request: NextRequest, { userId }: { userId: str
     console.log('API: Received data:', { userId, linkData })
 
     // Special validation for social media links
+    let sanitizedData: any;
+    
     if (linkData.category === 'social') {
       const socialValidation = SocialMediaValidator.validateSocialMediaLink({
         url: linkData.url,
@@ -41,7 +43,7 @@ const createLinkHandler = async (request: NextRequest, { userId }: { userId: str
         )
       }
 
-      var sanitizedData = socialValidation.sanitizedData!
+      sanitizedData = socialValidation.sanitizedData!
     } else {
       // Regular validation for non-social links
       const validation = validateLink(linkData)
@@ -52,7 +54,7 @@ const createLinkHandler = async (request: NextRequest, { userId }: { userId: str
         )
       }
 
-      var sanitizedData = validation.data
+      sanitizedData = validation.data
     }
     
     // Get next position for the category
@@ -92,7 +94,9 @@ const createLinkHandler = async (request: NextRequest, { userId }: { userId: str
       icon_variant: sanitizedData.icon_variant,
       use_custom_icon: sanitizedData.use_custom_icon,
       icon_selection_type: sanitizedData.icon_selection_type || 'default',
-      platform_detected: sanitizedData.platform_detected
+      platform_detected: sanitizedData.platform_detected,
+      // GitHub Projects specific field
+      live_project_url: sanitizedData.live_project_url && sanitizedData.live_project_url.trim() ? sanitizeUrl(sanitizedData.live_project_url) : null
     }
 
     // Additional URL validation
@@ -114,9 +118,29 @@ const createLinkHandler = async (request: NextRequest, { userId }: { userId: str
 
     if (error) {
       console.error('API: Database error:', error)
+      console.error('API: Insert data that caused error:', JSON.stringify(insertData, null, 2))
+      
+      // Provide more specific error messages based on error codes
+      let errorMessage = `Failed to create link: ${error.message}`
+      let statusCode = 500
+      
+      if (error.code === '23505') {
+        errorMessage = 'A link with this URL already exists in this category'
+        statusCode = 409 // Conflict
+      } else if (error.code === '23502') {
+        errorMessage = 'Missing required fields'
+        statusCode = 400 // Bad Request
+      } else if (error.code === '23503') {
+        errorMessage = 'Referenced record does not exist'
+        statusCode = 400 // Bad Request
+      } else if (error.code === '42703') {
+        errorMessage = 'Database schema mismatch. Please contact support.'
+        statusCode = 500 // Server Error
+      }
+      
       return NextResponse.json(
-        { error: `Failed to create link: ${error.message}` },
-        { status: 500 }
+        { error: errorMessage, code: error.code },
+        { status: statusCode }
       )
     }
 
@@ -211,7 +235,16 @@ const updateLinkHandler = async (request: NextRequest, { userId }: { userId: str
       description: sanitizedData.description ? sanitizeText(sanitizedData.description, 200) : null,
       icon_type: sanitizedData.icon_type,
       category: sanitizedData.category,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      // Include universal icon fields
+      custom_icon_url: sanitizedData.custom_icon_url || null,
+      uploaded_icon_url: sanitizedData.uploaded_icon_url || null,
+      icon_variant: sanitizedData.icon_variant || 'default',
+      use_custom_icon: sanitizedData.use_custom_icon || false,
+      icon_selection_type: sanitizedData.icon_selection_type || 'default',
+      platform_detected: sanitizedData.platform_detected || null,
+      // GitHub Projects specific field
+      live_project_url: sanitizedData.live_project_url && sanitizedData.live_project_url.trim() ? sanitizeUrl(sanitizedData.live_project_url) : null
     }
 
     // Additional URL validation
@@ -240,9 +273,32 @@ const updateLinkHandler = async (request: NextRequest, { userId }: { userId: str
 
     if (error) {
       console.error('API: Database error:', error)
+      console.error('API: Update payload that caused error:', JSON.stringify(updatePayload, null, 2))
+      
+      // Provide more specific error messages based on error codes
+      let errorMessage = `Failed to update link: ${error.message}`
+      let statusCode = 500
+      
+      if (error.code === '23505') {
+        errorMessage = 'A link with this URL already exists in this category'
+        statusCode = 409 // Conflict
+      } else if (error.code === '23502') {
+        errorMessage = 'Missing required fields'
+        statusCode = 400 // Bad Request
+      } else if (error.code === '23503') {
+        errorMessage = 'Referenced record does not exist'
+        statusCode = 400 // Bad Request
+      } else if (error.code === '42703') {
+        errorMessage = 'Database schema mismatch. Please contact support.'
+        statusCode = 500 // Server Error
+      } else if (error.code === '22P02') {
+        errorMessage = 'Invalid input format. Please check your data.'
+        statusCode = 400 // Bad Request
+      }
+      
       return NextResponse.json(
-        { error: `Failed to update link: ${error.message}` },
-        { status: 500 }
+        { error: errorMessage, code: error.code },
+        { status: statusCode }
       )
     }
 

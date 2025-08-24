@@ -37,6 +37,7 @@ interface DeveloperDarkTemplateProps {
   links: Record<LinkCategory, UserLinkWithPreview[]>
   appearanceSettings?: UserAppearanceSettings | null
   categoryOrder?: LinkCategory[]
+  isPreview?: boolean
 }
 
 // Function to get the appropriate icon for a link
@@ -114,7 +115,7 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
   }
 }
 
-export function DeveloperDarkTemplate({ user, links, appearanceSettings, categoryOrder: propCategoryOrder }: DeveloperDarkTemplateProps) {
+export function DeveloperDarkTemplate({ user, links, appearanceSettings, categoryOrder: propCategoryOrder, isPreview = false }: DeveloperDarkTemplateProps) {
   const [copied, setCopied] = useState(false)
   const [categoryIcons, setCategoryIcons] = useState<Record<LinkCategory, CategoryIconConfig>>({} as Record<LinkCategory, CategoryIconConfig>)
   const [categoryOrder, setCategoryOrder] = useState<LinkCategory[]>(propCategoryOrder || CategoryOrderService.DEFAULT_ORDER)
@@ -445,8 +446,9 @@ export function DeveloperDarkTemplate({ user, links, appearanceSettings, categor
                     key={category}
                     socialLinks={categoryLinks}
                     onLinkClick={handleLinkClick}
-                    variant="default"
+                    variant="dark"
                     appearanceSettings={appearanceSettings}
+                    getTypographyStyle={getTypographyStyle}
                   />
                 )
               }
@@ -531,8 +533,8 @@ export function DeveloperDarkTemplate({ user, links, appearanceSettings, categor
           </div>
         )}
 
-        {/* Powered by Link4Coders Footer */}
-        {!user.is_premium && (
+        {/* Powered by Link4Coders Footer - only shown for non-premium users in actual public profile (not in preview) */}
+        {!user.is_premium && !isPreview && (
           <div className="mt-8 text-center">
             <div 
               className="glassmorphic rounded-[12px] p-4 shadow-[0px_8px_15px_rgba(0,0,0,0.20)] inline-block"

@@ -6,7 +6,7 @@ import { TemplateService } from '@/lib/services/template-service'
 import { getAllTemplates, getTemplateConfig } from '@/lib/templates/template-config'
 import { TemplateId, TemplateConfig } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
-import { Check, Eye, Crown, Palette } from 'lucide-react'
+import { Check, Crown, Palette } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface ThemeSelectorProps {
@@ -57,17 +57,6 @@ export function ThemeSelector({ onThemeChange }: ThemeSelectorProps = {}) {
     } finally {
       setSaving(false)
     }
-  }
-
-  const handlePreview = (templateId: TemplateId) => {
-    if (!user?.profile_slug && !user?.github_username) {
-      toast.error('Please set up your profile URL first')
-      return
-    }
-    
-    const username = user.profile_slug || user.github_username
-    const previewUrl = `/${username}?preview=${templateId}`
-    window.open(previewUrl, '_blank', 'noopener,noreferrer')
   }
 
   if (loading) {
@@ -124,7 +113,6 @@ export function ThemeSelector({ onThemeChange }: ThemeSelectorProps = {}) {
               isSelected={selectedTemplate === template.id}
               isCurrent={currentTemplate === template.id}
               onSelect={() => handleTemplateSelect(template.id)}
-              onPreview={() => handlePreview(template.id)}
               isPremium={template.category === 'premium'}
               userIsPremium={user?.is_premium || false}
             />
@@ -163,7 +151,6 @@ interface TemplateCardProps {
   isSelected: boolean
   isCurrent: boolean
   onSelect: () => void
-  onPreview: () => void
   isPremium: boolean
   userIsPremium: boolean
 }
@@ -173,7 +160,6 @@ function TemplateCard({
   isSelected, 
   isCurrent, 
   onSelect, 
-  onPreview, 
   isPremium, 
   userIsPremium 
 }: TemplateCardProps) {
@@ -255,19 +241,6 @@ function TemplateCard({
 
       {/* Actions */}
       <div className="flex gap-2">
-        <Button
-          onClick={(e) => {
-            e.stopPropagation()
-            onPreview()
-          }}
-          variant="outline"
-          size="sm"
-          className="flex-1 border-[#33373b] text-[#7a7a83] hover:text-white hover:bg-[#33373b] text-xs"
-        >
-          <Eye className="w-3 h-3 mr-1" />
-          Preview
-        </Button>
-        
         {canUse ? (
           <div className="flex-1 text-center">
             {isSelected ? (

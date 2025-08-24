@@ -1,0 +1,163 @@
+/* Mobile padding fixes */
+.dashboard-form-container {
+  padding-bottom: 8rem; /* Extra padding on mobile */
+  padding-left: 0.75rem; /* Balanced horizontal padding on mobile */
+  padding-right: 0.75rem;
+  max-width: 100%;
+  width: 95%; /* Increased width on mobile for better visibility */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 640px) {
+  .dashboard-form-container {
+    padding-bottom: 2rem; /* Normal padding on desktop */
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    width: 100%; /* Full width on desktop */
+  }
+}
+
+/* Ensure tab bar doesn't cover important content */
+.mobile-safe-area {
+  padding-bottom: 8rem; /* Provides safe area above mobile tab bar */
+}
+
+@media (min-width: 640px) {
+  .mobile-safe-area {
+    padding-bottom: 0; /* No extra padding needed on desktop */
+  }
+}
+
+/* Fixed position floating buttons should be above the tab bar */
+.mobile-floating-button {
+  bottom: 5rem; /* Position above tab bar */
+}
+
+@media (min-width: 640px) {
+  .mobile-floating-button {
+    bottom: 1.5rem; /* Normal position on desktop */
+  }
+}
+
+/* Mobile utility classes */
+.mb-mobile-large {
+  margin-bottom: 8rem; /* Extra large margin for mobile */
+}
+
+@media (min-width: 640px) {
+  .mb-mobile-large {
+    margin-bottom: 2rem; /* Normal margin for desktop */
+  }
+}
+
+/* Mobile form elements */
+.mobile-form-element {
+  font-size: 14px;
+  padding: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .mobile-form-element {
+    font-size: 16px;
+    padding: 0.75rem;
+  }
+}
+
+/* Mobile form containers */
+.mobile-form-card {
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .mobile-form-card {
+    padding: 1.5rem;
+    border-radius: 1.25rem;
+  }
+}
+
+
+
+/* Mobile header fixes */
+@media (max-width: 640px) {
+  .mobile-header {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  
+  .mobile-header .logout-button {
+    min-width: fit-content;
+    white-space: nowrap;
+    flex-shrink: 0;
+    max-width: 90px;
+    font-size: 11px;
+    /* margin-right: 8px; */
+    padding: 0.25rem 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .mobile-header .logout-button span {
+    max-width: 50px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Profile image section mobile fixes */
+@media (max-width: 640px) {
+  .profile-avatar-section {
+    gap: 1.5rem;
+  }
+  
+  .profile-avatar-section .avatar-container {
+    flex-shrink: 0;
+    margin-bottom: 0.5rem;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .profile-avatar-section .text-content {
+    text-align: center;
+    width: 100%;
+    max-width: 100%;
+    margin-top: 0.5rem;
+  }
+}
+
+/* Add these styles to your global CSS */
+@media (max-width: 375px) {
+  .mobile-safe-area {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+  
+  .mobile-form-card {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    border-radius: 0.75rem;
+  }
+  
+  .mobile-header {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .custom-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -19,6 +19,23 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   return headers
 }
 
+// Create a timeout promise that rejects after specified milliseconds
+const createTimeoutPromise = (ms: number) => {
+  return new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error(`Request timed out after ${ms}ms`))
+    }, ms)
+  })
+}
+
+// Execute fetch request with timeout
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 10000): Promise<Response> {
+  return Promise.race([
+    fetch(url, options),
+    createTimeoutPromise(timeoutMs)
+  ]) as Promise<Response>;
+}
+
 export class ApiLinkService {
   // Get all links for a user via API with rich preview data
   static async getUserLinks(userId: string): Promise<Record<LinkCategory, UserLinkWithPreview[]>> {
@@ -72,17 +89,18 @@ export class ApiLinkService {
 
       const headers = await getAuthHeaders()
 
-      const response = await fetch('/api/links', {
+      const response = await fetchWithTimeout('/api/links', {
         method: 'POST',
         headers,
         body: JSON.stringify({
           userId,
           linkData
         })
-      })
+      }, 15000) // 15 second timeout
 
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('❌ API Service: Server error:', errorData)
         throw new Error(errorData.error || 'Failed to create link')
       }
 
@@ -103,17 +121,18 @@ export class ApiLinkService {
 
       const headers = await getAuthHeaders()
 
-      const response = await fetch('/api/links', {
+      const response = await fetchWithTimeout('/api/links', {
         method: 'PUT',
         headers,
         body: JSON.stringify({
           userId,
           linkData
         })
-      })
+      }, 15000) // 15 second timeout
 
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('❌ API Service: Server error:', errorData)
         throw new Error(errorData.error || 'Failed to update link')
       }
 

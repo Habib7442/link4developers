@@ -22,6 +22,8 @@ export interface UserLink {
   use_custom_icon?: boolean
   icon_selection_type?: 'default' | 'platform' | 'upload' | 'url'
   platform_detected?: string
+  // GitHub Projects specific field
+  live_project_url?: string
 }
 
 export type LinkCategory = 'personal' | 'projects' | 'blogs' | 'achievements' | 'contact' | 'social' | 'custom'
@@ -42,6 +44,8 @@ export interface CreateLinkData {
   use_custom_icon?: boolean
   icon_selection_type?: 'default' | 'platform' | 'upload' | 'url'
   platform_detected?: string
+  // GitHub Projects specific field
+  live_project_url?: string
 }
 
 export interface UpdateLinkData extends Partial<CreateLinkData> {
@@ -234,7 +238,16 @@ export class LinkService {
         category: linkData.category || 'contact',
         position: nextPosition, // This is required (NOT NULL)
         is_active: linkData.is_active ?? true,
-        metadata: linkData.metadata || {}
+        metadata: linkData.metadata || {},
+        // Universal icon fields
+        custom_icon_url: linkData.custom_icon_url || null,
+        uploaded_icon_url: linkData.uploaded_icon_url || null,
+        icon_variant: linkData.icon_variant || 'default',
+        use_custom_icon: linkData.use_custom_icon || false,
+        icon_selection_type: linkData.icon_selection_type || 'default',
+        platform_detected: linkData.platform_detected || null,
+        // GitHub Projects specific field
+        live_project_url: linkData.live_project_url || null
       }
 
       console.log('Insert data:', insertData)

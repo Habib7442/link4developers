@@ -103,6 +103,7 @@ export function GitHubRepoCard({
                 src={metadata.owner.avatar_url}
                 alt={metadata.owner.login}
                 fill
+                sizes="32px"
                 className="object-cover"
                 onError={() => setImageError(true)}
               />
@@ -136,6 +137,24 @@ export function GitHubRepoCard({
                 {formatNumber(metadata.stars)}
               </div>
             </div>
+            {/* Add Live Project URL for compact view */}
+            {link.live_project_url && (
+              <div className="mt-1">
+                <a 
+                  href={link.live_project_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className={cn(
+                    "inline-flex items-center gap-1 text-xs",
+                    isLight ? "text-blue-600 hover:text-blue-700" : "text-blue-400 hover:text-blue-300"
+                  )}
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Live Demo
+                </a>
+              </div>
+            )}
           </div>
           <ExternalLink className={cn(
             "w-4 h-4 group-hover:text-blue-400 transition-colors flex-shrink-0",
@@ -182,6 +201,7 @@ export function GitHubRepoCard({
                 src={metadata.owner?.avatar_url || ''}
                 alt={metadata.owner?.login || 'Repository owner'}
                 fill
+                sizes="48px"
                 className="object-cover"
                 onError={() => setImageError(true)}
               />
@@ -245,6 +265,25 @@ export function GitHubRepoCard({
           )}>
             {metadata.description}
           </p>
+        )}
+
+        {/* Live Project URL - Add this section */}
+        {link.live_project_url && (
+          <div className="mb-4">
+            <a 
+              href={link.live_project_url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className={cn(
+                "inline-flex items-center gap-1 text-sm font-medium",
+                isLight ? "text-blue-600 hover:text-blue-700" : "text-blue-400 hover:text-blue-300"
+              )}
+            >
+              <ExternalLink className="w-4 h-4" />
+              Live Demo
+            </a>
+          </div>
         )}
 
         {/* Topics */}

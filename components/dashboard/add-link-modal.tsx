@@ -10,13 +10,16 @@ import { LinkService, CreateLinkData, UpdateLinkData, LinkCategory, LINK_CATEGOR
 import { ApiLinkService } from '@/lib/services/api-link-service'
 import { useAuthStore } from '@/stores/auth-store'
 import { toast } from 'sonner'
-import { UniversalIconSelector } from '@/components/universal-icon-selector'
+import UniversalIconSelector from '@/components/universal-icon-selector'
 import { detectPlatformFromUrl } from '@/lib/config/social-icons'
+import { checkUserUploadsBucket } from '@/lib/utils/storage-setup'
+import { supabase } from '@/lib/supabase'
 
 interface AddLinkModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
+  defaultCategory?: LinkCategory
   editLink?: {
     id: string
     title: string
@@ -24,12 +27,25 @@ interface AddLinkModalProps {
     description?: string
     icon_type: string
     category: LinkCategory
+    live_project_url?: string
+    // Universal icon fields
+    custom_icon_url?: string
+    uploaded_icon_url?: string
+    icon_variant?: string
+    use_custom_icon?: boolean
+    icon_selection_type?: 'default' | 'platform' | 'upload' | 'url'
+    platform_detected?: string
   } | null
 }
 
-export function AddLinkModal({ isOpen, onClose, onSuccess, editLink }: AddLinkModalProps) {
+export function AddLinkModal({ isOpen, onClose, onSuccess, defaultCategory, editLink }: AddLinkModalProps) {
   const { user, session } = useAuthStore()
   const [loading, setLoading] = useState(false)
+  const [bucketStatus, setBucketStatus] = useState<{ checked: boolean, exists: boolean, error: string | null }>({
+    checked: false,
+    exists: false,
+    error: null
+  })
   const [formData, setFormData] = useState({
     title: '',
     url: '',
@@ -41,61 +57,199 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, editLink }: AddLinkMo
     uploaded_icon_url: '',
     icon_variant: 'default',
     use_custom_icon: false,
-    icon_selection_type: 'default' as 'default' | 'platform' | 'upload' | 'url'
+    icon_selection_type: 'default' as 'default' | 'platform' | 'upload' | 'url',
+    // GitHub Projects specific field
+    live_project_url: ''
   })
+
+  // Helper function to validate and set form data
+  const setValidatedFormData = (updates: Partial<typeof formData>) => {
+    setFormData(prev => {
+      const newData = { ...prev, ...updates }
+      // Ensure category is always valid
+      if (!newData.category || !Object.keys(LINK_CATEGORIES).includes(newData.category)) {
+        newData.category = 'personal'
+      }
+      return newData
+    })
+  }
+
+  // Helper function to safely validate a URL
+  const isValidUrl = (urlString?: string): boolean => {
+    if (!urlString || urlString.trim() === '') return false;
+    
+    try {
+      new URL(urlString);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Form validation function for all required fields and format checks
+  const validateForm = (): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = []
+
+    // Required fields validation
+    if (!formData.title.trim()) {
+      errors.push('Title is required')
+    } else if (formData.title.length > 100) {
+      errors.push('Title must be less than 100 characters')
+    }
+
+    if (!formData.url.trim()) {
+      errors.push('URL is required')
+    } else if (!isValidUrl(formData.url)) {
+      errors.push('Please enter a valid URL (e.g., https://example.com)')
+    }
+
+    // Description length check
+    if (formData.description && formData.description.length > 200) {
+      errors.push('Description must be less than 200 characters')
+    }
+
+    // Live project URL validation (only for projects category)
+    if (formData.category === 'projects' && 
+        formData.live_project_url && 
+        formData.live_project_url.trim() !== '' && 
+        !isValidUrl(formData.live_project_url)) {
+      errors.push('Please enter a valid Live Project URL or leave it empty')
+    }
+
+    // Check custom URL or upload icon validation when selected
+    if (formData.icon_selection_type === 'url' && !formData.custom_icon_url.trim()) {
+      errors.push('Please provide a valid icon URL or select a different icon type')
+    }
+
+    if (formData.icon_selection_type === 'upload' && !formData.uploaded_icon_url.trim()) {
+      errors.push('Please upload an icon or select a different icon type')
+    }
+
+    return { 
+      isValid: errors.length === 0,
+      errors 
+    }
+  }
 
   useEffect(() => {
     if (isOpen) {
       setLoading(false) // Reset loading state when modal opens
+      
+      // Check if user-uploads bucket exists
+      const checkBucket = async () => {
+        try {
+          // Check if bucket exists
+          const exists = await checkUserUploadsBucket()
+          setBucketStatus({
+            checked: true,
+            exists,
+            error: exists ? null : 'User uploads bucket not available'
+          })
+        } catch (error) {
+          setBucketStatus({
+            checked: true,
+            exists: false,
+            error: (error as Error).message || 'Error checking bucket status'
+          })
+        }
+      }
+      
+      checkBucket()
+      
       if (editLink && editLink.id && editLink.id.trim() !== '') {
         console.log('🔍 EditLink object received:', editLink)
         console.log('EditLink ID:', editLink.id)
-        setFormData({
+        setValidatedFormData({
           title: editLink.title,
           url: editLink.url,
           description: editLink.description || '',
           icon_type: editLink.icon_type,
           category: editLink.category,
           // Universal icon fields from edit data
-          custom_icon_url: (editLink as any).custom_icon_url || '',
-          uploaded_icon_url: (editLink as any).uploaded_icon_url || '',
-          icon_variant: (editLink as any).icon_variant || 'default',
-          use_custom_icon: (editLink as any).use_custom_icon || false,
-          icon_selection_type: (editLink as any).icon_selection_type || 'default'
+          custom_icon_url: editLink.custom_icon_url || '',
+          uploaded_icon_url: editLink.uploaded_icon_url || '',
+          icon_variant: editLink.icon_variant || 'default',
+          use_custom_icon: editLink.use_custom_icon || false,
+          icon_selection_type: editLink.icon_selection_type || 'default',
+          // GitHub Projects specific field
+          live_project_url: editLink.live_project_url || ''
         })
       } else {
-        setFormData({
+        const selectedCategory = defaultCategory || 'personal'
+        console.log('🎯 Modal opened with defaultCategory:', defaultCategory, 'Using category:', selectedCategory)
+        setValidatedFormData({
           title: '',
           url: '',
           description: '',
           icon_type: 'link',
-          category: 'personal',
+          category: selectedCategory,
           // Reset social media icon fields
           custom_icon_url: '',
+          uploaded_icon_url: '',
           icon_variant: 'default',
-          use_custom_icon: false
+          use_custom_icon: false,
+          icon_selection_type: 'default',
+          // GitHub Projects specific field
+          live_project_url: ''
         })
       }
     }
-  }, [editLink, isOpen])
+  }, [editLink, isOpen, defaultCategory])
+
+  // Function to reset form to initial state
+  const resetForm = (keepCategory = false) => {
+    setFormData({
+      title: '',
+      url: '',
+      description: '',
+      icon_type: 'link',
+      category: keepCategory ? (defaultCategory || 'personal') : 'personal',
+      custom_icon_url: '',
+      uploaded_icon_url: '',
+      icon_variant: 'default',
+      use_custom_icon: false,
+      icon_selection_type: 'default',
+      live_project_url: ''
+    })
+  }
 
   const handleClose = () => {
-    setLoading(false) // Reset loading state
+    // Force reset loading state when closing
+    setLoading(false)
+    
+    // Reset form to clean state
+    resetForm(false) // Don't keep category when closing
+    
+    console.log('➕ Modal closed, state reset')
     onClose()
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Prevent double submissions
+    if (loading) {
+      console.log('⏳ Form already submitting, ignoring duplicate submission')
+      return
+    }
+
     if (!user?.id) {
       toast.error('User not authenticated')
       return
     }
 
-    if (!formData.title.trim() || !formData.url.trim()) {
-      toast.error('Title and URL are required')
+    // Run full form validation
+    const validation = validateForm()
+    if (!validation.isValid) {
+      // Show toast with the first error
+      toast.error(validation.errors[0])
+      // Could also show all errors in UI if needed
+      console.error('Validation errors:', validation.errors)
       return
     }
 
+    let isSubmissionSuccessful = false
+    
     try {
       setLoading(true)
       console.log('🚀 Starting save operation...', {
@@ -127,7 +281,15 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, editLink }: AddLinkMo
           url: formData.url.trim(),
           description: formData.description.trim() || undefined,
           icon_type: formData.icon_type,
-          category: formData.category
+          category: formData.category,
+          // Include all icon fields for updates
+          custom_icon_url: formData.custom_icon_url || undefined,
+          uploaded_icon_url: formData.uploaded_icon_url || undefined,
+          icon_variant: formData.icon_variant,
+          use_custom_icon: formData.use_custom_icon,
+          icon_selection_type: formData.icon_selection_type,
+          // GitHub Projects specific field - only include if not empty
+          live_project_url: formData.live_project_url && formData.live_project_url.trim() ? formData.live_project_url.trim() : undefined
         }
 
         console.log('📝 Update data being sent:', updateData)
@@ -135,6 +297,7 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, editLink }: AddLinkMo
         const result = await ApiLinkService.updateLink(user.id, updateData)
         console.log('✅ Update successful:', result)
         toast.success('Link updated successfully!')
+        isSubmissionSuccessful = true
       } else {
         // Create new link
         console.log('➕ Creating new link...')
@@ -149,43 +312,70 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, editLink }: AddLinkMo
           uploaded_icon_url: formData.uploaded_icon_url || undefined,
           icon_variant: formData.icon_variant,
           use_custom_icon: formData.use_custom_icon,
-          icon_selection_type: formData.icon_selection_type
+          icon_selection_type: formData.icon_selection_type,
+          // GitHub Projects specific field - only include if not empty
+          live_project_url: formData.live_project_url && formData.live_project_url.trim() ? formData.live_project_url.trim() : undefined
         }
 
         const result = await ApiLinkService.createLink(user.id, linkData)
         console.log('✅ Create successful:', result)
         toast.success('Link added successfully!')
+        isSubmissionSuccessful = true
       }
 
-      // Reset form and close modal
-      setFormData({
-        title: '',
-        url: '',
-        description: '',
-        icon_type: 'link',
-        category: 'personal',
-        custom_icon_url: '',
-        uploaded_icon_url: '',
-        icon_variant: 'default',
-        use_custom_icon: false,
-        icon_selection_type: 'default'
-      })
+      // Only proceed with cleanup if submission was successful
+      if (isSubmissionSuccessful) {
+        // Reset form and close modal
+        resetForm(true) // Keep category when successful
 
-      console.log('🔄 Calling onSuccess and onClose...')
-      onSuccess()
-      onClose()
-    } catch (error: any) {
+        console.log('🔄 Calling onSuccess and onClose...')
+        
+        // Add a small delay to ensure toast is visible before modal closes
+        setTimeout(() => {
+          onSuccess()
+          onClose()
+        }, 100)
+      }
+    } catch (error) {
       console.error('❌ Error saving link:', error)
       console.error('Error details:', {
-        message: error?.message,
-        code: error?.code,
-        details: error?.details,
-        hint: error?.hint,
-        stack: error?.stack
+        message: (error as Error)?.message,
+        code: (error as unknown as { code?: string })?.code,
+        details: (error as unknown as { details?: string })?.details,
+        hint: (error as unknown as { hint?: string })?.hint,
+        stack: (error as Error)?.stack
       })
-      const errorMessage = error?.message || 'Failed to save link. Please check the console for details.'
+      
+      // Determine error message based on error type and code
+      let errorMessage = 'Failed to save link. Please try again.'
+      
+      // Type guard to check if error has message property
+      if (error && typeof error === 'object' && 'message' in error) {
+        const err = error as Error & { code?: string };
+        if (err.message.includes('validation')) {
+          errorMessage = 'Please check all required fields and try again.'
+        } else if (err.message.includes('network') || err.message.includes('fetch')) {
+          errorMessage = 'Network error. Please check your connection and try again.'
+        } else if (err.code === '23505' || err.message.includes('already exists')) {
+          errorMessage = 'A link with this URL already exists in this category.'
+        } else if (err.code === '42703' || err.message.includes('column')) {
+          errorMessage = 'There was a database schema error. Please contact support.'
+        } else if (err.message.includes('timeout') || err.message.includes('aborted')) {
+          errorMessage = 'The request timed out. Please try again.'
+        } else if (err.code === '22P02') {
+          errorMessage = 'Invalid input format. Please check your data.'
+        } else if (err.message.includes('user') && err.message.includes('unauthorized')) {
+          errorMessage = 'You are not authorized to perform this action. Please sign in again.'
+          // Could also trigger an authentication refresh here
+        } else {
+          errorMessage = err.message
+        }
+      }
+      
       toast.error(errorMessage)
+      isSubmissionSuccessful = false
     } finally {
+      // Always reset loading state, regardless of success or failure
       setLoading(false)
       console.log('🏁 Save operation completed, loading set to false')
     }
@@ -194,19 +384,17 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, editLink }: AddLinkMo
   const handlePlatformSelect = (platform: string) => {
     const config = PLATFORM_CONFIGS[platform as keyof typeof PLATFORM_CONFIGS]
     if (config) {
-      setFormData(prev => ({
-        ...prev,
+      setValidatedFormData({
         icon_type: platform,
         category: config.category,
         // Only update URL if it's empty or doesn't start with http
-        url: prev.url && prev.url.startsWith('http') ? prev.url : config.baseUrl
-      }))
+        url: formData.url && formData.url.startsWith('http') ? formData.url : config.baseUrl
+      })
     } else {
       // For platforms not in config, just update icon
-      setFormData(prev => ({
-        ...prev,
+      setValidatedFormData({
         icon_type: platform
-      }))
+      })
     }
   }
 
@@ -216,24 +404,39 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, editLink }: AddLinkMo
     customUrl?: string,
     uploadedUrl?: string
   ) => {
-    setFormData(prev => ({
-      ...prev,
+    setValidatedFormData({
       icon_selection_type: iconType,
       use_custom_icon: iconType !== 'default' && iconType !== 'platform',
       icon_variant: iconVariant || 'default',
       custom_icon_url: customUrl || '',
       uploaded_icon_url: uploadedUrl || ''
-    }))
+    })
   }
 
   // Auto-detect social media URLs and suggest category
   const handleUrlChange = (url: string) => {
-    setFormData(prev => ({ ...prev, url }))
+    setValidatedFormData({ url })
+    
+    // Skip further processing if URL is empty or invalid
+    if (!url.trim() || !isValidUrl(url)) {
+      // Invalid URL - no category changes
+      return
+    }
 
-    // If URL is detected as a social platform and category is not already social, suggest it
-    if (url && detectPlatformFromUrl(url) && formData.category !== 'social') {
-      // Auto-set to social category for better UX
-      setFormData(prev => ({ ...prev, category: 'social' }))
+    // Only auto-detect and change category if:
+    // 1. There's no defaultCategory (modal opened from general Add Link button)
+    // 2. Current category is 'personal' (default fallback)
+    // 3. URL is detected as a social platform
+    if (!defaultCategory && formData.category === 'personal' && url && detectPlatformFromUrl(url)) {
+      // Auto-set to social category for better UX, but only when appropriate
+      console.log('🔍 Auto-detected social platform, setting category to social')
+      setValidatedFormData({ category: 'social' })
+    }
+    
+    // Special case: GitHub URLs should go to projects category if no specific category is set
+    if (!defaultCategory && formData.category === 'personal' && url && url.includes('github.com')) {
+      console.log('🔍 Auto-detected GitHub URL, setting category to projects')
+      setValidatedFormData({ category: 'projects' })
     }
   }
 
@@ -324,9 +527,20 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, editLink }: AddLinkMo
             <label className="text-[14px] font-medium text-white font-sharp-grotesk mb-2 block">
               Category *
             </label>
-            <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value as LinkCategory }))}>
+            <Select 
+              value={formData.category || 'personal'} 
+              onValueChange={(value) => {
+                console.log('📊 Category changed to:', value)
+                // Validate that the value is a valid LinkCategory
+                if (value && Object.keys(LINK_CATEGORIES).includes(value)) {
+                  setValidatedFormData({ category: value as LinkCategory })
+                } else {
+                  console.warn('Invalid category value received:', value, 'Keeping current:', formData.category)
+                }
+              }}
+            >
               <SelectTrigger className="bg-[#1a1a1a] border-[#2a2a2a] text-white">
-                <SelectValue />
+                <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
                 {Object.entries(LINK_CATEGORIES).map(([key, config]) => (
@@ -345,7 +559,7 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, editLink }: AddLinkMo
             </label>
             <Input
               value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              onChange={(e) => setValidatedFormData({ title: e.target.value })}
               placeholder="e.g., My GitHub Profile"
               className="bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder:text-[#7a7a83]"
               required
@@ -367,6 +581,25 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, editLink }: AddLinkMo
             />
           </div>
 
+          {/* Live Project URL - Only for GitHub Projects */}
+          {formData.category === 'projects' && (
+            <div>
+              <label className="text-[14px] font-medium text-white font-sharp-grotesk mb-2 block">
+                Live Project URL (Optional)
+              </label>
+              <Input
+                value={formData.live_project_url}
+                onChange={(e) => setValidatedFormData({ live_project_url: e.target.value })}
+                placeholder="https://your-project-demo.com"
+                className="bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder:text-[#7a7a83]"
+                type="url"
+              />
+              <p className="text-[12px] text-[#7a7a83] font-sharp-grotesk mt-1">
+                Link to the live/deployed version of your project
+              </p>
+            </div>
+          )}
+
           {/* Description */}
           <div>
             <label className="text-[14px] font-medium text-white font-sharp-grotesk mb-2 block">
@@ -374,7 +607,7 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, editLink }: AddLinkMo
             </label>
             <Textarea
               value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              onChange={(e) => setValidatedFormData({ description: e.target.value })}
               placeholder="Brief description of this link..."
               className="bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder:text-[#7a7a83] resize-none"
               rows={3}
@@ -384,6 +617,14 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, editLink }: AddLinkMo
           {/* Universal Icon Selection */}
           {formData.url && (
             <div className="space-y-2">
+              {bucketStatus.checked && !bucketStatus.exists && (
+                <div className="mb-3 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                  <p className="text-yellow-400 text-xs">
+                    Warning: Custom icon uploads require the user-uploads storage bucket, which is not available. 
+                    Please run the migrations to enable this feature.
+                  </p>
+                </div>
+              )}
               <UniversalIconSelector
                 category={formData.category}
                 url={formData.url}
@@ -396,12 +637,24 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, editLink }: AddLinkMo
               />
             </div>
           )}
+          
+          {/* Form validation errors */}
+          {!validateForm().isValid && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mt-4">
+              <h4 className="text-sm font-medium text-red-400 mb-1">Please fix the following issues:</h4>
+              <ul className="list-disc pl-5 text-sm text-red-400">
+                {validateForm().errors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Helpful message for social media links */}
           {formData.url && detectPlatformFromUrl(formData.url) && formData.category !== 'social' && (
             <div className="bg-[#54E0FF]/10 border border-[#54E0FF]/30 rounded-lg p-3">
               <p className="text-sm text-[#54E0FF] font-sharp-grotesk">
-                💡 This looks like a social media link! Set the category to "Social Media" to access platform-specific icons.
+                💡 This looks like a social media link! Set the category to &quot;Social Media&quot; to access platform-specific icons.
               </p>
             </div>
           )}
@@ -424,7 +677,7 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, editLink }: AddLinkMo
           <Button
             type="submit"
             form="link-form"
-            disabled={loading || !formData.title || !formData.url}
+            disabled={loading || !validateForm().isValid}
             className="flex-1 bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] text-[#18181a] hover:opacity-90"
           >
             {loading ? 'Saving...' : (editLink && editLink.id && editLink.id.trim() !== '') ? 'Update Link' : 'Add Link'}

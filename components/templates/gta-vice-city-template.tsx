@@ -37,6 +37,7 @@ interface GTAViceCityTemplateProps {
   links: Record<LinkCategory, UserLinkWithPreview[]>
   appearanceSettings?: UserAppearanceSettings | null
   categoryOrder?: LinkCategory[]
+  isPreview?: boolean
 }
 
 // Function to get the appropriate icon for a link
@@ -116,7 +117,7 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
   }
 }
 
-export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryOrder: propCategoryOrder }: GTAViceCityTemplateProps) {
+export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryOrder: propCategoryOrder, isPreview = false }: GTAViceCityTemplateProps) {
   const [copied, setCopied] = useState(false)
   const [categoryIcons, setCategoryIcons] = useState<Record<LinkCategory, CategoryIconConfig>>({} as Record<LinkCategory, CategoryIconConfig>)
   const [categoryOrder, setCategoryOrder] = useState<LinkCategory[]>(propCategoryOrder || CategoryOrderService.DEFAULT_ORDER)
@@ -420,6 +421,7 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
                   appearanceSettings={appearanceSettings}
                   variant="gta-vice-city"
                   customIcons={categoryIcons}
+                  getTypographyStyle={getTypographyStyle}
                 />
               )
             }
@@ -537,21 +539,23 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-16 pt-8" style={{ borderTop: `1px solid ${appearanceSettings?.border_color || 'rgba(255, 255, 255, 0.2)'}` }}>
-          <div className="flex items-center justify-center gap-2" style={getTypographyStyle('accent')}>
-            <Heart className="w-4 h-4" style={{ color: appearanceSettings?.text_accent_color || '#ffc0cb' }} />
-            <span className="text-sm">Powered by</span>
-            <span 
-              className="text-sm font-bold"
-              style={{
-                ...getTypographyStyle('accent'),
-                fontWeight: 'bold'
-              }}
-            >
-              Link4Coders
-            </span>
+        {!user.is_premium && !isPreview && (
+          <div className="text-center mt-16 pt-8" style={{ borderTop: `1px solid ${appearanceSettings?.border_color || 'rgba(255, 255, 255, 0.2)'}` }}>
+            <div className="flex items-center justify-center gap-2" style={getTypographyStyle('accent')}>
+              <Heart className="w-4 h-4" style={{ color: appearanceSettings?.text_accent_color || '#ffc0cb' }} />
+              <span className="text-sm">Powered by</span>
+              <span 
+                className="text-sm font-bold"
+                style={{
+                  ...getTypographyStyle('accent'),
+                  fontWeight: 'bold'
+                }}
+              >
+                Link4Coders
+              </span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )

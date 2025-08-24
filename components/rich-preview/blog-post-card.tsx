@@ -98,6 +98,7 @@ export function BlogPostCard({
                 src={metadata.featured_image}
                 alt={metadata.title}
                 fill
+                sizes="64px"
                 className="object-cover"
                 onError={() => setImageError(true)}
               />
@@ -170,6 +171,7 @@ export function BlogPostCard({
             src={metadata.featured_image}
             alt={metadata.title}
             fill
+            sizes="100vw"
             className="object-cover group-hover:scale-105 transition-transform duration-300"
             onError={() => setImageError(true)}
           />
@@ -230,6 +232,7 @@ export function BlogPostCard({
                 src={metadata.author.avatar}
                 alt={metadata.author.name}
                 fill
+                sizes="32px"
                 className="object-cover"
               />
             </div>

@@ -32,6 +32,8 @@ export function TypographyCustomizer({ settings, onUpdate }: TypographyCustomize
     { value: 'Source Sans Pro', label: 'Source Sans Pro' },
     { value: 'Nunito', label: 'Nunito' },
     { value: 'Raleway', label: 'Raleway' },
+    { value: 'Orbitron', label: 'Orbitron (Futuristic)' },
+    { value: 'Rajdhani', label: 'Rajdhani (Tech)' },
     { value: 'JetBrains Mono', label: 'JetBrains Mono (Monospace)' },
     { value: 'Fira Code', label: 'Fira Code (Monospace)' },
   ]

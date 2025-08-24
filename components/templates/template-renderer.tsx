@@ -11,6 +11,8 @@ import { DeveloperDarkTemplate } from './developer-dark-template'
 import { MinimalistLightTemplate } from './minimalist-light-template'
 import { GitHubFocusTemplate } from './github-focus-template'
 import { GTAViceCityTemplate } from './gta-vice-city-template'
+import { CyberpunkNeonTemplate } from './cyberpunk-neon-template'
+import { SunsetGradientTemplate } from './sunset-gradient-template'
 
 interface TemplateRendererProps {
   user: User
@@ -18,9 +20,10 @@ interface TemplateRendererProps {
   templateId?: TemplateId
   appearanceSettings?: UserAppearanceSettings | null
   categoryOrder?: LinkCategory[]
+  isPreview?: boolean
 }
 
-const TemplateRendererComponent = ({ user, links, templateId, appearanceSettings, categoryOrder }: TemplateRendererProps) => {
+const TemplateRendererComponent = ({ user, links, templateId, appearanceSettings, categoryOrder, isPreview = false }: TemplateRendererProps) => {
 
   // Use user's theme_id if no templateId is provided
   const currentTemplateId = templateId || (user.theme_id as TemplateId) || 'developer-dark'
@@ -28,20 +31,26 @@ const TemplateRendererComponent = ({ user, links, templateId, appearanceSettings
   // Validate template ID and fallback to default if invalid
   const templateConfig = getTemplateConfig(currentTemplateId)
 
-  // Render the appropriate template component
+  // Render the appropriate template component with proper bottom padding for mobile
   switch (currentTemplateId) {
     case 'minimalist-light':
-      return <MinimalistLightTemplate user={user} links={links} appearanceSettings={appearanceSettings} categoryOrder={categoryOrder} />
+      return <div className="pb-4"><MinimalistLightTemplate user={user} links={links} appearanceSettings={appearanceSettings} categoryOrder={categoryOrder} isPreview={isPreview} /></div>
 
     case 'github-focus':
-      return <GitHubFocusTemplate user={user} links={links} appearanceSettings={appearanceSettings} categoryOrder={categoryOrder} />
+      return <div className="pb-4"><GitHubFocusTemplate user={user} links={links} appearanceSettings={appearanceSettings} categoryOrder={categoryOrder} isPreview={isPreview} /></div>
 
     case 'gta-vice-city':
-      return <GTAViceCityTemplate user={user} links={links} appearanceSettings={appearanceSettings} categoryOrder={categoryOrder} />
+      return <div className="pb-4"><GTAViceCityTemplate user={user} links={links} appearanceSettings={appearanceSettings} categoryOrder={categoryOrder} isPreview={isPreview} /></div>
+
+    case 'cyberpunk-neon':
+      return <div className="pb-4"><CyberpunkNeonTemplate user={user} links={links} appearanceSettings={appearanceSettings} categoryOrder={categoryOrder} isPreview={isPreview} /></div>
+
+    case 'sunset-gradient':
+      return <div className="pb-4"><SunsetGradientTemplate user={user} links={links} appearanceSettings={appearanceSettings} categoryOrder={categoryOrder} isPreview={isPreview} /></div>
 
     case 'developer-dark':
     default:
-      return <DeveloperDarkTemplate user={user} links={links} appearanceSettings={appearanceSettings} categoryOrder={categoryOrder} />
+      return <div className="pb-4"><DeveloperDarkTemplate user={user} links={links} appearanceSettings={appearanceSettings} categoryOrder={categoryOrder} isPreview={isPreview} /></div>
   }
 }
 
@@ -54,6 +63,7 @@ export const TemplateRenderer = memo(TemplateRendererComponent, (prevProps, next
     prevProps.templateId === nextProps.templateId &&
     JSON.stringify(prevProps.links) === JSON.stringify(nextProps.links) &&
     JSON.stringify(prevProps.appearanceSettings) === JSON.stringify(nextProps.appearanceSettings) &&
-    JSON.stringify(prevProps.categoryOrder) === JSON.stringify(nextProps.categoryOrder)
+    JSON.stringify(prevProps.categoryOrder) === JSON.stringify(nextProps.categoryOrder) &&
+    prevProps.isPreview === nextProps.isPreview
   )
 })

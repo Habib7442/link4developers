@@ -149,6 +149,80 @@ export const TEMPLATE_CONFIGS: Record<TemplateId, TemplateConfig> = {
       heading_size: '36px',
       body_size: '18px'
     }
+  },
+
+  'cyberpunk-neon': {
+    id: 'cyberpunk-neon',
+    name: 'Cyberpunk Neon',
+    description: 'Futuristic cyberpunk theme with vibrant neon colors and glitch effects. Perfect for tech enthusiasts.',
+    category: 'free',
+    preview_image: '/templates/cyberpunk-neon.png',
+    features: [
+      'Vibrant neon color scheme',
+      'Glitch and scanline effects',
+      'Futuristic typography',
+      'Animated hover states',
+      'Glassmorphic cards'
+    ],
+    color_scheme: {
+      primary: '#00FFFF', // Cyan
+      secondary: '#FF00FF', // Magenta
+      accent: '#00FF00', // Electric green
+      background: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
+      surface: 'rgba(0, 0, 0, 0.3)',
+      text_primary: '#FFFFFF',
+      text_secondary: '#CCCCCC',
+      border: '#00FFFF'
+    },
+    layout: {
+      header_style: 'centered',
+      link_style: 'cards',
+      spacing: 'normal',
+      avatar_size: 'large'
+    },
+    typography: {
+      heading_font: 'Orbitron',
+      body_font: 'Rajdhani',
+      heading_size: '36px',
+      body_size: '18px'
+    }
+  },
+
+  'sunset-gradient': {
+    id: 'sunset-gradient',
+    name: 'Sunset Gradient',
+    description: 'Warm and inviting theme with beautiful sunset gradients and soft shadows. Perfect for creatives.',
+    category: 'free',
+    preview_image: '/templates/sunset-gradient.png',
+    features: [
+      'Warm sunset color palette',
+      'Smooth gradient transitions',
+      'Soft shadow effects',
+      'Elegant typography',
+      'Responsive design'
+    ],
+    color_scheme: {
+      primary: '#FF6F61', // Bright coral for links
+      secondary: '#E55B50', // Darker coral for hover
+      accent: '#FFB347', // Amber for accent elements
+      background: 'linear-gradient(135deg, #FF7E5F 0%, #FEB47B 100%)', // Sunset gradient
+      surface: '#FFF5EE', // Light cream for section backgrounds
+      text_primary: '#2C2C2C', // Deep charcoal for headings
+      text_secondary: '#444444', // Dark warm gray for paragraphs
+      border: '#FF6F61' // Coral for borders
+    },
+    layout: {
+      header_style: 'centered',
+      link_style: 'cards',
+      spacing: 'spacious',
+      avatar_size: 'large'
+    },
+    typography: {
+      heading_font: 'Poppins',
+      body_font: 'Inter',
+      heading_size: '32px',
+      body_size: '16px'
+    }
   }
 }
 
@@ -182,7 +256,9 @@ export const TEMPLATE_COMPONENTS = {
   'developer-dark': 'DeveloperDarkTemplate',
   'minimalist-light': 'MinimalistLightTemplate',
   'github-focus': 'GitHubFocusTemplate',
-  'gta-vice-city': 'GTAViceCityTemplate'
+  'gta-vice-city': 'GTAViceCityTemplate',
+  'cyberpunk-neon': 'CyberpunkNeonTemplate',
+  'sunset-gradient': 'SunsetGradientTemplate'
 } as const
 
 export type TemplateComponentName = typeof TEMPLATE_COMPONENTS[TemplateId]

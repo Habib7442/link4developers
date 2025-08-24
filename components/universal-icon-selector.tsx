@@ -49,7 +49,7 @@ const DEFAULT_CATEGORY_ICONS = {
   custom: LinkIcon
 }
 
-export function UniversalIconSelector({
+export default function UniversalIconSelector({
   category,
   url,
   currentIconType,
@@ -136,23 +136,49 @@ export function UniversalIconSelector({
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
       const filePath = `link-icons/${user?.id}/${fileName}`
 
+      // Check if bucket exists by trying to list files
+      const bucketCheck = await supabase.storage
+        .from('user-uploads')
+        .list('', { limit: 1 })
+
+      if (bucketCheck.error) {
+        console.warn('Storage bucket check failed:', bucketCheck.error.message)
+        toast.error('Storage bucket not available. Please check your Supabase configuration.')
+        throw new Error('Storage bucket not configured correctly')
+      }
+
       const { data, error } = await supabase.storage
         .from('user-uploads')
         .upload(filePath, file)
 
-      if (error) throw error
+      if (error) {
+        console.error('Upload error details:', error)
+        if (error.message.includes('bucket') || error.message.includes('not found')) {
+          toast.error('Storage bucket not available. Please contact support.')
+        } else if (error.message.includes('permission') || error.message.includes('policy')) {
+          toast.error('You don\'t have permission to upload files. Please contact support.')
+        } else {
+          toast.error(`Upload failed: ${error.message}`)
+        }
+        throw error
+      }
 
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
+      const { data: urlData } = supabase.storage
         .from('user-uploads')
         .getPublicUrl(filePath)
 
-      setUploadedUrl(publicUrl)
-      onIconChange('upload', undefined, undefined, publicUrl)
+      if (!urlData?.publicUrl) {
+        toast.error('Failed to get image URL')
+        throw new Error('Failed to get public URL for uploaded file')
+      }
+
+      setUploadedUrl(urlData.publicUrl)
+      onIconChange('upload', undefined, undefined, urlData.publicUrl)
       toast.success('Icon uploaded successfully!')
     } catch (error) {
       console.error('Upload error:', error)
-      toast.error('Failed to upload icon')
+      // More specific error already shown from within try block
     } finally {
       setUploading(false)
     }

@@ -25,6 +25,29 @@ export async function checkBackgroundImagesBucket() {
 }
 
 /**
+ * Check if the user-uploads storage bucket exists
+ */
+export async function checkUserUploadsBucket() {
+  try {
+    // Try to list files in the bucket to check if it exists and is accessible
+    const { error } = await supabase.storage
+      .from('user-uploads')
+      .list('', { limit: 1 })
+
+    if (error) {
+      console.error('User uploads bucket not accessible:', error)
+      return false
+    }
+
+    console.log('User uploads bucket is accessible')
+    return true
+  } catch (error) {
+    console.error('Error checking user uploads bucket:', error)
+    return false
+  }
+}
+
+/**
  * Set up storage policies for the background-images bucket
  */
 export async function setupBackgroundImagesPolicy() {

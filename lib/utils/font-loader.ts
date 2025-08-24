@@ -14,7 +14,9 @@ const GOOGLE_FONTS_MAP: Record<string, string> = {
   'Nunito': 'Nunito:wght@300;400;500;600;700',
   'Raleway': 'Raleway:wght@300;400;500;600;700',
   'JetBrains Mono': 'JetBrains+Mono:wght@300;400;500;600;700',
-  'Fira Code': 'Fira+Code:wght@300;400;500;600;700'
+  'Fira Code': 'Fira+Code:wght@300;400;500;600;700',
+  'Orbitron': 'Orbitron:wght@400;500;600;700;800;900',
+  'Rajdhani': 'Rajdhani:wght@300;400;500;600;700'
 }
 
 // Keep track of loaded fonts to avoid duplicates

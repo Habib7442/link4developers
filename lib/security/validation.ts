@@ -71,9 +71,7 @@ export const LinkSchema = z.object({
     .max(200, 'Description must be less than 200 characters')
     .optional(),
 
-  category: z.enum(['personal', 'projects', 'blogs', 'achievements', 'contact', 'social', 'custom'], {
-    errorMap: () => ({ message: 'Invalid category. Must be one of: personal, projects, blogs, achievements, contact, social, custom' })
-  }),
+  category: z.enum(['personal', 'projects', 'blogs', 'achievements', 'contact', 'social', 'custom']),
 
   icon_type: z.string()
     .max(50, 'Icon type must be less than 50 characters')
@@ -84,6 +82,51 @@ export const LinkSchema = z.object({
     .min(0, 'Position must be non-negative')
     .max(1000, 'Position must be less than 1000')
     .optional(), // Position is optional since it's auto-assigned by the API
+    
+  // Universal icon fields
+  custom_icon_url: z.string()
+    .url('Invalid custom icon URL')
+    .max(2000, 'Custom icon URL must be less than 2000 characters')
+    .optional()
+    .or(z.literal('')),
+    
+  uploaded_icon_url: z.string()
+    .url('Invalid uploaded icon URL')
+    .max(2000, 'Uploaded icon URL must be less than 2000 characters')
+    .optional()
+    .or(z.literal('')),
+    
+  icon_variant: z.string()
+    .max(50, 'Icon variant must be less than 50 characters')
+    .regex(/^[a-z0-9_-]+$/, 'Invalid icon variant format')
+    .optional(),
+    
+  use_custom_icon: z.boolean()
+    .optional(),
+    
+  icon_selection_type: z.enum(['default', 'platform', 'upload', 'url']).optional(),
+  
+  platform_detected: z.string()
+    .max(50, 'Platform detected must be less than 50 characters')
+    .regex(/^[a-z0-9_-]*$/, 'Invalid platform detected format')
+    .optional(),
+    
+  // GitHub Projects specific field
+  live_project_url: z.string()
+    .optional()
+    .refine((val) => {
+      // Allow undefined, null, or empty string
+      if (!val || val.trim() === '') return true;
+      // If value exists, validate as URL
+      try {
+        new URL(val);
+        return true;
+      } catch {
+        return false;
+      }
+    }, {
+      message: 'Live project URL must be a valid URL or empty'
+    }),
 })
 
 // Authentication Validation Schema
@@ -125,39 +168,63 @@ export function sanitizeHtml(input: string): string {
 }
 
 /**
+ * Safely validate a URL string
+ * @param urlString - The URL to validate
+ * @returns boolean indicating if the URL is valid
+ */
+export function isValidUrl(urlString?: string): boolean {
+  if (!urlString || urlString.trim() === '') return false;
+  
+  // First check with validator
+  const isValid = validator.isURL(urlString.trim(), {
+    protocols: ['http', 'https'],
+    require_protocol: true,
+    require_host: true,
+    require_valid_protocol: true,
+    allow_underscores: false,
+    allow_trailing_dot: false,
+    allow_protocol_relative_urls: false,
+    disallow_auth: true
+  });
+  
+  if (!isValid) return false;
+  
+  // Double-check with URL constructor for additional validation
+  try {
+    new URL(urlString);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Sanitize and validate URL
  */
 export function sanitizeUrl(url: string): string | null {
   try {
+    // Early return for empty strings
+    if (!url || url.trim() === '') return null;
+    
     // Remove any potential XSS vectors
-    const cleaned = url.trim()
+    const cleaned = url.trim();
     
     // Check for javascript: or data: protocols
     if (cleaned.toLowerCase().startsWith('javascript:') || 
         cleaned.toLowerCase().startsWith('data:') ||
         cleaned.toLowerCase().startsWith('vbscript:')) {
-      return null
+      return null;
     }
     
-    // Validate URL format
-    if (!validator.isURL(cleaned, {
-      protocols: ['http', 'https'],
-      require_protocol: true,
-      require_host: true,
-      require_valid_protocol: true,
-      allow_underscores: false,
-      host_whitelist: false,
-      host_blacklist: false,
-      allow_trailing_dot: false,
-      allow_protocol_relative_urls: false,
-      disallow_auth: true
-    })) {
-      return null
+    // Use our isValidUrl function for validation
+    if (!isValidUrl(cleaned)) {
+      return null;
     }
     
-    return cleaned
+    return cleaned;
   } catch (error) {
-    return null
+    console.error('URL sanitization error:', error);
+    return null;
   }
 }
 

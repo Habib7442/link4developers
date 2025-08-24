@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Sharp+Grotesk:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "./dashboard/mobile-fixes.css";
 
 @custom-variant dark (&:is(.dark *));
 

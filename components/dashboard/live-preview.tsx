@@ -185,21 +185,22 @@ export function LivePreview({ profileData, refreshTrigger = 0 }: LivePreviewProp
             height: `${100 / scale}%`
           }}
         >
-          <div className="w-full h-full overflow-y-auto custom-scrollbar">
+          <div className="w-full h-full overflow-y-auto custom-scrollbar pb-4">
             <TemplateRenderer
               user={previewUser}
               links={links}
               templateId={user?.theme_id}
               appearanceSettings={appearanceSettings}
               categoryOrder={categoryOrder}
+              isPreview={true}
             />
           </div>
         </div>
       </div>
 
-      {/* Preview Info */}
-      <div className="p-3 border-t border-[#33373b] flex-shrink-0">
-        <p className="text-[10px] text-[#7a7a83] font-sharp-grotesk text-center">
+      {/* Preview Info - Improved spacing and styling with rounded bottom corners */}
+      <div className="p-4 border-t border-[#33373b] flex-shrink-0 bg-[#1e1e20] rounded-b-[20px]">
+        <p className="text-[11px] font-medium text-[#54E0FF] font-sharp-grotesk text-center">
           {user?.profile_slug ? `link4coders.com/${user.profile_slug}` : 'Set up your profile URL to enable preview'}
         </p>
       </div>

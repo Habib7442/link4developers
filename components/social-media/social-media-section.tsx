@@ -21,16 +21,17 @@ interface SocialMediaSectionProps {
   links?: UserLinkWithPreview[]
   socialLinks?: UserLinkWithPreview[]
   onLinkClick?: (link: UserLinkWithPreview) => void
-  variant?: 'default' | 'light' | 'github' | 'gta-vice-city'
+  variant?: 'default' | 'light' | 'github' | 'gta-vice-city' | 'cyberpunk' | 'sunset' | 'dark'
   className?: string
   appearanceSettings?: UserAppearanceSettings | null
   customIcons?: Record<string, unknown>
+  getTypographyStyle?: (type: 'heading' | 'subheading' | 'body' | 'accent' | 'link') => React.CSSProperties
 }
 
 interface SocialIconProps {
   link: UserLinkWithPreview
   onClick: () => void
-  variant: 'default' | 'light' | 'github' | 'gta-vice-city'
+  variant: 'default' | 'light' | 'github' | 'gta-vice-city' | 'cyberpunk' | 'sunset' | 'dark'
   appearanceSettings?: UserAppearanceSettings | null
 }
 
@@ -41,9 +42,9 @@ function SocialIcon({ link, onClick, variant, appearanceSettings }: SocialIconPr
   const detectedPlatform = detectPlatformFromUrl(link.url)
   const platformConfig = detectedPlatform ? SOCIAL_PLATFORMS[detectedPlatform] : null
   
-  // Simplified icon handling for social media
-  const useCustomIcon = false // Simplified for now
-  const iconVariant = platformConfig?.defaultIcon || 'default'
+  // Check for custom icon settings
+  const useCustomIcon = link.use_custom_icon || link.icon_selection_type === 'upload' || link.icon_selection_type === 'url'
+  const iconVariant = link.icon_variant || (platformConfig?.defaultIcon || 'default')
   
   // Get display name
   const displayName = platformConfig?.displayName || link.title
@@ -66,6 +67,24 @@ function SocialIcon({ link, onClick, variant, appearanceSettings }: SocialIconPr
       }
     }
     
+    if (variant === 'cyberpunk') {
+      // For Cyberpunk theme, use neon colors
+      return {
+        platformColor: '#00F5FF', // Neon cyan for all icons
+        hoverColor: '#FF00FF' // Neon magenta for hover
+      }
+    }
+    
+    if (variant === 'sunset') {
+      // For Sunset theme, use warm colors per user specifications
+      return {
+        platformColor: '#FF6F61', // Coral for icons
+        hoverColor: '#E55B50', // Darker coral for hover
+        backgroundColor: 'bg-white/90', // Increased opacity for better contrast
+        textColor: 'text-[#2C2C2C] font-medium' // Dark charcoal text with medium font weight
+      }
+    }
+    
     // For other themes, use appearance settings if available
     const platformColor = appearanceSettings?.link_color || platformConfig?.color || '#666666'
     const hoverColor = appearanceSettings?.link_hover_color || platformColor
@@ -79,9 +98,9 @@ function SocialIcon({ link, onClick, variant, appearanceSettings }: SocialIconPr
     switch (variant) {
       case 'light':
         return {
-          container: 'hover:bg-gray-50 border-gray-200',
-          text: 'text-gray-700',
-          icon: 'bg-white border-gray-200 shadow-sm'
+          container: 'hover:bg-gray-50 border-[#E5E7EB]',
+          text: 'text-[#374151] font-inter',
+          icon: 'bg-white border-[#E5E7EB] shadow-[0_2px_6px_rgba(0,0,0,0.08)]'
         }
       case 'github':
         return {
@@ -95,6 +114,18 @@ function SocialIcon({ link, onClick, variant, appearanceSettings }: SocialIconPr
           text: 'text-white',
           icon: 'bg-white/10 border-white/20'
         }
+      case 'cyberpunk':
+        return {
+          container: 'hover:bg-[#00F5FF]/20 border-[#00F5FF]/30',
+          text: 'text-[#00F5FF] font-orbitron',
+          icon: 'bg-[#1A1A1A] border-[#00F5FF]/30'
+        }
+      case 'sunset':
+        return {
+          container: 'hover:bg-orange-50 border-orange-200',
+          text: 'text-[#2C2C2C] font-medium',
+          icon: 'bg-white/90 border-orange-200 shadow-[0_4px_15px_rgba(255,100,70,0.15)]'
+        }
       default:
         return {
           container: 'hover:bg-[#28282b]/50 border-[#33373b]',
@@ -107,26 +138,67 @@ function SocialIcon({ link, onClick, variant, appearanceSettings }: SocialIconPr
   const themeStyles = getThemeStyles()
 
   // Get typography styles from section-specific styling system
-  const getTypographyStyle = (): React.CSSProperties => {
+  const getTypographyStyle = (type: 'heading' | 'body' | 'subheading' = 'body'): React.CSSProperties => {
     if (variant === 'light') {
-      // For light theme, ensure text is dark and visible regardless of appearance settings
+      // For Minimalist Light theme, ensure text is dark and visible
+      if (type === 'heading') {
+        return { 
+          fontFamily: 'Roboto Mono, monospace',
+          color: '#374151' // Neutral gray for good contrast on light background
+        }
+      }
       return { 
-        fontFamily: 'Sharp Grotesk, system-ui, sans-serif',
-        color: '#374151' // Dark gray for good contrast on light background
+        fontFamily: 'Inter, sans-serif',
+        color: '#374151' // Neutral gray for good contrast on light background
       }
     }
     
     if (variant === 'gta-vice-city') {
       // For GTA Vice City theme, use theme-specific fonts and colors
+      if (type === 'heading') {
+        return {
+          fontFamily: 'Rajdhani, sans-serif',
+          color: '#ffffff'
+        }
+      }
       return {
         fontFamily: 'Rajdhani, sans-serif',
         color: '#ffffff'
       }
     }
     
+    if (variant === 'cyberpunk') {
+      // For Cyberpunk theme, use futuristic fonts and neon colors
+      if (type === 'heading') {
+        return {
+          fontFamily: 'Orbitron, sans-serif',
+          color: '#00F5FF', // Neon cyan
+          textShadow: '0 0 5px rgba(0, 245, 255, 0.6)' // Neon glow
+        }
+      }
+      return {
+        fontFamily: 'Orbitron, sans-serif',
+        color: '#00F5FF', // Neon cyan
+        textShadow: '0 0 5px rgba(0, 245, 255, 0.6)' // Neon glow
+      }
+    }
+    
+    if (variant === 'sunset') {
+      // For Sunset theme, use elegant fonts per user specifications
+      if (type === 'heading') {
+        return {
+          fontFamily: 'Poppins, sans-serif',
+          color: '#FF6F61' // Bright coral for text
+        }
+      }
+      return {
+        fontFamily: 'Poppins, sans-serif',
+        color: '#FF6F61' // Bright coral for text
+      }
+    }
+    
     // Use section-specific styling for consistency
-    const themeMode = variant === 'light' ? 'light' as const : null
-    return getSectionTypographyStyle('social', 'body', appearanceSettings, false, themeMode)
+    return getSectionTypographyStyle('social', 'body', appearanceSettings)
   }
 
   const handleImageError = () => {
@@ -141,44 +213,75 @@ function SocialIcon({ link, onClick, variant, appearanceSettings }: SocialIconPr
     >
       {/* Icon Container - Instagram Story Style */}
       <div className={`
-        relative w-16 h-16 rounded-full flex items-center justify-center
+        relative w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center
         transition-all duration-200 group-hover:scale-110 shadow-lg
         ${
           variant === 'light' 
-            ? 'bg-gradient-to-br from-gray-100 to-gray-200 border-2 border-gray-300' 
+            ? 'bg-white border-2 border-[#E5E7EB] shadow-[0_2px_6px_rgba(0,0,0,0.08)]' 
             : variant === 'github'
               ? 'bg-gradient-to-br from-[#21262d] to-[#161b22] border-2 border-[#30363d]'
               : variant === 'gta-vice-city'
                 ? 'bg-gradient-to-br from-white/20 to-white/10 border-2 border-white/30 backdrop-blur-sm'
-                : detectedPlatform 
-                  ? 'bg-gradient-to-br from-gray-700 to-gray-800' 
-                  : 'bg-gradient-to-br from-gray-800 to-gray-900'
+                : variant === 'cyberpunk'
+                  ? 'bg-gradient-to-br from-[#00F5FF]/20 to-[#FF00FF]/20 border-2 border-[#00F5FF]/30 backdrop-blur-sm'
+                  : variant === 'sunset'
+                    ? 'bg-gradient-to-br from-white to-white border-2 border-[#FF6F61]'
+                    : detectedPlatform 
+                      ? 'bg-gradient-to-br from-gray-700 to-gray-800' 
+                      : 'bg-gradient-to-br from-gray-800 to-gray-900'
         }
       `}>
-        {detectedPlatform && !imageError ? (
+        {/* Render custom uploaded icon */}
+        {link.icon_selection_type === 'upload' && link.uploaded_icon_url && !imageError ? (
+          <Image
+            src={link.uploaded_icon_url}
+            alt={`${link.title} icon`}
+            width={48}
+            height={48}
+            className="w-10 h-10 md:w-12 md:h-12 object-contain transition-transform duration-200"
+            onError={handleImageError}
+          />
+        ) : link.icon_selection_type === 'url' && link.custom_icon_url && !imageError ? (
+          <Image
+            src={link.custom_icon_url}
+            alt={`${link.title} icon`}
+            width={48}
+            height={48}
+            className="w-10 h-10 md:w-12 md:h-12 object-contain transition-transform duration-200"
+            onError={handleImageError}
+          />
+        ) : detectedPlatform && !imageError ? (
           (() => {
             const iconContent = getIconContent(detectedPlatform, iconVariant)
             if (isIconSVG(iconContent)) {
               return (
                 <div
-                  className="w-12 h-12 transition-transform duration-200 transition-colors"
+                  className="w-10 h-10 md:w-12 md:h-12 transition-transform duration-200 transition-colors"
                   style={{
                     color: variant === 'light' ? '#374151' : 
                            variant === 'github' ? '#e6edf3' : 
-                           variant === 'gta-vice-city' ? '#ffffff' : platformColor,
+                           variant === 'gta-vice-city' ? '#ffffff' : 
+                           variant === 'cyberpunk' ? '#00F5FF' : 
+                           variant === 'sunset' ? '#FF6F61' : platformColor,
                     '--hover-color': variant === 'light' ? '#1f2937' : 
                                    variant === 'github' ? '#58a6ff' : 
-                                   variant === 'gta-vice-city' ? '#ffc0cb' : hoverColor
+                                   variant === 'gta-vice-city' ? '#ffc0cb' : 
+                                   variant === 'cyberpunk' ? '#FF00FF' : 
+                                   variant === 'sunset' ? '#E55B50' : hoverColor
                   } as React.CSSProperties}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.color = variant === 'light' ? '#1f2937' : 
                                                  variant === 'github' ? '#58a6ff' : 
-                                                 variant === 'gta-vice-city' ? '#ffc0cb' : hoverColor
+                                                 variant === 'gta-vice-city' ? '#ffc0cb' : 
+                                                 variant === 'cyberpunk' ? '#FF00FF' : 
+                                                 variant === 'sunset' ? '#E55B50' : hoverColor
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.color = variant === 'light' ? '#374151' : 
                                                  variant === 'github' ? '#e6edf3' : 
-                                                 variant === 'gta-vice-city' ? '#ffffff' : platformColor
+                                                 variant === 'gta-vice-city' ? '#ffffff' : 
+                                                 variant === 'cyberpunk' ? '#00F5FF' : 
+                                                 variant === 'sunset' ? '#FF6F61' : platformColor
                   }}
                   dangerouslySetInnerHTML={{ __html: iconContent }}
                 />
@@ -190,7 +293,7 @@ function SocialIcon({ link, onClick, variant, appearanceSettings }: SocialIconPr
                   alt={`${displayName} icon`}
                   width={48}
                   height={48}
-                  className="w-12 h-12 object-contain transition-transform duration-200"
+                  className="w-10 h-10 md:w-12 md:h-12 object-contain transition-transform duration-200"
                 />
               )
             }
@@ -198,21 +301,27 @@ function SocialIcon({ link, onClick, variant, appearanceSettings }: SocialIconPr
         ) : (
           // Fallback icon
           <Share2
-            className="w-10 h-10 transition-transform duration-200 transition-colors"
+            className="w-8 h-8 md:w-10 md:h-10 transition-transform duration-200 transition-colors"
             style={{ 
               color: variant === 'light' ? '#374151' : 
                      variant === 'github' ? '#e6edf3' : 
-                     variant === 'gta-vice-city' ? '#ffffff' : platformColor
+                     variant === 'gta-vice-city' ? '#ffffff' : 
+                     variant === 'cyberpunk' ? '#00F5FF' : 
+                     variant === 'sunset' ? '#FF6F61' : platformColor
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = variant === 'light' ? '#1f2937' : 
                                           variant === 'github' ? '#58a6ff' : 
-                                          variant === 'gta-vice-city' ? '#ffc0cb' : hoverColor
+                                          variant === 'gta-vice-city' ? '#ffc0cb' : 
+                                          variant === 'cyberpunk' ? '#FF00FF' : 
+                                          variant === 'sunset' ? '#E55B50' : hoverColor
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.color = variant === 'light' ? '#374151' : 
                                          variant === 'github' ? '#e6edf3' : 
-                                         variant === 'gta-vice-city' ? '#ffffff' : platformColor
+                                         variant === 'gta-vice-city' ? '#ffffff' : 
+                                         variant === 'cyberpunk' ? '#00F5FF' : 
+                                         variant === 'sunset' ? '#FF6F61' : platformColor
             }}
           />
         )}
@@ -220,12 +329,12 @@ function SocialIcon({ link, onClick, variant, appearanceSettings }: SocialIconPr
 
       {/* Platform Name */}
       <span
-        className="mt-3 text-xs font-medium text-center leading-tight"
+        className="mt-2 md:mt-3 text-xs font-medium text-center leading-tight"
         style={{
-          ...getTypographyStyle(),
+          ...getTypographyStyle('body'),
           color: variant === 'light' ? '#374151' : 
                  variant === 'github' ? '#e6edf3' : 
-                 variant === 'gta-vice-city' ? '#ffffff' : getTypographyStyle().color
+                 variant === 'gta-vice-city' ? '#ffffff' : getTypographyStyle('body').color
         }}
       >
         {displayName}
@@ -241,7 +350,8 @@ export function SocialMediaSection({
   variant = 'default',
   className = '',
   appearanceSettings,
-  customIcons
+  customIcons,
+  getTypographyStyle
 }: SocialMediaSectionProps) {
   // Support both socialLinks and links props for backward compatibility
   const actualLinks = socialLinks || links || []
@@ -285,8 +395,8 @@ export function SocialMediaSection({
             </div>
           </div>
           {/* Social Icons Grid */}
-          <div className="p-6">
-            <div className="flex flex-wrap gap-6 justify-start">
+          <div className="p-4 sm:p-6">
+            <div className="flex flex-wrap gap-3 sm:gap-6 justify-start">
               {actualLinks.map((link) => (
                 <SocialIcon
                   key={link.id}
@@ -307,7 +417,7 @@ export function SocialMediaSection({
           </div>
         </div>
       ) : variant === 'default' ? (
-        <div className="glassmorphic rounded-[20px] p-6 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)]">
+        <div className="glassmorphic rounded-[20px] p-4 sm:p-6 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)]">
           <div className="flex items-center gap-3 mb-4">
             <Share2
               className="w-5 h-5"
@@ -322,7 +432,7 @@ export function SocialMediaSection({
               Social Media
             </h2>
           </div>
-          <div className="flex flex-wrap gap-6 justify-start">
+          <div className="flex flex-wrap gap-3 sm:gap-6 justify-start">
             {actualLinks.map((link) => (
               <SocialIcon
                 key={link.id}
@@ -344,26 +454,27 @@ export function SocialMediaSection({
       ) : variant === 'gta-vice-city' ? (
         <>
           {/* Category Header - Outside the card like other sections */}
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex items-center gap-3 sm:gap-4 mb-6">
             <div 
-              className="p-3 rounded-xl backdrop-blur-sm border transition-all duration-200 hover:scale-105"
+              className="p-2 sm:p-3 rounded-xl backdrop-blur-sm border"
               style={{
-                ...getSectionStyles('social', appearanceSettings),
+                // Use the same background styling as other category headers
+                backgroundColor: appearanceSettings?.card_background_color || 'rgba(0, 0, 0, 0.20)',
                 borderColor: getSectionStyles('social', appearanceSettings).sectionColors.card_border_color,
-                backdropFilter: 'blur(8px)', // Slightly less blur for header icon
-                WebkitBackdropFilter: 'blur(8px)', // Safari support
-                boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)' // Subtle shadow for depth
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)'
               }}
             >
               <Share2 
-                className="w-6 h-6" 
+                className="w-5 h-5 sm:w-6 sm:h-6" 
                 style={{ 
                   color: '#ffffff'  // Force white color to match other category icons
                 }} 
               />
             </div>
             <h2 
-              className="text-2xl font-bold"
+              className="text-xl sm:text-2xl font-bold"
               style={{
                 ...getSectionTypographyStyle('social', 'subheading', appearanceSettings),
                 textShadow: !appearanceSettings?.text_accent_color ? '0 0 15px rgba(255, 255, 255, 0.3)' : undefined
@@ -373,15 +484,19 @@ export function SocialMediaSection({
             </h2>
           </div>
           
-          {/* Social Icons Card - Independent social media section styling */}
+          {/* Social Icons Card - Consistent dark background with other sections */}
           <div 
-            className="backdrop-blur-md border rounded-2xl p-6 transition-all duration-300 transform hover:scale-[1.01] hover:shadow-2xl"
+            className="backdrop-blur-md border rounded-2xl p-4 sm:p-6 transition-all duration-300 transform hover:scale-[1.01] hover:shadow-2xl"
             style={{
-              ...getSectionStyles('social', appearanceSettings),
+              // Extract styles explicitly to ensure proper dark background consistency
+              backgroundColor: appearanceSettings?.card_background_color || 'rgba(0, 0, 0, 0.20)',
+              borderColor: getSectionStyles('social', appearanceSettings).sectionColors.card_border_color,
               borderRadius: `${getSectionStyles('social', appearanceSettings).sectionColors.card_border_radius || 20}px`,
-              backdropFilter: 'blur(10px)', // Ensure consistent backdrop blur
-              WebkitBackdropFilter: 'blur(10px)', // Safari support
-              boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.3)' // Enhanced shadow for better depth
+              borderWidth: `${getSectionStyles('social', appearanceSettings).sectionColors.card_border_width || 1}px`,
+              color: appearanceSettings?.text_primary_color || '#ffffff',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.3)'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = getSectionStyles('social', appearanceSettings).sectionColors.link_hover_color || 'rgba(255, 255, 255, 0.4)'
@@ -390,7 +505,7 @@ export function SocialMediaSection({
               e.currentTarget.style.borderColor = getSectionStyles('social', appearanceSettings).sectionColors.card_border_color || 'rgba(255, 255, 255, 0.2)'
             }}
           >
-            <div className="flex flex-wrap gap-6 justify-start">
+            <div className="flex flex-wrap gap-3 sm:gap-6 justify-start">
               {actualLinks.map((link) => (
                 <SocialIcon
                   key={link.id}
@@ -410,24 +525,229 @@ export function SocialMediaSection({
             )}
           </div>
         </>
+      ) : variant === 'sunset' ? (
+        <>
+          {/* Category Header - Outside the card like other sections */}
+          <div className="flex items-center gap-3 sm:gap-4 mb-6">
+            <div 
+              className="p-2 sm:p-3 rounded-xl bg-white shadow-sm border border-orange-200"
+            >
+              <Share2 
+                className="w-5 h-5 sm:w-6 sm:h-6" 
+                style={{ 
+                  color: '#FF6F61'  // Coral color to match sunset theme
+                }} 
+              />
+            </div>
+            <h2 
+              className="text-xl sm:text-2xl font-bold text-[#FF6F61] bg-white px-4 py-2 rounded-xl shadow-sm border border-orange-200"
+            >
+              Social Media
+            </h2>
+          </div>
+          
+          {/* Social Icons Card - Consistent with other section cards */}
+          <div 
+            className="bg-[#FFE9DC] border border-white/60 rounded-3xl p-4 sm:p-6 transition-all duration-300 transform hover:scale-[1.01] hover:shadow-[0_8px_30px_rgba(255,100,70,0.2)] shadow-[0_8px_30px_rgba(255,100,70,0.2)]"
+          >
+            <div className="flex flex-wrap gap-3 sm:gap-6 justify-start">
+              {actualLinks.map((link) => (
+                <SocialIcon
+                  key={link.id}
+                  link={link}
+                  onClick={() => handleLinkClick(link)}
+                  variant={variant}
+                  appearanceSettings={appearanceSettings}
+                />
+              ))}
+            </div>
+            
+            {/* Optional: Show count if many links */}
+            {actualLinks.length > 8 && (
+              <div className="mt-4 text-center text-xs text-[#6E6E6E] font-medium">
+                {actualLinks.length} social platforms
+              </div>
+            )}
+          </div>
+        </>
+      ) : variant === 'light' ? (
+        <>
+          {/* Category Header - Outside the card like other sections */}
+          <div className="flex items-center gap-3 sm:gap-4 mb-6">
+            <div 
+              className="p-2 sm:p-3 rounded-xl bg-white border border-[#E5E7EB] shadow-[0_2px_6px_rgba(0,0,0,0.08)]"
+            >
+              <Share2 
+                className="w-5 h-5 sm:w-6 sm:h-6" 
+                style={{ 
+                  color: '#374151'  // Neutral gray to match Minimalist Light theme
+                }} 
+              />
+            </div>
+            <h2 
+              className="text-xl sm:text-2xl font-semibold"
+              style={getTypographyStyle ? getTypographyStyle('heading') : getSectionTypographyStyle('social', 'heading', appearanceSettings)}
+            >
+              Social Media
+            </h2>
+          </div>
+          
+          {/* Social Icons Card - Consistent with Minimalist Light theme */}
+          <div 
+            className="bg-white border border-[#E5E7EB] rounded-xl p-4 sm:p-6 transition-all duration-300 transform hover:scale-[1.01] hover:shadow-[0_2px_6px_rgba(0,0,0,0.08)] shadow-[0_2px_6px_rgba(0,0,0,0.08)]"
+          >
+            <div className="flex flex-wrap gap-3 sm:gap-6 justify-start">
+              {actualLinks.map((link) => (
+                <SocialIcon
+                  key={link.id}
+                  link={link}
+                  onClick={() => handleLinkClick(link)}
+                  variant={variant}
+                  appearanceSettings={appearanceSettings}
+                />
+              ))}
+            </div>
+            
+            {/* Optional: Show count if many links */}
+            {actualLinks.length > 8 && (
+              <div className="mt-4 text-center text-xs text-[#6B7280] font-inter font-medium">
+                {actualLinks.length} social platforms
+              </div>
+            )}
+          </div>
+        </>
+      ) : variant === 'cyberpunk' ? (
+        <>
+          {/* Category Header - Outside the card like other sections */}
+          <div className="flex items-center gap-3 sm:gap-4 mb-6">
+            <div 
+              className="p-2 sm:p-3 rounded-xl bg-[#00F5FF]/20 border border-[#00F5FF]/30"
+              style={{ boxShadow: '0 0 10px rgba(0, 245, 255, 0.3)' }}
+            >
+              <Share2 
+                className="w-5 h-5 sm:w-6 sm:h-6" 
+                style={{ 
+                  color: '#00F5FF'  // Neon cyan to match cyberpunk theme
+                }} 
+              />
+            </div>
+            <h2 
+              className="text-xl sm:text-2xl font-bold text-[#00F5FF] font-orbitron"
+              style={{ textShadow: '0 0 8px rgba(0, 245, 255, 0.6)' }}
+            >
+              Social Media
+            </h2>
+          </div>
+          
+          {/* Social Icons Card - Consistent with cyberpunk neon theme */}
+          <div 
+            className="bg-[#1A1A1A] border border-[#00F5FF]/30 rounded-2xl p-4 sm:p-6 transition-all duration-300 transform hover:scale-[1.01] hover:shadow-[0_0_15px_rgba(0,245,255,0.3)]"
+            style={{ boxShadow: '0 0 15px rgba(0, 245, 255, 0.2), 0 0 30px rgba(0, 245, 255, 0.1)' }}
+          >
+            <div className="flex flex-wrap gap-3 sm:gap-6 justify-start">
+              {actualLinks.map((link) => (
+                <SocialIcon
+                  key={link.id}
+                  link={link}
+                  onClick={() => handleLinkClick(link)}
+                  variant={variant}
+                  appearanceSettings={appearanceSettings}
+                />
+              ))}
+            </div>
+            
+            {/* Optional: Show count if many links */}
+            {actualLinks.length > 8 && (
+              <div className="mt-4 text-center text-xs text-[#39FF14] font-inter font-medium"
+                   style={{ textShadow: '0 0 5px rgba(57, 255, 20, 0.6)' }}>
+                {actualLinks.length} social platforms
+              </div>
+            )}
+          </div>
+        </>
+      ) : variant === 'dark' ? (
+        <>
+          {/* Category Header - Outside the card like other sections */}
+          <div className="flex items-center gap-3 sm:gap-4 mb-6">
+            <div 
+              className="p-2 sm:p-3 rounded-xl backdrop-blur-sm border"
+              style={{
+                backgroundColor: 'rgba(0, 0, 0, 0.20)',
+                borderColor: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '12px'
+              }}
+            >
+              <Share2 
+                className="w-5 h-5 sm:w-6 sm:h-6" 
+                style={{ 
+                  color: '#54E0FF'  // Developer Dark theme accent color
+                }} 
+              />
+            </div>
+            <h2 
+              className="font-medium tracking-[-0.6px]"
+              style={getTypographyStyle ? getTypographyStyle('heading') : {
+                fontFamily: 'Sharp Grotesk, system-ui, sans-serif',
+                fontSize: '20px',
+                color: '#ffffff',
+                lineHeight: '24px'
+              }}
+            >
+              Social Media
+            </h2>
+          </div>
+          
+          {/* Social Icons Card - Consistent with Developer Dark theme */}
+          <div 
+            className="glassmorphic rounded-[20px] p-6 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)]"
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.20)',
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '20px'
+            }}
+          >
+            <div className="flex flex-wrap gap-3 sm:gap-6 justify-start">
+              {actualLinks.map((link) => (
+                <SocialIcon
+                  key={link.id}
+                  link={link}
+                  onClick={() => handleLinkClick(link)}
+                  variant={variant}
+                  appearanceSettings={appearanceSettings}
+                />
+              ))}
+            </div>
+            
+            {/* Optional: Show count if many links */}
+            {actualLinks.length > 8 && (
+              <div className="mt-4 text-center text-xs font-light tracking-[-0.48px]"
+                   style={getTypographyStyle ? getTypographyStyle('accent') : {
+                     fontFamily: 'Sharp Grotesk, system-ui, sans-serif',
+                     color: '#7a7a83'
+                   }}>
+                {actualLinks.length} social platforms
+              </div>
+            )}
+          </div>
+        </>
       ) : (
         <div className="mb-10">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <div className="flex items-center gap-3 sm:gap-4 mb-6">
+            <div className="p-2 sm:p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
               <Share2 
-                className="w-6 h-6"
+                className="w-5 h-5 sm:w-6 sm:h-6"
                 style={{ color: '#374151' }}
               />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-lg sm:text-xl font-bold text-white">
                 Social Media
               </h2>
             </div>
           </div>
           
-          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-            <div className="flex flex-wrap gap-6 justify-start">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 shadow-sm">
+            <div className="flex flex-wrap gap-3 sm:gap-6 justify-start">
               {actualLinks.map((link) => (
                 <SocialIcon
                   key={link.id}

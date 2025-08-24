@@ -71,7 +71,7 @@ const getLinkIcon = (link: UserLinkWithPreview) => {
     custom: LinkIcon
   }
 
-  const IconComponent = defaultIcons[link.category] || Globe
+  const IconComponent = defaultIcons[link.category as keyof typeof defaultIcons] || Globe
   // Use inline style to force dark color in light theme regardless of appearance settings
   return <IconComponent className="w-4 h-4" style={{ color: '#374151' }} />
 }
@@ -130,6 +130,7 @@ export function WebpagePreviewCard({
                 src={metadata.favicon}
                 alt=""
                 fill
+                sizes="32px"
                 className="object-cover"
                 onError={() => setFaviconError(true)}
               />
@@ -195,6 +196,7 @@ export function WebpagePreviewCard({
             src={metadata.image}
             alt=""
             fill
+            sizes="100vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             onError={() => setImageError(true)}
           />
@@ -218,6 +220,7 @@ export function WebpagePreviewCard({
                 src={metadata.favicon}
                 alt=""
                 fill
+                sizes="40px"
                 className="object-cover"
                 onError={() => setFaviconError(true)}
               />

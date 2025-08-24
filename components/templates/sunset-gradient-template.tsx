@@ -26,15 +26,14 @@ import {
   Award,
   Share2,
   Copy,
-  Check,
-  GitFork,
-  Star
+  Check
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CategoryIconService, CategoryIconConfig } from '@/lib/services/category-icon-service'
 import { CategoryIconPreview } from '@/components/category-icons/category-icon-preview'
+import React from 'react'
 
-interface GitHubFocusTemplateProps {
+interface SunsetGradientTemplateProps {
   user: User
   links: Record<LinkCategory, UserLinkWithPreview[]>
   appearanceSettings?: UserAppearanceSettings | null
@@ -42,16 +41,60 @@ interface GitHubFocusTemplateProps {
   isPreview?: boolean
 }
 
-// Icon mapping for different link types
-const getIconForType = (iconType: string) => {
-  switch (iconType) {
-    case 'github': return Github
-    case 'linkedin': return Linkedin
-    case 'twitter': return Twitter
-    case 'email': return Mail
-    case 'website': return Globe
-    default: return ExternalLink
+// Function to get the appropriate icon for a link
+const getLinkIcon = (link: UserLinkWithPreview) => {
+  // Check for uploaded icon
+  if (link.icon_selection_type === 'upload' && link.uploaded_icon_url) {
+    return (
+      <Image
+        src={link.uploaded_icon_url}
+        alt={`${link.title} icon`}
+        width={16}
+        height={16}
+        className="w-4 h-4 object-contain"
+      />
+    )
   }
+
+  // Check for custom URL icon
+  if (link.icon_selection_type === 'url' && link.custom_icon_url) {
+    return (
+      <Image
+        src={link.custom_icon_url}
+        alt={`${link.title} icon`}
+        width={16}
+        height={16}
+        className="w-4 h-4 object-contain"
+      />
+    )
+  }
+
+  // Check for platform icon (social media)
+  if (link.icon_selection_type === 'platform' && link.category === 'social' && link.platform_detected) {
+    return (
+      <Image
+        src={`/icons/${link.platform_detected}/${link.icon_variant || 'default'}.png`}
+        alt={`${link.platform_detected} icon`}
+        width={16}
+        height={16}
+        className="w-4 h-4 object-contain"
+      />
+    )
+  }
+
+  // Default icons based on category
+  const defaultIcons = {
+    personal: ExternalLink,
+    projects: Github,
+    blogs: BookOpen,
+    achievements: Award,
+    contact: Mail,
+    social: Globe,
+    custom: ExternalLink
+  }
+
+  const IconComponent = defaultIcons[link.category] || ExternalLink
+  return <IconComponent className="w-4 h-4" />
 }
 
 // Category icon mapping
@@ -59,10 +102,10 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
   // Check if user has custom icon for this category
   const customIcon = customIcons[category]
   if (customIcon) {
-    return () => <CategoryIconPreview config={customIcon} size={16} />
+    return () => <CategoryIconPreview config={customIcon} size={20} />
   }
 
-  // Fallback to default icon
+  // Fallback to default icon - ensure these are always available
   const config = LINK_CATEGORIES[category]
   switch (config?.icon) {
     case 'Github': return Github
@@ -73,7 +116,7 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
   }
 }
 
-export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryOrder: propCategoryOrder, isPreview = false }: GitHubFocusTemplateProps) {
+export function SunsetGradientTemplate({ user, links, appearanceSettings, categoryOrder: propCategoryOrder, isPreview = false }: SunsetGradientTemplateProps) {
   const [copied, setCopied] = useState(false)
   const [categoryIcons, setCategoryIcons] = useState<Record<LinkCategory, CategoryIconConfig>>({} as Record<LinkCategory, CategoryIconConfig>)
   const [categoryOrder, setCategoryOrder] = useState<LinkCategory[]>(propCategoryOrder || CategoryOrderService.DEFAULT_ORDER)
@@ -83,10 +126,10 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
     if (!appearanceSettings) return
 
     const fontsToLoad = []
-    if (appearanceSettings.primary_font && appearanceSettings.primary_font !== 'Sharp Grotesk') {
+    if (appearanceSettings.primary_font && appearanceSettings.primary_font !== 'Poppins') {
       fontsToLoad.push(appearanceSettings.primary_font)
     }
-    if (appearanceSettings.secondary_font && appearanceSettings.secondary_font !== 'Sharp Grotesk' && appearanceSettings.secondary_font !== appearanceSettings.primary_font) {
+    if (appearanceSettings.secondary_font && appearanceSettings.secondary_font !== 'Open Sans' && appearanceSettings.secondary_font !== appearanceSettings.primary_font) {
       fontsToLoad.push(appearanceSettings.secondary_font)
     }
 
@@ -125,15 +168,22 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
   // Generate background style from appearance settings
   const getBackgroundStyle = (): React.CSSProperties => {
     if (!appearanceSettings) {
-      return { backgroundColor: '#0D1117' } // Default GitHub dark mode base
+      return { 
+        background: 'linear-gradient(135deg, #FF7E5F 0%, #FEB47B 100%)', // True sunset gradient
+        position: 'relative',
+        overflow: 'hidden'
+      }
     }
 
-    const style: React.CSSProperties = {}
+    const style: React.CSSProperties = {
+      position: 'relative',
+      overflow: 'hidden'
+    }
 
     if (appearanceSettings.background_type === 'gradient' && appearanceSettings.background_gradient) {
       const { type, colors, direction } = appearanceSettings.background_gradient
       if (type === 'linear') {
-        style.background = `linear-gradient(${direction || '45deg'}, ${colors.join(', ')})`
+        style.background = `linear-gradient(${direction || '135deg'}, ${colors.join(', ')})`
       } else if (type === 'radial') {
         style.background = `radial-gradient(${appearanceSettings.background_gradient.position || 'center'}, ${colors.join(', ')})`
       }
@@ -145,14 +195,14 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
         style.backgroundSize = appearanceSettings.background_image_size || 'cover'
         style.backgroundRepeat = 'no-repeat'
         // Set a fallback background color in case image fails to load
-        style.backgroundColor = appearanceSettings.background_color || '#0D1117'
+        style.backgroundColor = appearanceSettings.background_color || 'linear-gradient(135deg, #FF7E5F 0%, #FEB47B 100%)'
       } else {
         // No image set yet, show a neutral background instead of falling back to solid color
-        style.backgroundColor = '#0D1117' // Use default GitHub dark mode base
+        style.background = 'linear-gradient(135deg, #FF7E5F 0%, #FEB47B 100%)' // Use sunset gradient as default
       }
     } else {
-      // Default to solid color
-      style.backgroundColor = appearanceSettings.background_color || '#0D1117'
+      // Default to sunset gradient
+      style.background = appearanceSettings.background_color || 'linear-gradient(135deg, #FF7E5F 0%, #FEB47B 100%)'
     }
 
     return style
@@ -161,35 +211,37 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
   // Generate typography styles from appearance settings
   const getTypographyStyle = (type: 'heading' | 'subheading' | 'body' | 'accent' | 'link', isHover = false): React.CSSProperties => {
     if (!appearanceSettings) {
-      // Default styles for GitHub Focus theme - EXACT specifications
+      // Default styles for Sunset Gradient theme based on user specifications
       const defaults = {
-        heading: { fontFamily: 'Inter, sans-serif', fontSize: '32px', color: '#F0F6FC', lineHeight: '1.2' }, // White headings
-        subheading: { fontFamily: 'Inter, sans-serif', fontSize: '18px', color: '#58A6FF', lineHeight: '1.4' }, // Blue subheadings
-        body: { fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#C9D1D9', lineHeight: '1.6' }, // Light gray body
-        accent: { fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#8B949E', lineHeight: '1.4' }, // Muted gray
-        link: { fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#58A6FF', lineHeight: '1.6' } // Blue links
+        heading: { fontFamily: 'Poppins, sans-serif', fontSize: '32px', color: '#2C2C2C', lineHeight: '1.2', fontWeight: '700' }, // Deep charcoal
+        subheading: { fontFamily: 'Poppins, sans-serif', fontSize: '18px', color: '#FF6F61', lineHeight: '1.4', fontWeight: '600' }, // Coral
+        body: { fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#444444', lineHeight: '1.6' }, // Dark warm gray
+        accent: { fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#6E6E6E', lineHeight: '1.4' }, // Muted/subtext
+        link: { fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#FF6F61', lineHeight: '1.6' } // Bright coral
       }
       return defaults[type]
     }
 
     const style: React.CSSProperties = {}
 
-    // Apply font family - GitHub Focus uses Inter for most text
+    // Apply font family
     if (type === 'heading' || type === 'subheading') {
-      style.fontFamily = getFontFamilyWithFallbacks(appearanceSettings.primary_font || 'Inter')
+      style.fontFamily = getFontFamilyWithFallbacks(appearanceSettings.primary_font || 'Poppins')
     } else {
       style.fontFamily = getFontFamilyWithFallbacks(appearanceSettings.secondary_font || 'Inter')
     }
 
-    // Apply font size
+    // Apply font size and weight
     switch (type) {
       case 'heading':
         style.fontSize = `${appearanceSettings.font_size_heading || 32}px`
         style.lineHeight = `${appearanceSettings.line_height_heading || 1.2}`
+        style.fontWeight = '700'
         break
       case 'subheading':
         style.fontSize = `${appearanceSettings.font_size_subheading || 18}px`
         style.lineHeight = `${appearanceSettings.line_height_base || 1.4}`
+        style.fontWeight = '600'
         break
       case 'body':
       case 'accent':
@@ -199,24 +251,24 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
         break
     }
 
-    // Apply colors - EXACT GitHub Focus specifications
+    // Apply colors
     switch (type) {
       case 'heading':
-        style.color = appearanceSettings.text_primary_color || '#F0F6FC' // White
+        style.color = appearanceSettings.text_primary_color || '#2C2C2C' // Deep charcoal
         break
       case 'subheading':
-        style.color = appearanceSettings.text_accent_color || '#58A6FF' // Blue
+        style.color = appearanceSettings.text_accent_color || '#FF6F61' // Bright coral
         break
       case 'body':
-        style.color = appearanceSettings.text_secondary_color || '#C9D1D9' // Light gray
+        style.color = appearanceSettings.text_secondary_color || '#444444' // Dark warm gray
         break
       case 'accent':
-        style.color = appearanceSettings.text_secondary_color || '#8B949E' // Muted gray
+        style.color = appearanceSettings.text_secondary_color || '#6E6E6E' // Muted/subtext
         break
       case 'link':
         style.color = isHover
-          ? (appearanceSettings.link_hover_color || '#1F6FEB') // Brighter blue on hover
-          : (appearanceSettings.link_color || '#58A6FF') // Blue
+          ? (appearanceSettings.link_hover_color || '#E55B50') // Darker coral for hover
+          : (appearanceSettings.link_color || '#FF6F61') // Bright coral
         break
     }
 
@@ -275,26 +327,31 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
   const hasLinks = Object.values(links).some(categoryLinks => categoryLinks.length > 0)
 
   return (
-    <div className="min-h-screen" style={getBackgroundStyle()}>
-      <div className="max-w-4xl mx-auto px-4 py-6">
+    <div className="min-h-screen relative" style={getBackgroundStyle()}>
+      <div className="max-w-4xl mx-auto px-4 py-8 relative z-10">
         
-        {/* Profile Header - GitHub Focus Style */}
-        <div className="bg-[#161B22] border border-[#30363D] rounded-[12px] p-6 mb-6">
-          <div className="flex flex-col md:flex-row gap-6">
+        {/* Profile Header */}
+        <div className="bg-[#FFE9DC] rounded-3xl p-8 mb-8 shadow-[0_8px_30px_rgba(255,100,70,0.2)] border border-white/60 relative overflow-hidden">
+          {/* Soft shadow effect */}
+          <div className="absolute inset-0 rounded-3xl shadow-[0_10px_30px_rgba(255,100,70,0.2)]"></div>
+          
+          <div className="flex flex-col md:flex-row gap-8 relative z-10">
             
             {/* Left Side - Avatar and Basic Info */}
             <div className="flex-shrink-0">
               {user.avatar_url ? (
-                <Image
-                  src={user.avatar_url}
-                  alt={`${user.full_name || user.github_username}'s avatar`}
-                  width={80}
-                  height={80}
-                  className="w-[80px] h-[80px] rounded-full object-cover border border-[#30363D]"
-                />
+                <div className="relative">
+                  <Image
+                    src={user.avatar_url}
+                    alt={`${user.full_name || user.github_username}'s avatar`}
+                    width={120}
+                    height={120}
+                    className="w-[120px] h-[120px] rounded-full object-cover border-4 border-white shadow-lg"
+                  />
+                </div>
               ) : (
-                <div className="w-[80px] h-[80px] rounded-full bg-[#238636] flex items-center justify-center border border-[#30363D]">
-                  <span className="text-[32px] font-bold text-white font-inter">
+                <div className="w-[120px] h-[120px] rounded-full bg-gradient-to-r from-[#FF7E5F] to-[#FEB47B] flex items-center justify-center border-4 border-white shadow-lg">
+                  <span className="text-[48px] font-bold text-white font-poppins">
                     {(user.full_name || user.github_username || 'U')[0].toUpperCase()}
                   </span>
                 </div>
@@ -303,22 +360,22 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
 
             {/* Right Side - Profile Details */}
             <div className="flex-1 min-w-0">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-[24px] font-semibold leading-[30px] tracking-[-0.72px] font-inter text-[#F0F6FC] mb-1"
-                       style={getTypographyStyle('heading')}>
+                  <h1 className="text-[32px] font-bold leading-[1.2] tracking-[-0.5px] mb-2 text-[#2C2C2C]"
+                      style={getTypographyStyle('heading')}>
                     {user.full_name || user.github_username || 'Developer'}
                   </h1>
                   
                   {user.github_username && (
-                    <p className="text-[16px] font-normal leading-[22px] text-[#8B949E] font-inter mb-3"
-                       style={getTypographyStyle('accent')}>
+                    <p className="text-[18px] font-semibold leading-[1.4] mb-3 text-[#FF6F61]"
+                       style={getTypographyStyle('subheading')}>
                       @{user.github_username}
                     </p>
                   )}
 
                   {user.profile_title && (
-                    <p className="text-[14px] font-medium leading-[20px] text-[#238636] font-inter mb-3"
+                    <p className="text-[18px] font-semibold leading-[1.4] mb-4 text-[#FF6F61]"
                        style={getTypographyStyle('subheading')}>
                       {user.profile_title}
                     </p>
@@ -326,50 +383,52 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
 
                   {/* Bio */}
                   {user.bio && (
-                    <p className="text-[14px] font-normal leading-[20px] text-[#C9D1D9] font-inter mb-4"
+                    <p className="text-[16px] leading-[1.6] mb-5 text-[#444444]"
                        style={getTypographyStyle('body')}>
                       {user.bio}
                     </p>
                   )}
 
                   {/* Meta Information */}
-                  <div className="flex flex-wrap items-center gap-4 text-[12px] text-[#8B949E] font-inter"
+                  <div className="flex flex-wrap items-center gap-5 text-[14px] text-[#6E6E6E] font-medium"
                        style={getTypographyStyle('accent')}>
                     {user.location && (
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-[#8B949E]" />
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-[#FF6F61]" />
                         <span>{user.location}</span>
                       </div>
                     )}
                     {user.company && (
-                      <div className="flex items-center gap-1">
-                        <Building className="w-3 h-3 text-[#8B949E]" />
+                      <div className="flex items-center gap-2">
+                        <Building className="w-4 h-4 text-[#FF6F61]" />
                         <span>{user.company}</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-[#8B949E]" />
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-[#FF6F61]" />
                       <span>Joined {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Share Button - GitHub Focus Style */}
+                {/* Share Button */}
                 <Button
                   onClick={handleShare}
-                  className="bg-[#238636] hover:bg-[#2EA043] text-white border-0 px-4 py-2 rounded-[6px] font-medium text-[14px] font-inter transition-colors"
+                  className="bg-gradient-to-r from-[#FF5E62] to-[#FF9966] hover:from-[#FF9966] hover:to-[#FF5E62] text-white border-0 px-6 py-3 rounded-xl font-bold text-[16px] shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                 >
-                  {copied ? (
-                    <>
-                      <Check className="w-4 h-4 mr-2" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Share2 className="w-4 h-4 mr-2" />
-                      Share
-                    </>
-                  )}
+                  <span className="flex items-center">
+                    {copied ? (
+                      <>
+                        <Check className="w-5 h-5 mr-2" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="w-5 h-5 mr-2" />
+                        Share Profile
+                      </>
+                    )}
+                  </span>
                 </Button>
               </div>
             </div>
@@ -378,8 +437,8 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
 
         {/* All Categories Section - Respecting Category Order */}
         {hasLinks ? (
-          <div className="space-y-4">
-            {categoryOrder.map((category) => {
+          <div className="space-y-8">
+            {categoryOrder.map((category, index) => {
               const categoryLinks = links[category] || []
               if (categoryLinks.length === 0) return null
 
@@ -390,7 +449,7 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
                     key={category}
                     socialLinks={categoryLinks}
                     onLinkClick={handleLinkClick}
-                    variant="github"
+                    variant="sunset"
                     appearanceSettings={appearanceSettings}
                     getTypographyStyle={getTypographyStyle}
                   />
@@ -403,78 +462,95 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
               return (
                 <div 
                   key={category} 
-                  className="bg-[#161B22] border border-[#30363D] rounded-[12px] overflow-hidden"
+                  className="bg-[#FFE9DC] rounded-3xl overflow-hidden shadow-[0_8px_30px_rgba(255,100,70,0.2)] border border-white/60 relative"
                 >
-                  
                   {/* Category Header */}
-                  <div className="bg-[#1C2128] border-b border-[#30363D] px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1 rounded bg-[#238636]/20 border border-[#238636]/30">
-                        <CategoryIcon 
-                          className="w-4 h-4" 
-                          style={{ color: '#238636' }}
-                        />
+                  <div className="bg-gradient-to-r from-[#FF7E5F]/10 to-[#FEB47B]/10 border-b border-white/50 px-8 py-5">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-xl bg-white shadow-sm">
+                        {(() => {
+                          // For projects category, always show GitHub icon
+                          if (category === 'projects') {
+                            return <Github className="w-6 h-6 text-[#FF6F61]" />
+                          }
+                          
+                          // For blogs category, always show BookOpen icon
+                          if (category === 'blogs') {
+                            return <BookOpen className="w-6 h-6 text-[#FF6F61]" />
+                          }
+                          
+                          // For other categories, use the mapped icon
+                          const IconComponent = CategoryIcon
+                          if (IconComponent && typeof IconComponent === 'function') {
+                            return <IconComponent className="w-6 h-6 text-[#FF6F61]" />
+                          }
+                          
+                          // Fallback
+                          return <ExternalLink className="w-6 h-6 text-[#FF6F61]" />
+                        })()}
                       </div>
-                      <h2 className="text-[14px] font-semibold leading-[18px] font-inter text-[#F0F6FC]"
-                          style={getTypographyStyle('subheading')}>
-                        {categoryConfig?.label || category}
-                      </h2>
-                      <span className="text-[12px] text-[#8B949E] font-inter ml-auto"
+                      <div>
+                        <h2 className="text-[22px] font-bold leading-[1.3] text-[#2C2C2C]"
+                            style={getTypographyStyle('heading')}>
+                          {categoryConfig?.label || category}
+                        </h2>
+                        <p className="text-[14px] text-[#6E6E6E] font-medium mt-1"
                            style={getTypographyStyle('accent')}>
-                        {categoryLinks.length} {categoryLinks.length === 1 ? 'link' : 'links'}
-                      </span>
+                          {categoryLinks.length} {categoryLinks.length === 1 ? 'link' : 'links'}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Rich Link Previews */}
-                  <div className="space-y-2">
-                    {categoryLinks.map((link) => (
-                      <div key={link.id} className="px-4 py-2">
-                        <RichLinkPreview
-                          link={link}
-                          onClick={() => handleLinkClick(link)}
-                          onRefresh={handleRefreshPreview}
-                          variant="compact"
-                          showRefreshButton={true}
-                          className="bg-transparent border-0 shadow-none hover:bg-[#1C2128] rounded-lg transition-colors"
-                        />
-                      </div>
-                    ))}
+                  {/* Links Grid */}
+                  <div className="p-6 md:p-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      {categoryLinks.map((link) => (
+                        <div key={link.id} className="group">
+                          <RichLinkPreview
+                            link={link}
+                            onClick={() => handleLinkClick(link)}
+                            onRefresh={handleRefreshPreview}
+                            variant="default"
+                            showRefreshButton={true}
+                            className="bg-white border border-gray-200 hover:border-[#FF6F61] rounded-2xl transition-all duration-300 hover:shadow-[0_5px_15px_rgba(255,100,70,0.2)]"
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )
             })}
           </div>
         ) : (
-          <div className="bg-[#161B22] border border-[#30363D] rounded-[12px] p-8 text-center">
-            <h2 className="text-[16px] font-semibold leading-[20px] font-inter text-[#F0F6FC] mb-2"
-                 style={getTypographyStyle('heading')}>
-              No repositories yet
+          <div className="bg-[#FFE9DC] rounded-3xl p-10 text-center shadow-[0_8px_30px_rgba(255,100,70,0.2)] border border-white/60">
+            <h2 className="text-[26px] font-bold leading-[1.3] mb-3 text-[#2C2C2C]"
+                style={getTypographyStyle('heading')}>
+              No Links Yet
             </h2>
-            <p className="text-[14px] font-normal leading-[20px] text-[#8B949E] font-inter"
+            <p className="text-[18px] font-medium leading-[1.6] text-[#444444]"
                style={getTypographyStyle('body')}>
-              This developer hasn&apos;t added any links to their profile yet.
+              This developer hasn't added any links to their profile yet.
             </p>
           </div>
         )}
 
         {/* Powered by Link4Coders Footer */}
         {!user.is_premium && !isPreview && (
-          <div className="mt-8 text-center">
-            <div className="bg-[#161B22] border border-[#30363D] rounded-[8px] p-3 inline-block">
-              <p className="text-[12px] font-normal text-[#8B949E] font-inter"
-                 style={getTypographyStyle('accent')}>
+          <div className="mt-10 text-center">
+            <div className="bg-[#FFE9DC] rounded-2xl p-5 inline-block shadow-[0_5px_15px_rgba(255,100,70,0.2)] border border-white/60">
+              <p className="text-[15px] font-semibold text-[#444444] font-inter">
                 Powered by{' '}
                 <a 
                   href="https://link4coders.com?ref=profile" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-[#58A6FF] hover:text-[#1F6FEB] transition-colors font-medium"
-                  style={getTypographyStyle('link')}
+                  className="text-[#FF6F61] hover:text-[#E55B50] transition-colors font-bold"
                   onClick={() => {
                     // Track branding click for analytics
-                    if (typeof window !== 'undefined' && (window as any).gtag) {
-                      (window as any).gtag('event', 'branding_click', {
+                    if (typeof window !== 'undefined' && window.gtag) {
+                      window.gtag('event', 'branding_click', {
                         event_category: 'engagement',
                         event_label: 'powered_by_footer'
                       })
@@ -485,8 +561,7 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
                 </a>
                 {' '}⭐
               </p>
-              <p className="text-[10px] text-[#8B949E] font-inter mt-1"
-                 style={getTypographyStyle('accent')}>
+              <p className="text-[13px] text-[#6E6E6E] font-medium font-inter mt-2">
                 Create your developer profile for free
               </p>
             </div>

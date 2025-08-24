@@ -100,6 +100,8 @@ export interface UserLinkWithPreview {
   use_custom_icon?: boolean
   icon_selection_type?: 'default' | 'platform' | 'upload' | 'url'
   platform_detected?: string
+  // GitHub Projects specific field
+  live_project_url?: string
 }
 
 // GitHub API Response Types

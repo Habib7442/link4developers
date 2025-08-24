@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { Button } from './button';
 import ChainLinkIcon from '../icons/ChainLinkIcon';
 import { AuthModal } from './auth-modal';
@@ -70,10 +71,12 @@ export function Header() {
               {user ? (
                 <div className="flex items-center gap-2 sm:gap-3">
                   {user.avatar_url ? (
-                    <img
+                    <Image
                       src={user.avatar_url}
-                      alt={user.full_name || user.email}
-                      className="w-6 h-6 sm:w-8 sm:h-8 rounded-full"
+                      alt={user.full_name || user.email || 'User avatar'}
+                      width={32}
+                      height={32}
+                      className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover"
                     />
                   ) : (
                     <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] flex items-center justify-center">

@@ -13,11 +13,11 @@ export interface SocialPlatform {
 export const SOCIAL_PLATFORMS: Record<string, SocialPlatform> = {
   twitter: {
     name: 'twitter',
-    displayName: 'Twitter',
+    displayName: 'X',
     baseUrl: 'https://twitter.com/',
     iconVariants: ['twitter1', 'twitter2', 'twitter3'],
-    defaultIcon: 'twitter1',
-    color: '#1DA1F2'
+    defaultIcon: 'twitter2',
+    color: '#000000'
   },
   linkedin: {
     name: 'linkedin',

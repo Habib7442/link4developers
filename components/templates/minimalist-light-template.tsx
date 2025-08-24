@@ -37,6 +37,7 @@ interface MinimalistLightTemplateProps {
   links: Record<LinkCategory, UserLinkWithPreview[]>
   appearanceSettings?: UserAppearanceSettings | null
   categoryOrder?: LinkCategory[]
+  isPreview?: boolean
 }
 
 // Function to get the appropriate icon for a link
@@ -116,7 +117,7 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
   }
 }
 
-export function MinimalistLightTemplate({ user, links, appearanceSettings, categoryOrder: propCategoryOrder }: MinimalistLightTemplateProps) {
+export function MinimalistLightTemplate({ user, links, appearanceSettings, categoryOrder: propCategoryOrder, isPreview = false }: MinimalistLightTemplateProps) {
   const [copied, setCopied] = useState(false)
   
   // Use Zustand store for state management
@@ -151,7 +152,9 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
   // Generate background style from appearance settings
   const getBackgroundStyle = (): React.CSSProperties => {
     if (!appearanceSettings) {
-      return { backgroundColor: '#ffffff' } // Default background for light theme
+      return { 
+        background: 'linear-gradient(180deg, #FFFFFF 0%, #F9FAFB 100%)' // Default Minimalist Light gradient
+      }
     }
 
     const style: React.CSSProperties = {}
@@ -171,23 +174,87 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
         style.backgroundSize = appearanceSettings.background_image_size || 'cover'
         style.backgroundRepeat = 'no-repeat'
         // Set a fallback background color in case image fails to load
-        style.backgroundColor = appearanceSettings.background_color || '#ffffff'
+        style.backgroundColor = appearanceSettings.background_color || '#FFFFFF'
       } else {
-        // No image set yet, show a neutral background instead of falling back to solid color
-        style.backgroundColor = '#ffffff' // Use default light background
+        // No image set yet, show the default Minimalist Light gradient
+        style.background = 'linear-gradient(180deg, #FFFFFF 0%, #F9FAFB 100%)'
       }
     } else {
-      // Default to solid color
-      style.backgroundColor = appearanceSettings.background_color || '#ffffff'
+      // Default to solid color or Minimalist Light gradient
+      style.backgroundColor = appearanceSettings.background_color || '#FFFFFF'
+      if (!appearanceSettings.background_color) {
+        style.background = 'linear-gradient(180deg, #FFFFFF 0%, #F9FAFB 100%)'
+      }
     }
 
     return style
   }
 
-  // Generate typography styles from appearance settings with light theme defaults
+  // Generate typography styles from appearance settings with Minimalist Light theme defaults
   const getTypographyStyle = (type: 'heading' | 'subheading' | 'body' | 'accent' | 'link', isHover = false): React.CSSProperties => {
-    // Always use light theme safe colors to ensure visibility
-    return getSectionTypographyStyle('profile', type, appearanceSettings, isHover, 'light')
+    if (!appearanceSettings) {
+      // Default styles for Minimalist Light theme - EXACT specifications with better contrast
+      const defaults = {
+        heading: { fontFamily: 'Roboto Mono, monospace', fontSize: '32px', color: '#111827', lineHeight: '1.2', fontWeight: '600' }, // Dark gray headings with Roboto Mono
+        subheading: { fontFamily: 'Inter, sans-serif', fontSize: '18px', color: '#111827', lineHeight: '1.4', fontWeight: '500' }, // Dark gray subheadings for better visibility
+        body: { fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#111827', lineHeight: '1.6', fontWeight: '400' }, // Dark gray body for better visibility
+        accent: { fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#374151', lineHeight: '1.4', fontWeight: '500' }, // Medium gray for better visibility
+        link: { fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#2563EB', lineHeight: '1.6', fontWeight: '500' } // Blue links
+      }
+      return defaults[type]
+    }
+
+    const style: React.CSSProperties = {}
+
+    // Apply font family - Minimalist Light uses Roboto Mono for headings, Inter for other text
+    if (type === 'heading') {
+      style.fontFamily = getFontFamilyWithFallbacks(appearanceSettings.primary_font || 'Roboto Mono')
+    } else if (type === 'subheading') {
+      style.fontFamily = getFontFamilyWithFallbacks(appearanceSettings.primary_font || 'Inter')
+    } else {
+      style.fontFamily = getFontFamilyWithFallbacks(appearanceSettings.secondary_font || 'Inter')
+    }
+
+    // Apply font size
+    switch (type) {
+      case 'heading':
+        style.fontSize = `${appearanceSettings.font_size_heading || 32}px`
+        style.lineHeight = `${appearanceSettings.line_height_heading || 1.2}`
+        break
+      case 'subheading':
+        style.fontSize = `${appearanceSettings.font_size_subheading || 18}px`
+        style.lineHeight = `${appearanceSettings.line_height_base || 1.4}`
+        break
+      case 'body':
+      case 'accent':
+      case 'link':
+        style.fontSize = `${appearanceSettings.font_size_base || 16}px`
+        style.lineHeight = `${appearanceSettings.line_height_base || 1.6}`
+        break
+    }
+
+    // Apply colors - EXACT Minimalist Light specifications with better contrast
+    switch (type) {
+      case 'heading':
+        style.color = appearanceSettings.text_primary_color || '#111827' // Dark gray
+        break
+      case 'subheading':
+        style.color = appearanceSettings.text_primary_color || '#111827' // Dark gray for better visibility
+        break
+      case 'body':
+        style.color = appearanceSettings.text_secondary_color || '#111827' // Dark gray for better visibility
+        break
+      case 'accent':
+        style.color = appearanceSettings.text_secondary_color || '#374151' // Medium gray for better visibility
+        break
+      case 'link':
+        style.color = isHover
+          ? (appearanceSettings.link_hover_color || '#1E40AF') // Darker blue on hover
+          : (appearanceSettings.link_color || '#2563EB') // Blue
+        break
+    }
+
+    return style
   }
 
 
@@ -211,18 +278,18 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
       className="min-h-screen relative"
       style={getBackgroundStyle()}
     >
-      {/* Subtle overlay pattern */}
-      <div className="absolute inset-0 opacity-30">
+      {/* Subtle overlay pattern - removed for better visibility */}
+      {/* <div className="absolute inset-0 opacity-30">
         <div className="absolute inset-0" style={{
           backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(148, 163, 184, 0.15) 1px, transparent 0)',
           backgroundSize: '32px 32px'
         }}></div>
-      </div>
+      </div> */}
       
       <div className="relative z-10 container mx-auto px-6 py-12 max-w-2xl">
         {/* Header Section */}
         <div 
-          className="text-center mb-12 bg-white border border-gray-200 rounded-xl p-8 shadow-sm"
+          className="text-center mb-12 bg-white border border-[#E5E7EB] rounded-xl p-8 shadow-[0_2px_6px_rgba(0,0,0,0.08)]"
         >
           {/* Avatar */}
           <div className="relative inline-block mb-6">
@@ -232,14 +299,13 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
               alt={user.full_name || user.github_username || 'User'}
               width={appearanceSettings?.profile_avatar_size || 120}
               height={appearanceSettings?.profile_avatar_size || 120}
-              className="relative rounded-full border-4 border-white shadow-xl backdrop-blur-sm"
+              className="relative rounded-full border-4 border-white shadow-[0_2px_6px_rgba(0,0,0,0.08)] backdrop-blur-sm"
             />
           </div>
 
           {/* Name */}
           <h1 
-            className="text-3xl font-bold mb-3"
-            style={getTypographyStyle('heading')}
+            className="text-3xl font-semibold mb-3 text-[#111827] font-inter"
           >
             {user.full_name || user.github_username}
           </h1>
@@ -247,8 +313,7 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
           {/* Title */}
           {user.profile_title && (
             <p 
-              className="text-lg font-medium mb-4"
-              style={getTypographyStyle('subheading')}
+              className="text-lg font-medium mb-4 text-[#111827] font-inter"
             >
               {user.profile_title}
             </p>
@@ -257,8 +322,7 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
           {/* Bio */}
           {user.bio && (
             <p 
-              className="text-base mb-6 leading-relaxed max-w-lg mx-auto"
-              style={getTypographyStyle('body')}
+              className="text-base mb-6 leading-relaxed max-w-lg mx-auto text-[#111827] font-medium font-inter"
             >
               {user.bio}
             </p>
@@ -266,39 +330,33 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
 
           {/* Location, Company, Join Date */}
           <div 
-            className="flex flex-wrap justify-center items-center gap-6 mb-8"
+            className="flex flex-wrap justify-center items-center gap-6 mb-8 text-[#374151]"
             style={getTypographyStyle('accent')}
           >
             {user.location && (
               <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-gray-700" />
-                <span className="text-sm font-medium">{user.location}</span>
+                <MapPin className="w-4 h-4 text-[#6B7280]" />
+                <span className="text-sm font-medium text-[#374151]">{user.location}</span>
               </div>
             )}
             {user.company && (
               <div className="flex items-center gap-2">
-                <Building className="w-4 h-4 text-gray-700" />
-                <span className="text-sm font-medium">{user.company}</span>
+                <Building className="w-4 h-4 text-[#6B7280]" />
+                <span className="text-sm font-medium text-[#374151]">{user.company}</span>
               </div>
             )}
             {joinedDate && (
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-gray-700" />
-                <span className="text-sm font-medium">Joined {joinedDate}</span>
+                <Calendar className="w-4 h-4 text-[#6B7280]" />
+                <span className="text-sm font-medium text-[#374151]">Joined {joinedDate}</span>
               </div>
             )}
           </div>
 
-          {/* Share Button */}
+          {/* Share Button - Minimalist Light Style */}
           <Button
             onClick={handleShare}
-            className="font-medium px-8 py-3 rounded-full hover:scale-105 transition-all duration-300 shadow-lg mb-8"
-            style={{
-              backgroundColor: appearanceSettings?.link_color || '#3b82f6',
-              color: appearanceSettings?.text_primary_color || '#ffffff',
-              backgroundImage: !appearanceSettings?.link_color ? 'linear-gradient(45deg, #3b82f6, #8b5cf6)' : undefined,
-              boxShadow: '0 4px 20px rgba(59, 130, 246, 0.3)'
-            }}
+            className="font-medium px-8 py-3 rounded-full hover:scale-105 transition-all duration-300 shadow-[0_2px_6px_rgba(0,0,0,0.08)] mb-8 bg-[#2563EB] hover:bg-[#1D4ED8] text-white border-0"
           >
             {copied ? (
               <>
@@ -330,6 +388,7 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
                   onLinkClick={handleLinkClick}
                   variant="light"
                   appearanceSettings={appearanceSettings}
+                  getTypographyStyle={getTypographyStyle}
                 />
               )
             }
@@ -338,13 +397,29 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
               <div key={category} className="mb-10">
                 {/* Category Header */}
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
-                    <IconComponent 
-                      className="w-6 h-6 text-gray-700" 
-                      style={{ color: '#374151' }}
-                    />
+                  <div className="p-3 bg-white border border-[#E5E7EB] rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.08)]">
+                    {(() => {
+                      // For projects category, always show GitHub icon
+                      if (category === 'projects') {
+                        return <Github className="w-6 h-6 text-[#374151]" />
+                      }
+                      
+                      // For blogs category, always show BookOpen icon
+                      if (category === 'blogs') {
+                        return <BookOpen className="w-6 h-6 text-[#374151]" />
+                      }
+                      
+                      // For other categories, use the mapped icon
+                      if (IconComponent && typeof IconComponent === 'function') {
+                        return <IconComponent className="w-6 h-6 text-[#374151]" />
+                      }
+                      
+                      // Fallback
+                      return <ExternalLink className="w-6 h-6 text-[#374151]" />
+                    })()}
                   </div>
-                  <h2 className="text-xl font-bold text-gray-900">
+                  <h2 className="text-xl font-semibold text-[#111827]"
+                      style={getTypographyStyle('heading')}>
                     {config.label}
                   </h2>
                 </div>
@@ -355,7 +430,7 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
                     <div key={link.id}>
                       {link.metadata?.type === 'github_repo' || link.metadata?.type === 'webpage' || link.metadata?.type === 'blog_post' ? (
                         <div className="group">
-                          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg">
+                          <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden transition-all duration-300 transform hover:scale-[1.02] hover:shadow-[0_2px_6px_rgba(0,0,0,0.08)]">
                             <RichLinkPreview 
                               link={link} 
                               onClick={() => handleLinkClick(link)}
@@ -369,27 +444,29 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
                           className="w-full group"
                         >
                           <div 
-                            className="bg-white border border-gray-200 rounded-xl p-6 text-left transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:border-blue-300"
+                            className="bg-white border border-[#E5E7EB] rounded-xl p-6 text-left transition-all duration-300 transform hover:scale-[1.02] hover:shadow-[0_2px_6px_rgba(0,0,0,0.08)] hover:border-[#2563EB]"
                           >
                             <div className="flex items-center gap-4">
-                              <div className="flex-shrink-0 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                              <div className="flex-shrink-0 p-3 bg-[#F3F4F6] border border-[#E5E7EB] rounded-xl">
                                 <div style={{ color: '#374151' }}>
                                   {getLinkIcon(link)}
                                 </div>
                               </div>
                               <div className="flex-grow min-w-0">
-                                <h3 className="text-lg font-semibold mb-1 text-gray-900 transition-colors group-hover:text-blue-600">
+                                <h3 className="text-lg font-semibold mb-1 text-[#111827] transition-colors group-hover:text-[#2563EB]"
+                                    style={getTypographyStyle('heading')}>
                                   {link.title}
                                 </h3>
                                 {link.description && (
-                                  <p className="text-sm text-gray-600 line-clamp-2">
+                                  <p className="text-sm text-[#6B7280] line-clamp-2"
+                                     style={getTypographyStyle('accent')}>
                                     {link.description}
                                   </p>
                                 )}
                               </div>
                               <div className="flex-shrink-0">
                                 <ExternalLink 
-                                  className="w-5 h-5 text-gray-700 transition-colors"
+                                  className="w-5 h-5 text-[#374151] transition-colors"
                                   style={{ color: '#374151' }}
                                 />
                               </div>
@@ -407,27 +484,31 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
 
         {/* No Links Message */}
         {!hasLinks && (
-          <div className="bg-white border border-gray-200 rounded-xl p-10 shadow-sm text-center">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">
+          <div className="bg-white border border-[#E5E7EB] rounded-xl p-10 shadow-[0_2px_6px_rgba(0,0,0,0.08)] text-center">
+            <h2 className="text-xl font-semibold mb-4 text-[#111827]"
+                 style={getTypographyStyle('heading')}>
               No Links Yet
             </h2>
-            <p className="text-gray-600">
+            <p className="text-[#6B7280]"
+               style={getTypographyStyle('body')}>
               This developer hasn&apos;t added any links to their profile yet.
             </p>
           </div>
         )}
 
         {/* Footer */}
-        {!user.is_premium && (
-          <div className="text-center mt-16 pt-8 border-t border-gray-200">
-            <div className="flex items-center justify-center gap-2 text-gray-600">
+        {!user.is_premium && !isPreview && (
+          <div className="text-center mt-16 pt-8 border-t border-[#E5E7EB]">
+            <div className="flex items-center justify-center gap-2 text-[#6B7280]"
+                 style={getTypographyStyle('accent')}>
               <Heart className="w-4 h-4 text-red-500" />
               <span className="text-sm font-medium">Powered by</span>
               <a 
                 href="https://link4coders.com?ref=profile" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                className="text-sm font-bold text-[#2563EB] hover:text-[#1E40AF] transition-colors"
+                style={getTypographyStyle('link')}
               >
                 Link4Coders
               </a>

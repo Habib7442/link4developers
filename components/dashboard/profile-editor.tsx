@@ -5,8 +5,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { ProfileService } from '@/lib/database'
 import { Button } from '@/components/ui/button'
 import { AvatarUpload } from '@/components/ui/avatar-upload'
-import { LivePreview } from '@/components/dashboard/live-preview'
-import { User, Save, ExternalLink, Camera, Check, AlertCircle } from 'lucide-react'
+import { User, Save,  Camera, Check, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface ProfileFormData {
@@ -21,7 +20,7 @@ interface ProfileFormData {
   company: string
   twitter_username: string
   linkedin_url: string
-  avatar_url: string | null
+  avatar_url: string | undefined
   is_public: boolean
 }
 
@@ -39,7 +38,7 @@ export function ProfileEditor() {
     company: '',
     twitter_username: '',
     linkedin_url: '',
-    avatar_url: null,
+    avatar_url: undefined,
     is_public: true
   })
   const [isLoading, setSaving] = useState(false)
@@ -62,7 +61,7 @@ export function ProfileEditor() {
         company: user.company || '',
         twitter_username: user.twitter_username || '',
         linkedin_url: user.linkedin_url || '',
-        avatar_url: user.avatar_url || null,
+        avatar_url: user.avatar_url || undefined,
         is_public: user.is_public ?? true
       })
     }
@@ -97,7 +96,7 @@ export function ProfileEditor() {
     }))
   }
 
-  const handleAvatarUpdate = (avatarUrl: string | null) => {
+  const handleAvatarUpdate = (avatarUrl: string | undefined) => {
     setFormData(prev => ({
       ...prev,
       avatar_url: avatarUrl
@@ -162,93 +161,185 @@ export function ProfileEditor() {
 
   if (!user) {
     return (
-      <div className="glassmorphic rounded-[20px] p-8 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)]">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-[#54E0FF] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[16px] font-light leading-[24px] tracking-[-0.48px] text-[#7a7a83] font-sharp-grotesk">
-            Loading profile...
-          </p>
+      <div className="glassmorphic rounded-[16px] sm:rounded-[20px] p-4 sm:p-8 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)]">
+        <div className="animate-pulse space-y-4 sm:space-y-6">
+          <div className="h-4 sm:h-6 bg-[#28282b] rounded w-1/4"></div>
+          <div className="space-y-3 sm:space-y-4">
+            <div className="h-10 sm:h-12 bg-[#28282b] rounded-[8px]"></div>
+            <div className="h-10 sm:h-12 bg-[#28282b] rounded-[8px]"></div>
+            <div className="h-16 sm:h-20 bg-[#28282b] rounded-[8px]"></div>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-        
-        {/* Basic Information */}
-        <div className="glassmorphic rounded-[20px] p-6 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)]">
-          <h2 className="text-[24px] font-medium leading-[28px] tracking-[-0.72px] font-sharp-grotesk text-white mb-6">
-            Basic Information
-          </h2>
-          
-          <div className="space-y-4">
-            {/* Full Name */}
-            <div>
-              <label className="block text-[14px] font-medium text-white font-sharp-grotesk mb-2">
-                Full Name *
-              </label>
-              <input
-                type="text"
-                value={formData.full_name}
-                onChange={(e) => handleInputChange('full_name', e.target.value)}
-                className="w-full bg-[#28282b] border border-[#33373b] rounded-[8px] px-4 py-3 text-white font-sharp-grotesk text-[14px] focus:outline-none focus:border-[#54E0FF] transition-colors"
-                placeholder="Enter your full name"
-              />
-            </div>
+    <div className="space-y-3 sm:space-y-8 pb-20 sm:pb-8">
+      
+      {/* Current Profile Status */}
+      <div className="glassmorphic rounded-[16px] sm:rounded-[20px] p-4 sm:p-6 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)]">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-[16px] sm:text-[20px] font-medium leading-[20px] sm:leading-[24px] tracking-[-0.48px] sm:tracking-[-0.6px] font-sharp-grotesk text-white mb-1 sm:mb-2">
+              Profile Status
+            </h2>
+            <p className="text-[12px] sm:text-[14px] font-light text-[#7a7a83] font-sharp-grotesk truncate">
+              {formData.full_name ? `${formData.full_name} - ${formData.profile_title || 'No title set'}` : 'Complete your profile information'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <User className="w-4 h-4 sm:w-5 sm:h-5 text-[#54E0FF]" />
+            <span className="text-[12px] sm:text-[14px] font-medium text-[#54E0FF] font-sharp-grotesk">
+              {formData.is_public ? 'Public' : 'Private'}
+            </span>
+          </div>
+        </div>
+      </div>
 
-            {/* Profile Title */}
-            <div>
-              <label className="block text-[14px] font-medium text-white font-sharp-grotesk mb-2">
-                Profile Title
-              </label>
-              <input
-                type="text"
-                value={formData.profile_title}
-                onChange={(e) => handleInputChange('profile_title', e.target.value)}
-                className="w-full bg-[#28282b] border border-[#33373b] rounded-[8px] px-4 py-3 text-white font-sharp-grotesk text-[14px] focus:outline-none focus:border-[#54E0FF] transition-colors"
-                placeholder="e.g., Full Stack Developer, Frontend Engineer"
-              />
+      {/* Current Profile Picture */}
+      <div className="glassmorphic rounded-[20px] p-8 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)]">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-[24px] font-medium leading-[28px] tracking-[-0.72px] font-sharp-grotesk text-white">
+            Profile Picture
+          </h2>
+          <div className="flex items-center gap-2">
+            <Camera className="w-5 h-5 text-[#54E0FF]" />
+            <span className="text-[14px] font-medium text-[#54E0FF] font-sharp-grotesk">
+              {formData.avatar_url ? 'Customized' : 'Default'}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center text-center">
+          <div className="mb-8">
+            <AvatarUpload
+              currentAvatarUrl={formData.avatar_url}
+              onAvatarUpdate={(url) => handleAvatarUpdate(url || undefined)}
+              size="lg"
+              className="w-32 h-32"
+            />
+          </div>
+          <div className="max-w-md">
+            <p className="text-[16px] font-light text-[#7a7a83] font-sharp-grotesk mb-4">
+              Upload a profile picture to make your profile more personal.
+            </p>
+            <ul className="text-[14px] font-light text-[#7a7a83] font-sharp-grotesk space-y-2 mb-6">
+              <li>• Recommended size: 200×200px</li>
+              <li>• Formats: JPEG, PNG, WebP, GIF</li>
+              <li>• Max size: 5MB</li>
+            </ul>
+
+            {formData.avatar_url && (
+              <Button
+                onClick={async () => {
+                  try {
+                    setSaving(true)
+                    await ProfileService.updateUserProfile(user!.id, { avatar_url: undefined })
+                    handleAvatarUpdate(undefined)
+                    toast.success('Avatar removed successfully!')
+                  } catch (error) {
+                    console.error('Remove avatar error:', error)
+                    toast.error('Failed to remove avatar')
+                  } finally {
+                    setSaving(false)
+                  }
+                }}
+                variant="outline"
+                size="sm"
+                className="text-red-400 border-red-400/20 hover:bg-red-400/10 hover:border-red-400/40 text-[14px] py-2 px-4"
+              >
+                Remove Avatar
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Profile Editor Form */}
+      <div className="glassmorphic rounded-[16px] sm:rounded-[20px] p-4 sm:p-8 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)]">
+        <h2 className="text-[20px] sm:text-[24px] font-medium leading-[24px] sm:leading-[28px] tracking-[-0.6px] sm:tracking-[-0.72px] font-sharp-grotesk text-white mb-4 sm:mb-6">
+          Edit Your Profile
+        </h2>
+        
+        <div className="space-y-6 sm:space-y-8">
+          
+          {/* Basic Information Section */}
+          <div className="space-y-4 sm:space-y-6">
+            <h3 className="text-[16px] sm:text-[18px] font-medium leading-[20px] sm:leading-[22px] tracking-[-0.48px] sm:tracking-[-0.54px] font-sharp-grotesk text-white border-b border-[#33373b] pb-2 sm:pb-3">
+              Basic Information
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              {/* Full Name */}
+              <div className="md:col-span-2 lg:col-span-1">
+                <label className="block text-[12px] sm:text-[14px] font-medium text-white font-sharp-grotesk mb-2">
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.full_name}
+                  onChange={(e) => handleInputChange('full_name', e.target.value)}
+                  className="w-full bg-[#28282b] border border-[#33373b] rounded-[6px] sm:rounded-[8px] px-3 sm:px-4 py-2 sm:py-3 text-white font-sharp-grotesk text-[13px] sm:text-[14px] focus:outline-none focus:border-[#54E0FF] transition-colors"
+                  placeholder="Enter your full name"
+                />
+              </div>
+
+              {/* Profile Title */}
+              <div className="md:col-span-2 lg:col-span-1">
+                <label className="block text-[12px] sm:text-[14px] font-medium text-white font-sharp-grotesk mb-2">
+                  Profile Title
+                </label>
+                <input
+                  type="text"
+                  value={formData.profile_title}
+                  onChange={(e) => handleInputChange('profile_title', e.target.value)}
+                  className="w-full bg-[#28282b] border border-[#33373b] rounded-[6px] sm:rounded-[8px] px-3 sm:px-4 py-2 sm:py-3 text-white font-sharp-grotesk text-[13px] sm:text-[14px] focus:outline-none focus:border-[#54E0FF] transition-colors"
+                  placeholder="e.g., Full Stack Developer"
+                />
+              </div>
             </div>
 
             {/* Bio */}
             <div>
-              <label className="block text-[14px] font-medium text-white font-sharp-grotesk mb-2">
+              <label className="block text-[12px] sm:text-[14px] font-medium text-white font-sharp-grotesk mb-2">
                 Bio
               </label>
               <textarea
                 value={formData.bio}
                 onChange={(e) => handleInputChange('bio', e.target.value)}
-                rows={4}
-                className="w-full bg-[#28282b] border border-[#33373b] rounded-[8px] px-4 py-3 text-white font-sharp-grotesk text-[14px] focus:outline-none focus:border-[#54E0FF] transition-colors resize-none thin-scrollbar"
-                placeholder="Tell visitors about yourself, your skills, and what you're passionate about..."
+                rows={3}
+                className="w-full bg-[#28282b] border border-[#33373b] rounded-[6px] sm:rounded-[8px] px-3 sm:px-4 py-2 sm:py-3 text-white font-sharp-grotesk text-[13px] sm:text-[14px] focus:outline-none focus:border-[#54E0FF] transition-colors resize-none"
+                placeholder="Tell visitors about yourself..."
               />
-              <p className="text-[12px] text-[#7a7a83] font-sharp-grotesk mt-1">
+              <p className="text-[10px] sm:text-[12px] text-[#7a7a83] font-sharp-grotesk mt-1">
                 {formData.bio.length}/500 characters
               </p>
             </div>
 
             {/* Profile URL */}
             <div>
-              <label className="block text-[14px] font-medium text-white font-sharp-grotesk mb-2">
+              <label className="block text-[12px] sm:text-[14px] font-medium text-white font-sharp-grotesk mb-2">
                 Profile URL *
               </label>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 flex items-center bg-[#28282b] border border-[#33373b] rounded-[8px] overflow-hidden">
-                  <span className="px-4 py-3 text-[#7a7a83] font-sharp-grotesk text-[14px] border-r border-[#33373b]">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                <div className="w-full sm:flex-1 flex items-center bg-[#28282b] border border-[#33373b] rounded-[6px] sm:rounded-[8px] overflow-hidden">
+                  <span className="px-2 sm:px-4 py-2 sm:py-3 text-[#7a7a83] font-sharp-grotesk text-[11px] sm:text-[14px] border-r border-[#33373b] whitespace-nowrap">
                     link4coders.com/
                   </span>
                   <input
                     type="text"
                     value={formData.profile_slug}
                     onChange={(e) => handleInputChange('profile_slug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                    className="flex-1 bg-transparent px-4 py-3 text-white font-sharp-grotesk text-[14px] focus:outline-none"
+                    className="flex-1 bg-transparent px-2 sm:px-4 py-2 sm:py-3 text-white font-sharp-grotesk text-[13px] sm:text-[14px] focus:outline-none min-w-0"
                     placeholder="your-username"
                   />
                 </div>
                 <Button
                   onClick={generateSlugFromName}
-                  className="bg-transparent border border-[#33373b] text-[#7a7a83] hover:text-white hover:border-[#54E0FF]/30 px-3 py-2 text-[12px]"
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto border-[#33373b] text-[#7a7a83] hover:text-white hover:border-[#54E0FF]/30 text-[11px] sm:text-[12px] h-8 sm:h-auto py-2 px-3"
                 >
                   Generate
                 </Button>
@@ -258,19 +349,19 @@ export function ProfileEditor() {
               {formData.profile_slug && formData.profile_slug !== user.profile_slug && (
                 <div className="flex items-center gap-2 mt-2">
                   {checkingSlug ? (
-                    <div className="w-4 h-4 border-2 border-[#54E0FF] border-t-transparent rounded-full animate-spin" />
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-[#54E0FF] border-t-transparent rounded-full animate-spin" />
                   ) : slugAvailable === true ? (
-                    <Check className="w-4 h-4 text-green-500" />
+                    <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
                   ) : slugAvailable === false ? (
-                    <AlertCircle className="w-4 h-4 text-red-500" />
+                    <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />
                   ) : null}
                   
-                  <span className={`text-[12px] font-sharp-grotesk ${
+                  <span className={`text-[11px] sm:text-[12px] font-sharp-grotesk ${
                     checkingSlug ? 'text-[#7a7a83]' :
                     slugAvailable === true ? 'text-green-500' :
                     slugAvailable === false ? 'text-red-500' : 'text-[#7a7a83]'
                   }`}>
-                    {checkingSlug ? 'Checking availability...' :
+                    {checkingSlug ? 'Checking...' :
                      slugAvailable === true ? 'Available!' :
                      slugAvailable === false ? 'Already taken' : ''}
                   </span>
@@ -278,110 +369,67 @@ export function ProfileEditor() {
               )}
             </div>
           </div>
-        </div>
 
-        {/* Avatar Upload Section */}
-        <div className="glassmorphic rounded-[20px] p-6 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)]">
-          <h2 className="text-[24px] font-medium leading-[28px] tracking-[-0.72px] font-sharp-grotesk text-white mb-6">
-            Profile Picture
-          </h2>
+          {/* Professional Information Section */}
+          <div className="space-y-4 sm:space-y-6">
+            <h3 className="text-[16px] sm:text-[18px] font-medium leading-[20px] sm:leading-[22px] tracking-[-0.48px] sm:tracking-[-0.54px] font-sharp-grotesk text-white border-b border-[#33373b] pb-2 sm:pb-3">
+              Professional Information
+            </h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              {/* Company */}
+              <div>
+                <label className="block text-[12px] sm:text-[14px] font-medium text-white font-sharp-grotesk mb-2">
+                  Company
+                </label>
+                <input
+                  type="text"
+                  value={formData.company}
+                  onChange={(e) => handleInputChange('company', e.target.value)}
+                  className="w-full bg-[#28282b] border border-[#33373b] rounded-[6px] sm:rounded-[8px] px-3 sm:px-4 py-2 sm:py-3 text-white font-sharp-grotesk text-[13px] sm:text-[14px] focus:outline-none focus:border-[#54E0FF] transition-colors"
+                  placeholder="Your current company"
+                />
+              </div>
 
-          <div className="flex items-start gap-6">
-            <AvatarUpload
-              currentAvatarUrl={formData.avatar_url}
-              onAvatarUpdate={handleAvatarUpdate}
-              size="lg"
-            />
-            <div className="flex-1">
-              <p className="text-[14px] font-light text-[#7a7a83] font-sharp-grotesk mb-3">
-                Upload a profile picture to make your profile more personal and recognizable.
-              </p>
-              <ul className="text-[12px] font-light text-[#7a7a83] font-sharp-grotesk space-y-1 mb-4">
-                <li>• Recommended size: 200x200px or larger</li>
-                <li>• Supported formats: JPEG, PNG, WebP, GIF</li>
-                <li>• Maximum file size: 5MB</li>
-                <li>• Image will be automatically cropped to square</li>
-              </ul>
-
-              {formData.avatar_url && (
-                <Button
-                  onClick={async () => {
-                    try {
-                      setSaving(true)
-                      const { error } = await ProfileService.updateUserProfile(user!.id, { avatar_url: null })
-                      if (error) throw error
-                      handleAvatarUpdate(null)
-                      toast.success('Avatar removed successfully!')
-                    } catch (error) {
-                      console.error('Remove avatar error:', error)
-                      toast.error('Failed to remove avatar')
-                    } finally {
-                      setSaving(false)
-                    }
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="text-red-400 border-red-400/20 hover:bg-red-400/10 hover:border-red-400/40"
-                >
-                  Remove Avatar
-                </Button>
-              )}
+              {/* Location */}
+              <div>
+                <label className="block text-[12px] sm:text-[14px] font-medium text-white font-sharp-grotesk mb-2">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => handleInputChange('location', e.target.value)}
+                  className="w-full bg-[#28282b] border border-[#33373b] rounded-[6px] sm:rounded-[8px] px-3 sm:px-4 py-2 sm:py-3 text-white font-sharp-grotesk text-[13px] sm:text-[14px] focus:outline-none focus:border-[#54E0FF] transition-colors"
+                  placeholder="City, Country"
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Professional Information */}
-        <div className="glassmorphic rounded-[20px] p-6 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)]">
-          <h2 className="text-[24px] font-medium leading-[28px] tracking-[-0.72px] font-sharp-grotesk text-white mb-6">
-            Professional Information
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Company */}
-            <div>
-              <label className="block text-[14px] font-medium text-white font-sharp-grotesk mb-2">
-                Company
-              </label>
-              <input
-                type="text"
-                value={formData.company}
-                onChange={(e) => handleInputChange('company', e.target.value)}
-                className="w-full bg-[#28282b] border border-[#33373b] rounded-[8px] px-4 py-3 text-white font-sharp-grotesk text-[14px] focus:outline-none focus:border-[#54E0FF] transition-colors"
-                placeholder="Your current company"
-              />
-            </div>
-
-            {/* Location */}
-            <div>
-              <label className="block text-[14px] font-medium text-white font-sharp-grotesk mb-2">
-                Location
-              </label>
-              <input
-                type="text"
-                value={formData.location}
-                onChange={(e) => handleInputChange('location', e.target.value)}
-                className="w-full bg-[#28282b] border border-[#33373b] rounded-[8px] px-4 py-3 text-white font-sharp-grotesk text-[14px] focus:outline-none focus:border-[#54E0FF] transition-colors"
-                placeholder="City, Country"
-              />
-            </div>
-          </div>
         </div>
 
         {/* Save Button */}
-        <div className="flex justify-end">
+        <div className="flex justify-center mt-6 sm:mt-8">
           <Button
             onClick={handleSave}
             disabled={isLoading || slugAvailable === false}
-            className="bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] text-[#18181a] hover:from-[#29ADFF] hover:to-[#54E0FF] font-medium text-[16px] tracking-[-0.48px] font-sharp-grotesk rounded-[12px] px-8 py-3 flex items-center gap-2"
+            className="bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] text-[#18181a] hover:opacity-90 px-6 sm:px-8 py-2 sm:py-3 text-[13px] sm:text-[14px]"
           >
             {isLoading ? (
-              <div className="w-4 h-4 border-2 border-[#18181a] border-t-transparent rounded-full animate-spin" />
+              <>
+                <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-[#18181a] border-t-transparent rounded-full animate-spin mr-2" />
+                Saving...
+              </>
             ) : (
-              <Save className="w-4 h-4" />
+              <>
+                <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                Save Changes
+              </>
             )}
-            {isLoading ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
+      </div>
     </div>
   )
 }

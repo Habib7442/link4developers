@@ -1,20 +1,85 @@
 /* Mobile padding fixes */
 .dashboard-form-container {
   padding-bottom: 8rem; /* Extra padding on mobile */
-  padding-left: 0.75rem; /* Balanced horizontal padding on mobile */
-  padding-right: 0.75rem;
+  padding-left: 0.5rem; /* Minimal horizontal padding on mobile */
+  padding-right: 0.5rem;
   max-width: 100%;
-  width: 95%; /* Increased width on mobile for better visibility */
+  width: 100%; /* Full width on mobile for better visibility */
   margin-left: auto;
   margin-right: auto;
+}
+
+/* Responsive width system using CSS custom properties */
+.dashboard-form-container {
+  --container-max-width: 320px; /* Default for mobile */
 }
 
 @media (min-width: 640px) {
   .dashboard-form-container {
     padding-bottom: 2rem; /* Normal padding on desktop */
+    padding-left: 1rem;
+    padding-right: 1rem;
+    width: 100%; /* Full width on desktop */
+    --container-max-width: 400px; /* Small devices */
+  }
+}
+
+@media (min-width: 768px) {
+  .dashboard-form-container {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
-    width: 100%; /* Full width on desktop */
+    --container-max-width: 500px; /* Medium devices */
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-form-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+    --container-max-width: 600px; /* Large devices */
+  }
+}
+
+@media (min-width: 1280px) {
+  .dashboard-form-container {
+    --container-max-width: 700px; /* XL devices */
+  }
+}
+
+@media (min-width: 1536px) {
+  .dashboard-form-container {
+    --container-max-width: 800px; /* 2XL devices */
+  }
+}
+
+/* Utility class for responsive containers */
+.responsive-container {
+  max-width: var(--container-max-width, 320px);
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Alternative approach using CSS Grid for better control */
+.responsive-grid-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  max-width: var(--container-max-width, 320px);
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-grid-container {
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .responsive-grid-container {
+    gap: 2rem;
   }
 }
 
@@ -159,5 +224,25 @@
   
   .custom-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+  
+  /* Ensure content is fully visible on mobile */
+  .mobile-safe-area {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  
+  /* Improve button spacing on mobile */
+  .mobile-safe-area button {
+    min-height: 2.5rem;
+  }
+}
+
+/* Additional responsive improvements for medium devices */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .dashboard-form-container {
+    max-width: 95%;
+    margin-left: auto;
+    margin-right: auto;
   }
 }

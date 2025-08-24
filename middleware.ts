@@ -209,8 +209,8 @@ export function middleware(request: NextRequest) {
       const allowedDomains = [
         'localhost',
         '127.0.0.1',
-        'link4coders.com',
-        'www.link4coders.com'
+        'link4coders.in',
+        'www.link4coders.in'
       ]
       
       const isAllowedDomain = allowedDomains.some(domain => 

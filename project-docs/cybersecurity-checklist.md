@@ -93,7 +93,7 @@ This document outlines the **security practices and policies** for Link4Coders t
 
 ## 11. Responsible Disclosure  
 We encourage security researchers to responsibly disclose vulnerabilities.  
-- Email: `security@link4coders.com`  
+- Email: `security@link4coders.in`  
 - Response time: within **48 hours**.  
 - Bounty program planned for verified vulnerabilities.  
 

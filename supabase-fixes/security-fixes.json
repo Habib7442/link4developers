@@ -1,0 +1,63 @@
+[
+  {
+    "name": "function_search_path_mutable",
+    "title": "Function Search Path Mutable - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "SECURITY"
+    ],
+    "description": "Previously detected functions where the search_path parameter was not set. This issue has been resolved.",
+    "detail": "All functions in the public schema now have explicit search_path settings.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0011_function_search_path_mutable",
+    "metadata": {
+      "name": "update_updated_at_column",
+      "type": "function",
+      "schema": "public"
+    },
+    "cache_key": "function_search_path_mutable_public_update_updated_at_column_06bcf30ac3d0a7f279a54cbf228a7bec",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by setting explicit search_path in all functions. See fix-search-path.sql for details."
+  },
+  {
+    "name": "auth_otp_long_expiry",
+    "title": "Auth OTP long expiry - ACTION REQUIRED",
+    "level": "WARN",
+    "facing": "EXTERNAL",
+    "categories": [
+      "SECURITY"
+    ],
+    "description": "OTP expiry exceeds recommended threshold. Manual action required.",
+    "detail": "You need to manually set the email OTP expiry to 3600 seconds (1 hour) or less in the Supabase Dashboard.",
+    "cache_key": "auth_otp_long_expiry",
+    "remediation": "https://supabase.com/docs/guides/platform/going-into-prod#security",
+    "metadata": {
+      "type": "auth",
+      "entity": "Auth"
+    },
+    "status": "PENDING_MANUAL_ACTION",
+    "resolution_date": null,
+    "notes": "See auth-security-fixes.md for detailed instructions."
+  },
+  {
+    "name": "auth_leaked_password_protection",
+    "title": "Leaked Password Protection Disabled - ACTION REQUIRED",
+    "level": "WARN",
+    "facing": "EXTERNAL",
+    "categories": [
+      "SECURITY"
+    ],
+    "description": "Leaked password protection is currently disabled. Manual action required.",
+    "detail": "You need to manually enable leaked password protection in the Supabase Dashboard.",
+    "cache_key": "auth_leaked_password_protection",
+    "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection",
+    "metadata": {
+      "type": "auth",
+      "entity": "Auth"
+    },
+    "status": "PENDING_MANUAL_ACTION",
+    "resolution_date": null,
+    "notes": "See auth-security-fixes.md for detailed instructions."
+  }
+]

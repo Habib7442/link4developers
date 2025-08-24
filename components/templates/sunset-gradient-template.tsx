@@ -543,7 +543,7 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
               <p className="text-[15px] font-semibold text-[#444444] font-inter">
                 Powered by{' '}
                 <a 
-                  href="https://link4coders.com?ref=profile" 
+                  href="https://link4coders.in?ref=profile" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-[#FF6F61] hover:text-[#E55B50] transition-colors font-bold"

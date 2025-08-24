@@ -563,7 +563,7 @@ export function CyberpunkNeonTemplate({ user, links, appearanceSettings, categor
                 <p className="text-[14px] font-medium text-[#D1D5DB] font-inter">
                   Powered by{' '}
                   <a 
-                    href="https://link4coders.com?ref=profile" 
+                    href="https://link4coders.in?ref=profile" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-[#FF00FF] hover:text-[#00F5FF] transition-colors font-bold"

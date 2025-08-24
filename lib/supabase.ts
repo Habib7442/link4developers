@@ -40,6 +40,52 @@ export interface User {
   updated_at: string
 }
 
+// User Settings types
+export interface UserSettings {
+  id: string
+  user_id: string
+  
+  // Notification Preferences
+  email_notifications: boolean
+  new_follower_notifications: boolean
+  link_click_notifications: boolean
+  marketing_emails: boolean
+  
+  // Privacy Settings
+  show_github_activity: boolean
+  show_view_count: boolean
+  share_link_analytics: boolean
+  indexed_by_search_engines: boolean
+  
+  // Account Settings
+  timezone: string
+  date_format: string
+  language: string
+  
+  // Profile Visibility
+  is_premium_status_visible: boolean
+  show_join_date: boolean
+  show_project_count: boolean
+  
+  // Metadata
+  created_at: string
+  updated_at: string
+}
+
+// Analytics types
+export interface ProfileView {
+  id: string
+  user_id: string
+  viewer_ip: string
+  viewer_country?: string
+  viewer_city?: string
+  viewer_browser?: string
+  viewer_os?: string
+  referer_url?: string
+  is_unique: boolean
+  viewed_at: string
+}
+
 // Template system types
 export type TemplateId = 'developer-dark' | 'minimalist-light' | 'github-focus' | 'gta-vice-city' | 'cyberpunk-neon' | 'sunset-gradient'
 

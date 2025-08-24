@@ -212,7 +212,7 @@ export function DashboardLayout({
               Your profile URL:
             </p>
             <span className="text-[12px] sm:text-[14px] font-medium text-[#54E0FF] font-sharp-grotesk break-all">
-              link4coders.com/
+              link4coders.in/
               {user.profile_slug ||
                 user.github_username ||
                 user.email?.split("@")[0] ||

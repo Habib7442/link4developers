@@ -553,7 +553,7 @@ export function DeveloperDarkTemplate({ user, links, appearanceSettings, categor
               >
                 Powered by{' '}
                 <a
-                  href="https://link4coders.com?ref=profile"
+                  href="https://link4coders.in?ref=profile"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="transition-colors font-medium hover:opacity-80"

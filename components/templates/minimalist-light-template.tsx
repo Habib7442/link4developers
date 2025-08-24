@@ -504,7 +504,7 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
               <Heart className="w-4 h-4 text-red-500" />
               <span className="text-sm font-medium">Powered by</span>
               <a 
-                href="https://link4coders.com?ref=profile" 
+                href="https://link4coders.in?ref=profile" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-sm font-bold text-[#2563EB] hover:text-[#1E40AF] transition-colors"

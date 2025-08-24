@@ -466,7 +466,7 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
                  style={getTypographyStyle('accent')}>
                 Powered by{' '}
                 <a 
-                  href="https://link4coders.com?ref=profile" 
+                  href="https://link4coders.in?ref=profile" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-[#58A6FF] hover:text-[#1F6FEB] transition-colors font-medium"

@@ -52,7 +52,7 @@ export async function generateMetadata({ params }: PublicProfilePageProps): Prom
 
     const title = `${user.full_name || user.github_username || 'Developer'} - Link4Coders`
     const description = user.bio || `Check out ${user.full_name || user.github_username || 'this developer'}'s profile on Link4Coders`
-    const profileUrl = `https://link4coders.com/${resolvedParams.username}`
+    const profileUrl = `https://link4coders.in/${resolvedParams.username}`
 
     return {
       title,
@@ -96,7 +96,7 @@ export async function generateMetadata({ params }: PublicProfilePageProps): Prom
           }
         ] : [
           {
-            url: 'https://link4coders.com/og-default.png',
+            url: 'https://link4coders.in/og-default.png',
             width: 1200,
             height: 630,
             alt: 'Link4Coders - Developer Profiles'
@@ -109,7 +109,7 @@ export async function generateMetadata({ params }: PublicProfilePageProps): Prom
         card: 'summary_large_image',
         title,
         description,
-        images: user.avatar_url ? [user.avatar_url] : ['https://link4coders.com/og-default.png'],
+        images: user.avatar_url ? [user.avatar_url] : ['https://link4coders.in/og-default.png'],
         creator: user.twitter_username ? `@${user.twitter_username}` : '@link4coders',
         site: '@link4coders'
       },

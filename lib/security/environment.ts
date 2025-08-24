@@ -81,8 +81,8 @@ export function getSecureConfig() {
       // CORS settings
       allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || [
         'http://localhost:3000',
-        'https://link4coders.com',
-        'https://www.link4coders.com'
+        'https://link4coders.in',
+        'https://www.link4coders.in'
       ],
       
       // Security headers

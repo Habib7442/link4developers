@@ -50,7 +50,7 @@
 ### 4.4 Premium Features  
 - Branding removal.  
 - Exclusive templates access.  
-- Custom domains (`username.link4coders.com` → `username.dev`).  
+- Custom domains (`username.link4coders.in` → `username.dev`).  
 - Analytics (profile views, link clicks).  
 - Early access to limited templates.  
 

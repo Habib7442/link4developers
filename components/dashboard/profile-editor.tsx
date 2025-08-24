@@ -325,7 +325,7 @@ export function ProfileEditor() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                 <div className="w-full sm:flex-1 flex items-center bg-[#28282b] border border-[#33373b] rounded-[6px] sm:rounded-[8px] overflow-hidden">
                   <span className="px-2 sm:px-4 py-2 sm:py-3 text-[#7a7a83] font-sharp-grotesk text-[11px] sm:text-[14px] border-r border-[#33373b] whitespace-nowrap">
-                    link4coders.com/
+                    link4coders.in/
                   </span>
                   <input
                     type="text"

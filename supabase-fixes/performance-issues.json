@@ -1,0 +1,401 @@
+[
+  {
+    "name": "auth_rls_initplan",
+    "title": "Auth RLS Initialization Plan - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected policies where auth.uid() was being unnecessarily re-evaluated for each row. This issue has been resolved.",
+    "detail": "All RLS policies now use (select auth.uid()) to evaluate the function once per query rather than once per row.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0003_auth_rls_initplan",
+    "metadata": {
+      "name": "users",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "auth_rls_init_plan_public_users_Users can view their own profile",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by replacing auth.uid() with (select auth.uid()) in all RLS policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "auth_rls_initplan",
+    "title": "Auth RLS Initialization Plan - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected policies where auth.uid() was being unnecessarily re-evaluated for each row. This issue has been resolved.",
+    "detail": "All RLS policies now use (select auth.uid()) to evaluate the function once per query rather than once per row.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0003_auth_rls_initplan",
+    "metadata": {
+      "name": "users",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "auth_rls_init_plan_public_users_Users can update their own profile",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by replacing auth.uid() with (select auth.uid()) in all RLS policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "auth_rls_initplan",
+    "title": "Auth RLS Initialization Plan - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected policies where auth.uid() was being unnecessarily re-evaluated for each row. This issue has been resolved.",
+    "detail": "All RLS policies now use (select auth.uid()) to evaluate the function once per query rather than once per row.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0003_auth_rls_initplan",
+    "metadata": {
+      "name": "users",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "auth_rls_init_plan_public_users_Users can insert their own profile",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by replacing auth.uid() with (select auth.uid()) in all RLS policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "multiple_permissive_policies",
+    "title": "Multiple Permissive Policies - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected multiple permissive policies on the same table for the same role and action. This issue has been resolved.",
+    "detail": "Multiple permissive policies have been consolidated into single policies to avoid performance degradation.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies",
+    "metadata": {
+      "name": "user_appearance_settings",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "multiple_permissive_policies_public_user_appearance_settings_anon_SELECT",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by consolidating multiple permissive policies into single policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "multiple_permissive_policies",
+    "title": "Multiple Permissive Policies - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected multiple permissive policies on the same table for the same role and action. This issue has been resolved.",
+    "detail": "Multiple permissive policies have been consolidated into single policies to avoid performance degradation.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies",
+    "metadata": {
+      "name": "user_appearance_settings",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "multiple_permissive_policies_public_user_appearance_settings_authenticated_SELECT",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by consolidating multiple permissive policies into single policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "multiple_permissive_policies",
+    "title": "Multiple Permissive Policies - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected multiple permissive policies on the same table for the same role and action. This issue has been resolved.",
+    "detail": "Multiple permissive policies have been consolidated into single policies to avoid performance degradation.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies",
+    "metadata": {
+      "name": "user_appearance_settings",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "multiple_permissive_policies_public_user_appearance_settings_authenticator_SELECT",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by consolidating multiple permissive policies into single policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "multiple_permissive_policies",
+    "title": "Multiple Permissive Policies - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected multiple permissive policies on the same table for the same role and action. This issue has been resolved.",
+    "detail": "Multiple permissive policies have been consolidated into single policies to avoid performance degradation.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies",
+    "metadata": {
+      "name": "user_appearance_settings",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "multiple_permissive_policies_public_user_appearance_settings_dashboard_user_SELECT",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by consolidating multiple permissive policies into single policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "multiple_permissive_policies",
+    "title": "Multiple Permissive Policies - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected multiple permissive policies on the same table for the same role and action. This issue has been resolved.",
+    "detail": "Multiple permissive policies have been consolidated into single policies to avoid performance degradation.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies",
+    "metadata": {
+      "name": "user_category_settings",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "multiple_permissive_policies_public_user_category_settings_anon_SELECT",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by consolidating multiple permissive policies into single policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "multiple_permissive_policies",
+    "title": "Multiple Permissive Policies - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected multiple permissive policies on the same table for the same role and action. This issue has been resolved.",
+    "detail": "Multiple permissive policies have been consolidated into single policies to avoid performance degradation.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies",
+    "metadata": {
+      "name": "user_category_settings",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "multiple_permissive_policies_public_user_category_settings_authenticated_SELECT",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by consolidating multiple permissive policies into single policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "multiple_permissive_policies",
+    "title": "Multiple Permissive Policies - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected multiple permissive policies on the same table for the same role and action. This issue has been resolved.",
+    "detail": "Multiple permissive policies have been consolidated into single policies to avoid performance degradation.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies",
+    "metadata": {
+      "name": "user_category_settings",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "multiple_permissive_policies_public_user_category_settings_authenticator_SELECT",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by consolidating multiple permissive policies into single policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "multiple_permissive_policies",
+    "title": "Multiple Permissive Policies - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected multiple permissive policies on the same table for the same role and action. This issue has been resolved.",
+    "detail": "Multiple permissive policies have been consolidated into single policies to avoid performance degradation.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies",
+    "metadata": {
+      "name": "user_category_settings",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "multiple_permissive_policies_public_user_category_settings_dashboard_user_SELECT",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by consolidating multiple permissive policies into single policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "multiple_permissive_policies",
+    "title": "Multiple Permissive Policies - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected multiple permissive policies on the same table for the same role and action. This issue has been resolved.",
+    "detail": "Multiple permissive policies have been consolidated into single policies to avoid performance degradation.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies",
+    "metadata": {
+      "name": "user_links",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "multiple_permissive_policies_public_user_links_anon_SELECT",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by consolidating multiple permissive policies into single policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "multiple_permissive_policies",
+    "title": "Multiple Permissive Policies - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected multiple permissive policies on the same table for the same role and action. This issue has been resolved.",
+    "detail": "Multiple permissive policies have been consolidated into single policies to avoid performance degradation.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies",
+    "metadata": {
+      "name": "user_links",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "multiple_permissive_policies_public_user_links_authenticated_SELECT",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by consolidating multiple permissive policies into single policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "multiple_permissive_policies",
+    "title": "Multiple Permissive Policies - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected multiple permissive policies on the same table for the same role and action. This issue has been resolved.",
+    "detail": "Multiple permissive policies have been consolidated into single policies to avoid performance degradation.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies",
+    "metadata": {
+      "name": "user_links",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "multiple_permissive_policies_public_user_links_authenticator_SELECT",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by consolidating multiple permissive policies into single policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "multiple_permissive_policies",
+    "title": "Multiple Permissive Policies - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected multiple permissive policies on the same table for the same role and action. This issue has been resolved.",
+    "detail": "Multiple permissive policies have been consolidated into single policies to avoid performance degradation.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies",
+    "metadata": {
+      "name": "user_links",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "multiple_permissive_policies_public_user_links_dashboard_user_SELECT",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by consolidating multiple permissive policies into single policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "multiple_permissive_policies",
+    "title": "Multiple Permissive Policies - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected multiple permissive policies on the same table for the same role and action. This issue has been resolved.",
+    "detail": "Multiple permissive policies have been consolidated into single policies to avoid performance degradation.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies",
+    "metadata": {
+      "name": "users",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "multiple_permissive_policies_public_users_anon_SELECT",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by consolidating multiple permissive policies into single policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "multiple_permissive_policies",
+    "title": "Multiple Permissive Policies - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected multiple permissive policies on the same table for the same role and action. This issue has been resolved.",
+    "detail": "Multiple permissive policies have been consolidated into single policies to avoid performance degradation.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies",
+    "metadata": {
+      "name": "users",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "multiple_permissive_policies_public_users_authenticated_SELECT",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by consolidating multiple permissive policies into single policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "multiple_permissive_policies",
+    "title": "Multiple Permissive Policies - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected multiple permissive policies on the same table for the same role and action. This issue has been resolved.",
+    "detail": "Multiple permissive policies have been consolidated into single policies to avoid performance degradation.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies",
+    "metadata": {
+      "name": "users",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "multiple_permissive_policies_public_users_authenticator_SELECT",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by consolidating multiple permissive policies into single policies. See fix-performance-issues.sql for details."
+  },
+  {
+    "name": "multiple_permissive_policies",
+    "title": "Multiple Permissive Policies - FIXED",
+    "level": "INFO",
+    "facing": "EXTERNAL",
+    "categories": [
+      "PERFORMANCE"
+    ],
+    "description": "Previously detected multiple permissive policies on the same table for the same role and action. This issue has been resolved.",
+    "detail": "Multiple permissive policies have been consolidated into single policies to avoid performance degradation.",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies",
+    "metadata": {
+      "name": "users",
+      "type": "table",
+      "schema": "public"
+    },
+    "cache_key": "multiple_permissive_policies_public_users_dashboard_user_SELECT",
+    "status": "RESOLVED",
+    "resolution_date": "2025-08-24",
+    "notes": "Fixed by consolidating multiple permissive policies into single policies. See fix-performance-issues.sql for details."
+  }
+]

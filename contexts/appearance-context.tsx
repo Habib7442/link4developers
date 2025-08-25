@@ -13,6 +13,7 @@ interface AppearanceContextType {
   updateSettings: (updates: Partial<UserAppearanceSettings>) => void
   saveSettings: () => Promise<boolean>
   resetSettings: () => Promise<boolean>
+  refreshSettings: () => Promise<void>  // Add refresh method
   hasUnsavedChanges: boolean
   previewSettings: UserAppearanceSettings | null // For real-time preview
 }
@@ -35,38 +36,56 @@ export function AppearanceProvider({ children }: AppearanceProviderProps) {
   // Debounce the preview settings to avoid excessive re-renders
   const debouncedPreviewSettings = useDebounce(tempPreviewSettings, 150)
 
-  // Load settings on mount or user change
-  useEffect(() => {
-    const loadSettings = async () => {
-      if (!user?.id) {
-        setSettings(null)
-        setPreviewSettings(null)
-        setLoading(false)
-        return
-      }
-
-      try {
-        setLoading(true)
-        setError(null)
-        
-        const userSettings = await AppearanceService.getUserAppearanceSettings(user.id)
-        setSettings(userSettings)
-        setPreviewSettings(userSettings)
-        setTempPreviewSettings(userSettings)
-        setHasUnsavedChanges(false)
-      } catch (err) {
-        console.error('Error loading appearance settings:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load settings')
-        setSettings(null)
-        setPreviewSettings(null)
-        setTempPreviewSettings(null)
-      } finally {
-        setLoading(false)
-      }
+  // Function to load settings
+  const loadSettings = useCallback(async () => {
+    if (!user?.id) {
+      setSettings(null)
+      setPreviewSettings(null)
+      setLoading(false)
+      return
     }
 
-    loadSettings()
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const userSettings = await AppearanceService.getUserAppearanceSettings(user.id)
+      setSettings(userSettings)
+      setPreviewSettings(userSettings)
+      setTempPreviewSettings(userSettings)
+      setHasUnsavedChanges(false)
+    } catch (err) {
+      console.error('Error loading appearance settings:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load settings')
+      setSettings(null)
+      setPreviewSettings(null)
+      setTempPreviewSettings(null)
+    } finally {
+      setLoading(false)
+    }
   }, [user?.id])
+
+  // Load settings on mount or user change
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
+
+  // Method to refresh settings from the server
+  const refreshSettings = async (): Promise<void> => {
+    try {
+      if (!user?.id) return
+      
+      const freshSettings = await AppearanceService.getUserAppearanceSettings(user.id)
+      if (freshSettings) {
+        setSettings(freshSettings)
+        setPreviewSettings(freshSettings)
+        setTempPreviewSettings(freshSettings)
+        setHasUnsavedChanges(false)
+      }
+    } catch (err) {
+      console.error('Error refreshing appearance settings:', err)
+    }
+  }
 
   // Update debounced preview settings when the debounced value changes
   useEffect(() => {
@@ -79,6 +98,16 @@ export function AppearanceProvider({ children }: AppearanceProviderProps) {
   const updateSettings = useCallback((updates: Partial<UserAppearanceSettings>) => {
     if (!tempPreviewSettings) return
 
+    // If this is a complete settings object (after save/reset), replace entirely
+    if ('id' in updates && 'user_id' in updates) {
+      setSettings(updates as UserAppearanceSettings)
+      setPreviewSettings(updates as UserAppearanceSettings)
+      setTempPreviewSettings(updates as UserAppearanceSettings)
+      setHasUnsavedChanges(false)
+      return
+    }
+
+    // Otherwise it's a partial update
     const newSettings = { ...tempPreviewSettings, ...updates }
     setTempPreviewSettings(newSettings)
     setHasUnsavedChanges(true)
@@ -93,6 +122,20 @@ export function AppearanceProvider({ children }: AppearanceProviderProps) {
       const savedSettings = await AppearanceService.updateAppearanceSettings(user.id, previewSettings)
       
       if (savedSettings) {
+        // Add cache invalidation here to ensure public profile shows the changes
+        try {
+          const username = user.profile_slug || user.github_username
+          if (username) {
+            await fetch(`/api/revalidate?tag=public-profile-${username}`, {
+              method: "POST",
+            })
+            console.log("✅ Cache invalidated for profile:", username)
+          }
+        } catch (cacheError) {
+          console.warn("Failed to invalidate cache:", cacheError)
+          // Don't fail the operation if cache invalidation fails
+        }
+        
         setSettings(savedSettings)
         setPreviewSettings(savedSettings)
         setTempPreviewSettings(savedSettings)
@@ -117,6 +160,20 @@ export function AppearanceProvider({ children }: AppearanceProviderProps) {
       const defaultSettings = await AppearanceService.resetToDefaults(user.id)
       
       if (defaultSettings) {
+        // Add cache invalidation here to ensure public profile shows the changes
+        try {
+          const username = user.profile_slug || user.github_username
+          if (username) {
+            await fetch(`/api/revalidate?tag=public-profile-${username}`, {
+              method: "POST",
+            })
+            console.log("✅ Cache invalidated for profile:", username)
+          }
+        } catch (cacheError) {
+          console.warn("Failed to invalidate cache:", cacheError)
+          // Don't fail the operation if cache invalidation fails
+        }
+        
         setSettings(defaultSettings)
         setPreviewSettings(defaultSettings)
         setTempPreviewSettings(defaultSettings)
@@ -139,6 +196,7 @@ export function AppearanceProvider({ children }: AppearanceProviderProps) {
     updateSettings,
     saveSettings,
     resetSettings,
+    refreshSettings,
     hasUnsavedChanges,
     previewSettings
   }

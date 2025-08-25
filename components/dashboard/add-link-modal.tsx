@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { LinkService, CreateLinkData, UpdateLinkData, LinkCategory, LINK_CATEGORIES, PLATFORM_CONFIGS } from '@/lib/services/link-service'
+import { LinkService, CreateLinkData, UpdateLinkData } from '@/lib/services/link-service'
+import { LinkCategory } from '@/lib/domain/entities'
+import { LINK_CATEGORIES, PLATFORM_CONFIGS } from '@/lib/services/link-constants'
 import { ApiLinkService } from '@/lib/services/api-link-service'
 import { useAuthStore } from '@/stores/auth-store'
 import { toast } from 'sonner'
@@ -236,6 +238,7 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, defaultCategory, edit
       icon_variant: 'default',
       use_custom_icon: false,
       icon_selection_type: 'default',
+      platform_detected: '',
       live_project_url: ''
     })
   }

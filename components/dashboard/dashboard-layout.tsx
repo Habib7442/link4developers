@@ -408,7 +408,17 @@ export function DashboardLayout({
                 Dashboard
               </span>
             </div>
-            <div className="flex items-center flex-shrink-0 ml-3">
+            <div className="flex items-center flex-shrink-0 ml-3 gap-2">
+              {showPreview && (
+                <Button
+                  onClick={() => setMobilePreviewOpen(true)}
+                  className="bg-[#54E0FF] hover:bg-[#29ADFF] text-[#18181a] px-2 py-1 h-8 rounded-md flex items-center text-[11px] font-medium whitespace-nowrap min-w-0 justify-center"
+                  aria-label="Preview"
+                >
+                  <Eye className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
+                  <span className="truncate">Preview</span>
+                </Button>
+              )}
               <Button
                 onClick={handleSignOut}
                 className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 h-8 rounded-md flex items-center text-[11px] font-medium whitespace-nowrap min-w-0 justify-center logout-button"

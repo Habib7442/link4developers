@@ -13,11 +13,12 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             // Time before data is considered stale
             staleTime: 5 * 60 * 1000, // 5 minutes
             // Time before inactive queries are garbage collected
-            gcTime: 10 * 60 * 1000, // 10 minutes
+            gcTime: 15 * 60 * 1000, // 15 minutes
             // Retry failed requests
-            retry: (failureCount, error: any) => {
+            retry: (failureCount, error: Error) => {
               // Don't retry on 4xx errors (client errors)
-              if (error?.status >= 400 && error?.status < 500) {
+              const status = (error as { status?: number })?.status;
+              if (status !== undefined && status >= 400 && status < 500) {
                 return false;
               }
               // Retry up to 3 times for other errors
@@ -27,11 +28,15 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             refetchOnWindowFocus: true,
             // Refetch on reconnect
             refetchOnReconnect: true,
+            // Ensure queries start executing immediately
+            refetchOnMount: true,
+            
           },
           mutations: {
             // Retry failed mutations
-            retry: (failureCount, error: any) => {
-              if (error?.status >= 400 && error?.status < 500) {
+            retry: (failureCount, error: Error) => {
+              const status = (error as { status?: number })?.status;
+              if (status !== undefined && status >= 400 && status < 500) {
                 return false;
               }
               return failureCount < 2;

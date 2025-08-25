@@ -26,9 +26,9 @@ import { useAuthStore } from "@/stores/auth-store";
 import {
   LinkService,
   UserLink,
-  LinkCategory,
-  LINK_CATEGORIES,
 } from "@/lib/services/link-service";
+import { LinkCategory, LinkWithPreview } from '@/lib/domain/entities';
+import { LINK_CATEGORIES } from "@/lib/services/link-constants";
 import { ApiLinkService } from "@/lib/services/api-link-service";
 import { CategoryOrderService } from "@/lib/services/category-order-service";
 import { Button } from "@/components/ui/button";
@@ -44,9 +44,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { UserLinkWithPreview } from '@/lib/types/rich-preview';
 
 // Function to get the appropriate icon for a link
-const getLinkIcon = (link: UserLink) => {
+const getLinkIcon = (link: UserLinkWithPreview) => {
   // Check for uploaded icon
   if (link.icon_selection_type === "upload" && link.uploaded_icon_url) {
     return (
@@ -103,7 +104,7 @@ const getLinkIcon = (link: UserLink) => {
     custom: Link,
   };
 
-  const IconComponent = defaultIcons[link.category] || Link;
+  const IconComponent = defaultIcons[link.category as keyof typeof defaultIcons] || Link;
   return <IconComponent className="w-4 h-4 text-[#54E0FF]" />;
 };
 
@@ -113,8 +114,8 @@ interface LinkManagerProps {
 
 export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
   const { user } = useAuthStore();
-  const [links, setLinks] = useState<Record<LinkCategory, UserLink[]>>(
-    {} as Record<LinkCategory, UserLink[]>
+  const [links, setLinks] = useState<Record<LinkCategory, UserLinkWithPreview[]>>(
+    {} as Record<LinkCategory, UserLinkWithPreview[]>
   );
   const [categoryOrder, setCategoryOrder] = useState<LinkCategory[]>(
     CategoryOrderService.DEFAULT_ORDER
@@ -137,6 +138,13 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
     description?: string;
     icon_type: string;
     category: LinkCategory;
+    custom_icon_url?: string;
+    uploaded_icon_url?: string;
+    icon_variant?: string;
+    use_custom_icon?: boolean;
+    icon_selection_type?: 'default' | 'platform' | 'upload' | 'url';
+    platform_detected?: string;
+    live_project_url?: string;
   } | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
@@ -175,8 +183,7 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
       const userLinks = await ApiLinkService.getUserLinks(user!.id);
       console.log("✅ Links loaded successfully:", userLinks);
 
-      // Use type assertion to fix the TypeScript error
-      setLinks(userLinks as unknown as Record<LinkCategory, UserLink[]>);
+      setLinks(userLinks);
     } catch (error) {
       console.error("❌ Error loading links:", error);
       toast.error("Failed to load links");
@@ -238,15 +245,21 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
     }
   };
 
-  const handleEditLink = (link: UserLink) => {
+  const handleEditLink = (link: UserLinkWithPreview) => {
     setEditingLink({
       id: link.id,
       title: link.title,
       url: link.url,
       description: link.description,
       icon_type: link.icon_type,
-      category: link.category,
-      live_project_url: link.live_project_url || '', // Add this line to include live_project_url
+      category: link.category as LinkCategory,
+      custom_icon_url: link.custom_icon_url,
+      uploaded_icon_url: link.uploaded_icon_url,
+      icon_variant: link.icon_variant,
+      use_custom_icon: link.use_custom_icon,
+      icon_selection_type: link.icon_selection_type,
+      platform_detected: link.platform_detected,
+      live_project_url: link.live_project_url || '',
     });
   };
 
@@ -397,16 +410,16 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
 
   if (loading) {
     return (
-      <div className="w-full max-w-3xl mx-auto px-4">
-        <div className="glassmorphic rounded-xl p-4 sm:p-8 shadow-lg">
-          <div className="animate-pulse space-y-4 sm:space-y-6">
-            <div className="h-4 sm:h-6 bg-[#28282b] rounded w-1/4"></div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+      <div className="w-[86%] sm:w-[90%] md:w-[94%] lg:w-full mx-auto px-0 sm:px-0 md:px-0 max-w-full">
+        <div className="glassmorphic rounded-xl p-4 sm:p-5 md:p-6 shadow-lg min-w-[280px] max-w-[330px] sm:max-w-[500px] md:max-w-[650px] lg:max-w-none mx-auto w-full overflow-hidden">
+          <div className="animate-pulse space-y-4 sm:space-y-5">
+            <div className="h-5 sm:h-6 md:h-7 bg-[#28282b] rounded w-1/3"></div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-20 sm:h-24 bg-[#28282b] rounded-lg"></div>
+                <div key={i} className="h-16 sm:h-20 md:h-24 bg-[#28282b] rounded-lg"></div>
               ))}
             </div>
-            <div className="h-48 sm:h-64 bg-[#28282b] rounded-lg sm:rounded-xl"></div>
+            <div className="h-32 sm:h-40 md:h-48 bg-[#28282b] rounded-lg"></div>
           </div>
         </div>
       </div>
@@ -425,9 +438,9 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
   );
 
   return (
-    <div className="h-full p-1 sm:p-2 space-y-2 sm:space-y-3">
+    <div className="w-[86%] sm:w-[90%] md:w-[94%] lg:w-full mx-auto px-0 sm:px-0 md:px-0 max-w-full">
       {/* Link Statistics Status */}
-      <div className="glassmorphic rounded-xl p-2 sm:p-3 md:p-4 shadow-lg w-full">
+      <div className="glassmorphic rounded-xl p-4 sm:p-5 md:p-6 shadow-lg min-w-[280px] max-w-[330px] sm:max-w-[500px] md:max-w-[650px] lg:max-w-none mx-auto w-full overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <div className="min-w-0 flex-1">
             <h2 className="text-base sm:text-lg md:text-xl font-medium text-white mb-1 sm:mb-2">
@@ -448,15 +461,15 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
 
       {/* Analytics Overview */}
       {analytics && (
-        <div className="glassmorphic rounded-xl p-2 sm:p-3 md:p-4 lg:p-6 shadow-lg w-full">
-          <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
+        <div className="glassmorphic rounded-xl p-4 sm:p-5 md:p-6 shadow-lg min-w-[280px] max-w-[330px] sm:max-w-[500px] md:max-w-[650px] lg:max-w-none mx-auto w-full mt-4 sm:mt-5 overflow-hidden">
+          <div className="flex items-center justify-between mb-4 sm:mb-5">
             <h2 className="text-base sm:text-lg md:text-xl font-medium text-white">
               Analytics Overview
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-            <div className="text-center bg-[#28282b]/70 rounded-lg p-2 sm:p-3 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+            <div className="text-center bg-[#28282b]/70 rounded-lg p-4 w-full">
               <div className="text-lg sm:text-xl font-medium text-[#54E0FF]">
                 {analytics.totalClicks}
               </div>
@@ -465,7 +478,7 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
               </div>
             </div>
 
-            <div className="text-center bg-[#28282b]/70 rounded-lg p-2 sm:p-3 w-full">
+            <div className="text-center bg-[#28282b]/70 rounded-lg p-4 w-full">
               <div className="text-lg sm:text-xl font-medium text-[#54E0FF]">
                 {totalLinks}
               </div>
@@ -474,7 +487,7 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
               </div>
             </div>
 
-            <div className="text-center bg-[#28282b]/70 rounded-lg p-2 sm:p-3 w-full">
+            <div className="text-center bg-[#28282b]/70 rounded-lg p-4 w-full">
               <div className="text-lg sm:text-xl font-medium text-[#54E0FF]">
                 {activeLinks}
               </div>
@@ -487,14 +500,14 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
       )}
 
       {/* Link Management */}
-      <div className="glassmorphic rounded-xl p-2 sm:p-3 md:p-4 lg:p-6 shadow-lg w-full">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4 md:mb-6">
+      <div className="glassmorphic rounded-xl p-4 sm:p-5 md:p-6 shadow-lg min-w-[280px] max-w-[330px] sm:max-w-[500px] md:max-w-[650px] lg:max-w-none mx-auto w-full mt-4 sm:mt-5 overflow-hidden" style={{ position: 'relative' }}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-5">
           <div className="min-w-0 flex-1">
             <h2 className="text-base sm:text-lg md:text-xl font-medium text-white">
               Manage Your Links
             </h2>
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto flex-shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto flex-shrink-0 mt-2 sm:mt-0">
             <Button
               onClick={handleResetCategoryOrder}
               size="sm"
@@ -502,25 +515,25 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
               className="w-full sm:w-auto border-[#54E0FF]/20 text-[#54E0FF] hover:bg-[#54E0FF]/10 text-xs sm:text-sm h-8 sm:h-9 py-1 px-2 sm:px-3"
             >
               <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              Reset Order
+              <span className="hidden xs:inline">Reset Order</span>
             </Button>
             <Button
               onClick={() => handleAddLink()}
               className="w-full sm:w-auto bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] text-[#18181a] hover:opacity-90 text-xs sm:text-sm h-8 sm:h-9 py-1 px-2 sm:px-3"
             >
               <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              Add Link
+              <span className="hidden xs:inline">Add Link</span>
             </Button>
           </div>
         </div>
 
         <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="category-sections" type="CATEGORY">
+          <Droppable droppableId="category-sections" type="CATEGORY" direction="vertical">
             {(provided) => (
               <div
                 {...provided.droppableProps}
                 ref={provided.innerRef}
-                className="space-y-3 sm:space-y-4 md:space-y-6"
+                className="space-y-3 sm:space-y-4 md:space-y-5 overflow-visible relative"
               >
                 {categoryOrder.map((category, index) => {
                   const categoryConfig = LINK_CATEGORIES[category];
@@ -536,21 +549,26 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
                         <div
                           ref={provided.innerRef}
                           {...provided.draggableProps}
-                          className={`bg-[#28282b] border border-[#33373b] rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 ${
+                          style={{
+                            ...provided.draggableProps.style,
+                            transition: snapshot.isDragging ? 'transform 0.1s' : 'transform 0.2s',
+                          }}
+                          className={`bg-[#28282b] border border-[#33373b] rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 ${
                             snapshot.isDragging
-                              ? "shadow-2xl scale-[1.02] rotate-1"
+                              ? "shadow-2xl scale-[1.01] z-50"
                               : ""
-                          } transition-all duration-200`}
+                          } transition-all duration-150 overflow-hidden`}
                         >
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 md:gap-4 mb-2 sm:mb-3 md:mb-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 mb-2 sm:mb-3 md:mb-4">
                             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden">
                               <div
                                 {...provided.dragHandleProps}
-                                className="text-[#7a7a83] hover:text-white cursor-grab active:cursor-grabbing p-1 rounded hover:bg-white/10 transition-colors flex-shrink-0"
+                                className="text-[#7a7a83] hover:text-white hover:bg-white/10 cursor-grab active:cursor-grabbing p-1.5 rounded transition-colors flex-shrink-0"
+                                title="Drag to reorder"
                               >
                                 <GripVertical className="w-4 h-4 sm:w-5 sm:h-5" />
                               </div>
-                              <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-r from-[#54E0FF]/20 to-[#29ADFF]/20 flex items-center justify-center flex-shrink-0">
+                              <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-gradient-to-r from-[#54E0FF]/20 to-[#29ADFF]/20 flex items-center justify-center flex-shrink-0">
                                 <div className="text-[#54E0FF]">
                                   {getCategoryIcon(
                                     category,
@@ -562,13 +580,13 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
                                 <h3 className="text-sm sm:text-base font-medium text-white truncate">
                                   {categoryConfig.label}
                                 </h3>
-                                <p className="text-xs text-[#7a7a83] truncate">
+                                <p className="text-xs text-[#7a7a83] truncate hidden sm:block">
                                   {categoryConfig.description}
                                 </p>
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-2 flex-shrink-0 ml-0 sm:ml-0">
+                            <div className="flex items-center gap-2 flex-shrink-0 ml-0 sm:ml-0 mt-2 sm:mt-0">
                               <span className="text-xs text-[#7a7a83]">
                                 {categoryLinks.length}/{categoryConfig.maxLinks}
                               </span>
@@ -584,20 +602,20 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
                                 }
                               >
                                 <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                                Add
+                                <span className="hidden xs:inline">Add</span>
                               </Button>
                             </div>
                           </div>
 
-                          <Droppable droppableId={category}>
+                          <Droppable droppableId={category} direction="vertical">
                             {(provided) => (
                               <div
                                 {...provided.droppableProps}
                                 ref={provided.innerRef}
-                                className="space-y-2 sm:space-y-2 md:space-y-3"
+                                className="space-y-3 sm:space-y-4 min-h-[40px] relative overflow-hidden"
                               >
                                 {categoryLinks.length === 0 ? (
-                                  <div className="text-center py-3 sm:py-4 md:py-6 text-xs sm:text-sm text-[#7a7a83]">
+                                  <div className="text-center py-3 sm:py-4 text-xs sm:text-sm text-[#7a7a83]">
                                     No links in this category yet. Add your first link!
                                   </div>
                                 ) : (
@@ -611,9 +629,13 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
                                         <div
                                           ref={provided.innerRef}
                                           {...provided.draggableProps}
-                                          className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-4 rounded-lg border border-[#33373b] bg-[#1a1a1a]/50 ${
+                                          style={{
+                                            ...provided.draggableProps.style,
+                                            transition: snapshot.isDragging ? 'transform 0.1s' : 'transform 0.2s'
+                                          }}
+                                          className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 md:p-5 rounded-lg border border-[#33373b] bg-[#1a1a1a]/50 ${
                                             snapshot.isDragging
-                                              ? "shadow-lg"
+                                              ? "shadow-lg z-10"
                                               : ""
                                           } ${
                                             !link.is_active ? "opacity-50" : ""
@@ -636,7 +658,7 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
                                               <h4 className="text-xs sm:text-sm font-medium text-white truncate flex-1">
                                                 {link.title}
                                               </h4>
-                                              <span className="text-xs text-[#7a7a83] flex-shrink-0 whitespace-nowrap">
+                                              <span className="text-xs text-[#7a7a83] flex-shrink-0 whitespace-nowrap hidden sm:inline">
                                                 {link.click_count || 0} clicks
                                               </span>
                                             </div>

@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { User, UserAppearanceSettings } from '@/lib/supabase'
-import { UserLink, LinkCategory, LINK_CATEGORIES } from './link-service'
+import { UserLink } from './link-service'
+import { LinkCategory } from '@/lib/domain/entities'
+import { LINK_CATEGORIES } from './link-constants'
 import { UserLinkWithPreview } from '@/lib/types/rich-preview'
 import { CategoryOrderService } from './category-order-service'
 import { AppearanceService } from './appearance-service'
@@ -23,7 +25,7 @@ export class PublicProfileService {
     return unstable_cache(
       async (): Promise<{
         user: User | null
-        links: Record<LinkCategory, UserLink[]>
+        links: Record<LinkCategory, UserLinkWithPreview[]>
         appearanceSettings: UserAppearanceSettings | null
         categoryOrder: LinkCategory[]
       }> => {
@@ -42,9 +44,10 @@ export class PublicProfileService {
           .select('count')
           .limit(1)
         console.log('🔍 Server Service: Connection test result:', { testData, testError })
-      } catch (testNetworkError) {
-        console.error('🔍 Server Service: Connection test failed:', testNetworkError)
-        throw new Error(`Supabase connection failed: ${testNetworkError.message}`)
+      } catch (testError) {
+        const errorMessage = testError instanceof Error ? testError.message : 'Unknown error';
+        console.error('🔍 Server Service: Connection test failed:', testError)
+        throw new Error(`Supabase connection failed: ${errorMessage}`)
       }
 
       // First, get the user profile by slug or github_username
@@ -60,8 +63,9 @@ export class PublicProfileService {
         user = result.data
         userError = result.error
       } catch (networkError) {
+        const errorMessage = networkError instanceof Error ? networkError.message : 'Unknown error';
         console.error('🔍 Server Service: Network error during user query:', networkError)
-        throw new Error(`Network error: ${networkError.message}`)
+        throw new Error(`Network error: ${errorMessage}`)
       }
 
       console.log('🔍 Server Service: User query completed. Error:', userError, 'Data:', !!user)
@@ -70,7 +74,12 @@ export class PublicProfileService {
         if (userError.code === 'PGRST116') {
           // No rows returned
           console.log('🔍 Server Service: No user found for username:', username)
-          return { user: null, links: {} as Record<LinkCategory, UserLink[]>, appearanceSettings: null, categoryOrder: CategoryOrderService.DEFAULT_ORDER }
+          return { 
+            user: null, 
+            links: {} as Record<LinkCategory, UserLinkWithPreview[]>, 
+            appearanceSettings: null, 
+            categoryOrder: CategoryOrderService.DEFAULT_ORDER 
+          }
         }
         console.error('Server Service: Error fetching user:', {
           message: userError.message,
@@ -82,7 +91,12 @@ export class PublicProfileService {
       }
 
       if (!user) {
-        return { user: null, links: {} as Record<LinkCategory, UserLink[]>, appearanceSettings: null, categoryOrder: CategoryOrderService.DEFAULT_ORDER }
+        return { 
+          user: null, 
+          links: {} as Record<LinkCategory, UserLinkWithPreview[]>, 
+          appearanceSettings: null, 
+          categoryOrder: CategoryOrderService.DEFAULT_ORDER 
+        }
       }
 
       // Try to get category order first so we can sort the links correctly
@@ -172,7 +186,9 @@ export class PublicProfileService {
       // Get appearance settings
       let appearanceSettings: UserAppearanceSettings | null = null;
       try {
-        appearanceSettings = await AppearanceService.getPublicAppearanceSettings(user.id);
+        const domainAppearanceSettings = await AppearanceService.getPublicAppearanceSettings(user.id);
+        // Type cast to the expected type
+        appearanceSettings = domainAppearanceSettings as unknown as UserAppearanceSettings;
       } catch (error) {
         console.log('Error loading appearance settings for user:', user.id, error);
         // This is fine, user may not have custom settings
@@ -194,7 +210,12 @@ export class PublicProfileService {
       if (error instanceof Error && error.message.includes('fetch failed')) {
         console.error('❌ Server Service: Network connectivity issue detected')
         // Return empty profile instead of throwing to prevent 500 errors
-        return { user: null, links: {} as Record<LinkCategory, UserLink[]>, appearanceSettings: null, categoryOrder: CategoryOrderService.DEFAULT_ORDER }
+        return { 
+          user: null, 
+          links: {} as Record<LinkCategory, UserLinkWithPreview[]>, 
+          appearanceSettings: null, 
+          categoryOrder: CategoryOrderService.DEFAULT_ORDER 
+        }
       }
 
       throw error

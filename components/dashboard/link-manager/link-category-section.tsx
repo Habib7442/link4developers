@@ -3,19 +3,19 @@
 import React from "react";
 import { Plus, GripVertical, Eye, EyeOff, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { UserLink, LinkCategory, LINK_CATEGORIES } from "@/lib/services/link-service";
-import { Draggable, Droppable } from "@hello-pangea/dnd";
+import { LinkCategory, LINK_CATEGORIES } from "@/lib/services/link-constants";
+import { UserLinkWithPreview } from '@/lib/types/rich-preview';
 
 interface LinkCategorySectionProps {
   category: LinkCategory;
-  categoryLinks: UserLink[];
+  categoryLinks: UserLinkWithPreview[];
   index: number;
   onAddLink: (category: LinkCategory) => void;
   onToggleStatus: (linkId: string) => void;
-  onEditLink: (link: UserLink) => void;
+  onEditLink: (link: UserLinkWithPreview) => void;
   onDeleteLink: (linkId: string, linkTitle: string) => void;
   getCategoryIcon: (category: LinkCategory, iconName: string) => React.ReactNode;
-  getLinkIcon: (link: UserLink) => React.ReactNode;
+  getLinkIcon: (link: UserLinkWithPreview) => React.ReactNode;
 }
 
 export function LinkCategorySection({

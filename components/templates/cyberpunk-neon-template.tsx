@@ -3,12 +3,10 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { User, UserAppearanceSettings } from '@/lib/supabase'
-import { UserLink, LinkCategory, LINK_CATEGORIES } from '@/lib/services/link-service'
-import { ApiLinkService } from '@/lib/services/api-link-service'
-import { CategoryOrderService } from '@/lib/services/category-order-service'
+import { LinkCategory } from '@/lib/domain/entities'
+import { UserLinkWithPreview } from '@/lib/types/rich-preview'
 import { Button } from '@/components/ui/button'
 import { RichLinkPreview } from '@/components/rich-preview/rich-link-preview'
-import { UserLinkWithPreview } from '@/lib/types/rich-preview'
 import { SocialMediaSection } from '@/components/social-media/social-media-section'
 import { getFontFamilyWithFallbacks, loadGoogleFont } from '@/lib/utils/font-loader'
 import { getSectionStyles, getSectionTypographyStyle } from '@/lib/utils/section-styling'
@@ -84,18 +82,16 @@ const getLinkIcon = (link: UserLinkWithPreview) => {
   }
 
   // Default icons based on category
-  const defaultIcons = {
-    personal: ExternalLink,
-    projects: Github,
-    blogs: BookOpen,
-    achievements: Award,
-    contact: Mail,
-    social: Globe,
-    custom: Link
+  switch (link.category) {
+    case 'personal': return <ExternalLink className="w-4 h-4" />
+    case 'projects': return <Github className="w-4 h-4" />
+    case 'blogs': return <BookOpen className="w-4 h-4" />
+    case 'achievements': return <Award className="w-4 h-4" />
+    case 'contact': return <Mail className="w-4 h-4" />
+    case 'social': return <Globe className="w-4 h-4" />
+    case 'custom': return <Link className="w-4 h-4" />
+    default: return <ExternalLink className="w-4 h-4" />
   }
-
-  const IconComponent = defaultIcons[link.category] || ExternalLink
-  return <IconComponent className="w-4 h-4" />
 }
 
 // Category icon mapping
@@ -106,19 +102,15 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
     return () => <CategoryIconPreview config={customIcon} size={20} />
   }
 
-  // Fallback to default icon - ensure these are always available
-  const config = LINK_CATEGORIES[category]
-  if (!config) return ExternalLink
-
-  // Map string icon names to actual icon components
-  switch (config.icon) {
-    case 'Github': return Github
-    case 'BookOpen': return BookOpen
-    case 'Award': return Award
-    case 'Mail': return Mail
-    case 'User': return UserIcon
-    case 'Share2': return Share2
-    case 'Link': return Link
+  // Fallback to default icon - map categories to icon components
+  switch (category) {
+    case 'projects': return Github
+    case 'blogs': return BookOpen
+    case 'achievements': return Award
+    case 'contact': return Mail
+    case 'personal': return UserIcon
+    case 'social': return Share2
+    case 'custom': return Link
     default: return ExternalLink
   }
 }
@@ -126,7 +118,7 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
 export function CyberpunkNeonTemplate({ user, links, appearanceSettings, categoryOrder: propCategoryOrder, isPreview = false }: CyberpunkNeonTemplateProps) {
   const [copied, setCopied] = useState(false)
   const [categoryIcons, setCategoryIcons] = useState<Record<LinkCategory, CategoryIconConfig>>({} as Record<LinkCategory, CategoryIconConfig>)
-  const [categoryOrder, setCategoryOrder] = useState<LinkCategory[]>(propCategoryOrder || CategoryOrderService.DEFAULT_ORDER)
+  const [categoryOrder, setCategoryOrder] = useState<LinkCategory[]>(propCategoryOrder || ['personal', 'projects', 'blogs', 'achievements', 'contact', 'custom', 'social'])
 
   // Load fonts when appearance settings change
   useEffect(() => {
@@ -158,9 +150,10 @@ export function CyberpunkNeonTemplate({ user, links, appearanceSettings, categor
 
       // Only load category order if not provided as prop
       if (!propCategoryOrder) {
-        CategoryOrderService.getCategoryOrder(user.id)
-          .then(order => setCategoryOrder(order))
-          .catch(error => console.error('Error loading category order:', error))
+        // For now, use default order since we're not using the old service
+        setCategoryOrder(['personal', 'projects', 'blogs', 'achievements', 'contact', 'custom', 'social'])
+      } else {
+        setCategoryOrder(propCategoryOrder)
       }
     }
   }, [user?.id, propCategoryOrder])
@@ -284,18 +277,14 @@ export function CyberpunkNeonTemplate({ user, links, appearanceSettings, categor
   }
 
   const handleLinkClick = async (link: UserLinkWithPreview) => {
-    // Track the click for analytics
-    await ApiLinkService.trackLinkClick(link.id)
-
-    // Open the link
+    // For now, just open the link (analytics will be handled by the new clean architecture)
     window.open(link.url, '_blank', 'noopener,noreferrer')
   }
 
   const handleRefreshPreview = async (linkId: string) => {
     try {
-      await ApiLinkService.refreshLinkPreview(user.id, linkId)
-      // Optionally trigger a re-fetch of the links data
-      window.location.reload() // Simple approach for now
+      // For now, just reload the page (preview refresh will be handled by the new clean architecture)
+      window.location.reload()
     } catch (error) {
       console.error('Failed to refresh preview:', error)
     }
@@ -476,7 +465,6 @@ export function CyberpunkNeonTemplate({ user, links, appearanceSettings, categor
                 )
               }
 
-              const categoryConfig = LINK_CATEGORIES[category]
               const CategoryIcon = getCategoryIcon(category, categoryIcons)
               
               return (
@@ -514,7 +502,7 @@ export function CyberpunkNeonTemplate({ user, links, appearanceSettings, categor
                       </div>
                       <h2 className="text-[20px] font-bold leading-[1.3] font-orbitron text-[#00F5FF]"
                           style={{ textShadow: '0 0 8px rgba(0, 245, 255, 0.6)' }}>
-                        {categoryConfig?.label || category}
+                        {category.charAt(0).toUpperCase() + category.slice(1)}
                       </h2>
                       <span className="text-[14px] text-[#39FF14] font-inter font-medium"
                            style={{ textShadow: '0 0 5px rgba(57, 255, 20, 0.6)' }}>

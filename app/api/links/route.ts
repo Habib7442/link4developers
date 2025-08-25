@@ -439,7 +439,28 @@ const getLinksHandler = async (request: NextRequest, { userId }: { userId: strin
     }
 
     console.log('API: Links fetched successfully:', data?.length || 0, 'links')
-    return NextResponse.json({ data })
+    
+    // Group links by category to match frontend expectations
+    const groupedLinks = {
+      personal: [],
+      projects: [],
+      blogs: [],
+      achievements: [],
+      contact: [],
+      custom: [],
+      social: []
+    } as Record<string, any[]>
+    
+    if (data) {
+      data.forEach((link: any) => {
+        const category = link.category
+        if (groupedLinks[category]) {
+          groupedLinks[category].push(link)
+        }
+      })
+    }
+    
+    return NextResponse.json(groupedLinks)
 
   } catch (error) {
     console.error('API: Unexpected error:', error)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createProtectedRoute } from '@/lib/security/api-protection'
+import { DEFAULT_CATEGORY_ORDER } from '@/lib/services/link-constants'
 
 // Create a server-side Supabase client
 const supabase = createClient(
@@ -27,12 +28,11 @@ const getCategoryOrderHandler = async (request: NextRequest, { userId }: { userI
       )
     }
 
-    // If no custom order exists, return default order
-    const defaultOrder = ['personal', 'projects', 'blogs', 'achievements', 'contact', 'social', 'custom']
-    const categoryOrder = data?.category_order || defaultOrder
+    // If no custom order exists, return default order from constants
+    const categoryOrder = data?.category_order || DEFAULT_CATEGORY_ORDER
 
     console.log('✅ API: Category order fetched successfully:', categoryOrder)
-    return NextResponse.json({ data: categoryOrder })
+    return NextResponse.json({ categoryOrder })
 
   } catch (error) {
     console.error('❌ API: Unexpected error in category order:', error)
@@ -49,10 +49,10 @@ const updateCategoryOrderHandler = async (request: NextRequest, { userId }: { us
     console.log('📋 API: Updating category order for user:', userId)
 
     const body = await request.json()
-    const { categoryOrder } = body
+    const { order } = body
 
-    if (!categoryOrder || !Array.isArray(categoryOrder)) {
-      console.error('❌ API: Invalid category order data:', { categoryOrder })
+    if (!order || !Array.isArray(order)) {
+      console.error('❌ API: Invalid category order data:', { order })
       return NextResponse.json(
         { error: 'Invalid category order data' },
         { status: 400 }
@@ -61,11 +61,11 @@ const updateCategoryOrderHandler = async (request: NextRequest, { userId }: { us
 
     // Validate category order
     const validCategories = ['personal', 'projects', 'blogs', 'achievements', 'contact', 'social', 'custom']
-    const isValidOrder = categoryOrder.every(cat => validCategories.includes(cat)) && 
-                        categoryOrder.length === validCategories.length
+    const isValidOrder = order.every(cat => validCategories.includes(cat)) && 
+                        order.length === validCategories.length
 
     if (!isValidOrder) {
-      console.error('❌ API: Invalid category order:', categoryOrder)
+      console.error('❌ API: Invalid category order:', order)
       return NextResponse.json(
         { error: 'Invalid category order format' },
         { status: 400 }
@@ -76,7 +76,7 @@ const updateCategoryOrderHandler = async (request: NextRequest, { userId }: { us
     const { data, error } = await supabase
       .from('users')
       .update({
-        category_order: categoryOrder,
+        category_order: order,
         updated_at: new Date().toISOString()
       })
       .eq('id', userId)
@@ -91,8 +91,8 @@ const updateCategoryOrderHandler = async (request: NextRequest, { userId }: { us
       )
     }
 
-    console.log('✅ API: Category order updated successfully:', categoryOrder)
-    return NextResponse.json({ data: { success: true, categoryOrder } })
+    console.log('✅ API: Category order updated successfully:', order)
+    return NextResponse.json({ success: true, categoryOrder: order })
 
   } catch (error) {
     console.error('❌ API: Unexpected error updating category order:', error)
@@ -108,13 +108,11 @@ const resetCategoryOrderHandler = async (request: NextRequest, { userId }: { use
   try {
     console.log('📋 API: Resetting category order for user:', userId)
 
-    const defaultOrder = ['personal', 'projects', 'blogs', 'achievements', 'contact', 'social', 'custom']
-
-    // Reset to default order
+    // Reset to default order from constants
     const { error: updateError } = await supabase
       .from('users')
       .update({
-        category_order: defaultOrder,
+        category_order: DEFAULT_CATEGORY_ORDER,
         updated_at: new Date().toISOString()
       })
       .eq('id', userId)
@@ -128,7 +126,7 @@ const resetCategoryOrderHandler = async (request: NextRequest, { userId }: { use
     }
 
     console.log('✅ API: Category order reset successfully to default')
-    return NextResponse.json({ data: { success: true, categoryOrder: defaultOrder } })
+    return NextResponse.json({ success: true, categoryOrder: DEFAULT_CATEGORY_ORDER })
 
   } catch (error) {
     console.error('❌ API: Unexpected error resetting category order:', error)

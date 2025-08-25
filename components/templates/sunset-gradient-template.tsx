@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { UserLink, LinkCategory, LINK_CATEGORIES } from '../../lib/services/link-service'
-import { ApiLinkService } from '../../lib/services/api-link-service'
-import { CategoryOrderService } from '../../lib/services/category-order-service'
+import { LinkCategory } from '@/lib/domain/entities'
 import { Button } from '../ui/button'
 import { RichLinkPreview } from '../rich-preview/rich-link-preview'
 import { UserLinkWithPreview } from '../../lib/types/rich-preview'
@@ -31,6 +29,8 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CategoryIconService, CategoryIconConfig } from '../../lib/services/category-icon-service'
+import { CategoryOrderService } from '../../lib/services/category-order-service'
+import { LINK_CATEGORIES } from '../../lib/services/link-constants'
 import { CategoryIconPreview } from '../category-icons/category-icon-preview'
 import React from 'react'
 import { User as SupabaseUser, UserAppearanceSettings as SupabaseUserAppearanceSettings } from '@/lib/types/supabase-types'
@@ -85,18 +85,16 @@ const getLinkIcon = (link: UserLinkWithPreview) => {
   }
 
   // Default icons based on category
-  const defaultIcons = {
-    personal: ExternalLink,
-    projects: Github,
-    blogs: BookOpen,
-    achievements: Award,
-    contact: Mail,
-    social: Globe,
-    custom: Link
+  switch (link.category) {
+    case 'personal': return <ExternalLink className="w-4 h-4" />
+    case 'projects': return <Github className="w-4 h-4" />
+    case 'blogs': return <BookOpen className="w-4 h-4" />
+    case 'achievements': return <Award className="w-4 h-4" />
+    case 'contact': return <Mail className="w-4 h-4" />
+    case 'social': return <Globe className="w-4 h-4" />
+    case 'custom': return <Link className="w-4 h-4" />
+    default: return <ExternalLink className="w-4 h-4" />
   }
-
-  const IconComponent = defaultIcons[link.category] || ExternalLink
-  return <IconComponent className="w-4 h-4" />
 }
 
 // Category icon mapping
@@ -107,19 +105,15 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
     return () => <CategoryIconPreview config={customIcon} size={20} />
   }
 
-  // Fallback to default icon - ensure these are always available
-  const config = LINK_CATEGORIES[category]
-  if (!config) return ExternalLink
-
-  // Map string icon names to actual icon components
-  switch (config.icon) {
-    case 'Github': return Github
-    case 'BookOpen': return BookOpen
-    case 'Award': return Award
-    case 'Mail': return Mail
-    case 'User': return User
-    case 'Share2': return Share2
-    case 'Link': return Link
+  // Fallback to default icon - map categories to icon components
+  switch (category) {
+    case 'projects': return Github
+    case 'blogs': return BookOpen
+    case 'achievements': return Award
+    case 'contact': return Mail
+    case 'personal': return User
+    case 'social': return Share2
+    case 'custom': return Link
     default: return ExternalLink
   }
 }
@@ -159,9 +153,10 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
 
       // Only load category order if not provided as prop
       if (!propCategoryOrder) {
-        CategoryOrderService.getCategoryOrder(user.id)
-          .then(order => setCategoryOrder(order))
-          .catch(error => console.error('Error loading category order:', error))
+        // For now, use default order since we're not using the old service
+        setCategoryOrder(['personal', 'projects', 'blogs', 'achievements', 'contact', 'custom', 'social'])
+      } else {
+        setCategoryOrder(propCategoryOrder)
       }
     }
   }, [user?.id, propCategoryOrder])

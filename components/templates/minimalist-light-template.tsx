@@ -3,14 +3,14 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { User as SupabaseUser, UserAppearanceSettings as SupabaseUserAppearanceSettings } from '@/lib/types/supabase-types'
-import { UserLink, LinkCategory, LINK_CATEGORIES } from '@/lib/services/link-service'
+import { LinkCategory } from '@/lib/domain/entities'
 import { Button } from '@/components/ui/button'
 import { RichLinkPreview } from '@/components/rich-preview/rich-link-preview'
 import { UserLinkWithPreview } from '@/lib/types/rich-preview'
 import { SocialMediaSection } from '@/components/social-media/social-media-section'
 import { getFontFamilyWithFallbacks } from '@/lib/utils/font-loader'
 import { getSectionStyles, getSectionTypographyStyle } from '@/lib/utils/section-styling'
-import { useLinksStore } from '@/stores/links-store'
+
 import { 
   MapPin, 
   Building, 
@@ -84,18 +84,16 @@ const getLinkIcon = (link: UserLinkWithPreview) => {
   }
 
   // Default icons based on category with light theme styling
-  const defaultIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-    personal: ExternalLink,
-    projects: Github,
-    blogs: BookOpen,
-    achievements: Award,
-    contact: Mail,
-    social: Globe,
-    custom: Link
+  switch (link.category) {
+    case 'personal': return <ExternalLink className="w-5 h-5 text-gray-700" />
+    case 'projects': return <Github className="w-5 h-5 text-gray-700" />
+    case 'blogs': return <BookOpen className="w-5 h-5 text-gray-700" />
+    case 'achievements': return <Award className="w-5 h-5 text-gray-700" />
+    case 'contact': return <Mail className="w-5 h-5 text-gray-700" />
+    case 'social': return <Globe className="w-5 h-5 text-gray-700" />
+    case 'custom': return <Link className="w-5 h-5 text-gray-700" />
+    default: return <ExternalLink className="w-5 h-5 text-gray-700" />
   }
-
-  const IconComponent = defaultIcons[link.category] || ExternalLink
-  return <IconComponent className="w-5 h-5 text-gray-700" />
 }
 
 // Category icon mapping
@@ -108,35 +106,47 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
     return CategoryIconComponent
   }
 
-  // Fallback to default icon with light theme styling
-  const config = LINK_CATEGORIES[category]
-  if (!config) return ExternalLink
-
-  // Map string icon names to actual icon components
-  switch (config.icon) {
-    case 'Github': return Github
-    case 'BookOpen': return BookOpen
-    case 'Award': return Award
-    case 'Mail': return Mail
-    case 'User': return User
-    case 'Share2': return Share2
-    case 'Link': return Link
+  // Fallback to default icon with light theme styling - map categories to icon components
+  switch (category) {
+    case 'projects': return Github
+    case 'blogs': return BookOpen
+    case 'achievements': return Award
+    case 'contact': return Mail
+    case 'personal': return User
+    case 'social': return Share2
+    case 'custom': return Link
     default: return ExternalLink
   }
 }
 
 export function MinimalistLightTemplate({ user, links, appearanceSettings, categoryOrder: propCategoryOrder, isPreview = false }: MinimalistLightTemplateProps) {
   const [copied, setCopied] = useState(false)
+  const [categoryIcons, setCategoryIcons] = useState<Record<LinkCategory, CategoryIconConfig>>({} as Record<LinkCategory, CategoryIconConfig>)
+  const [categoryOrder, setCategoryOrder] = useState<LinkCategory[]>(propCategoryOrder || ['personal', 'projects', 'blogs', 'achievements', 'contact', 'custom', 'social'])
   
-  // Use Zustand store for state management
-  const { categoryIcons, categoryOrder, loadCategoryIcons } = useLinksStore()
-  
-  // Load category icons when component mounts
+  // Load category icons and order
   useEffect(() => {
     if (user?.id) {
-      loadCategoryIcons(user.id)
+      CategoryIconService.getAllCategoryIcons(user.id)
+        .then(icons => setCategoryIcons(icons))
+        .catch(error => console.error('Error loading category icons:', error))
+
+      // Only load category order if not provided as prop
+      if (!propCategoryOrder) {
+        // For now, use default order since we're not using the old service
+        setCategoryOrder(['personal', 'projects', 'blogs', 'achievements', 'contact', 'custom', 'social'])
+      } else {
+        setCategoryOrder(propCategoryOrder)
+      }
     }
-  }, [user?.id, loadCategoryIcons])
+  }, [user?.id, propCategoryOrder])
+
+  // Update category order when prop changes
+  useEffect(() => {
+    if (propCategoryOrder) {
+      setCategoryOrder(propCategoryOrder)
+    }
+  }, [propCategoryOrder])
 
   const handleLinkClick = (link: UserLinkWithPreview) => {
     // Open link
@@ -384,7 +394,6 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
         <div className="space-y-8">
           {orderedCategories.map((category) => {
             const categoryLinks = links[category]
-            const config = LINK_CATEGORIES[category]
             const IconComponent = getCategoryIcon(category, categoryIcons)
 
             // Handle social media category specially
@@ -428,7 +437,7 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
                   </div>
                   <h2 className="text-xl font-semibold text-[#111827]"
                       style={getTypographyStyle('heading')}>
-                    {config.label}
+                    {category.charAt(0).toUpperCase() + category.slice(1)}
                   </h2>
                 </div>
 

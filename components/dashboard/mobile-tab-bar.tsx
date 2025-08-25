@@ -39,6 +39,7 @@ export function MobileTabBar({ showPreview = false, previewContent }: MobileTabB
   const { signOut } = useAuthStore()
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('')
+  const [isModalOpen, setIsModalOpen] = useState(false)
   
   // Determine active tab based on current path
   useEffect(() => {
@@ -58,6 +59,34 @@ export function MobileTabBar({ showPreview = false, previewContent }: MobileTabB
       window.removeEventListener('popstate', updateActiveTab)
     }
   }, [])
+
+  // Listen for modal state changes
+  useEffect(() => {
+    const handleModalStateChange = (event: any) => {
+      if (event.detail && typeof event.detail.isModalOpen === 'boolean') {
+        setIsModalOpen(event.detail.isModalOpen);
+      }
+    };
+    
+    // Listen for custom events from other components
+    window.addEventListener('modalStateChange', handleModalStateChange);
+    
+    // Check if any modals are currently open (for AddLinkModal, etc.)
+    const checkForModals = () => {
+      const modalElements = document.querySelectorAll('[role="dialog"]');
+      setIsModalOpen(modalElements.length > 0);
+    };
+    
+    // Check initially and set up observer
+    checkForModals();
+    const observer = new MutationObserver(checkForModals);
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    return () => {
+      window.removeEventListener('modalStateChange', handleModalStateChange);
+      observer.disconnect();
+    };
+  }, []);
 
   return (
     <>
@@ -93,18 +122,7 @@ export function MobileTabBar({ showPreview = false, previewContent }: MobileTabB
           </TabsList>
         </Tabs>
         
-        {/* Preview Button - Floating above tab bar */}
-        {showPreview && (
-          <div className="absolute top-0 right-4 transform -translate-y-full">
-            <Button
-              onClick={() => setMobilePreviewOpen(true)}
-              className="bg-[#54E0FF] hover:bg-[#29ADFF] text-[#18181a] rounded-t-none rounded-b-md p-2 h-8 flex items-center shadow-lg"
-            >
-              <Eye className="w-4 h-4 mr-1" />
-              <span className="text-[12px] font-medium">Preview</span>
-            </Button>
-          </div>
-        )}
+        {/* Preview Button removed - now in header */}
       </div>
 
       {/* Mobile Preview Modal */}

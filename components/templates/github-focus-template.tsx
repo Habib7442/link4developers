@@ -3,9 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { User as SupabaseUser, UserAppearanceSettings as SupabaseUserAppearanceSettings } from '@/lib/types/supabase-types'
-import { UserLink, LinkCategory, LINK_CATEGORIES } from '@/lib/services/link-service'
-import { ApiLinkService } from '@/lib/services/api-link-service'
-import { CategoryOrderService } from '@/lib/services/category-order-service'
+import { LinkCategory } from '@/lib/domain/entities'
 import { Button } from '@/components/ui/button'
 import { RichLinkPreview } from '@/components/rich-preview/rich-link-preview'
 import { UserLinkWithPreview } from '@/lib/types/rich-preview'
@@ -64,19 +62,15 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
     return () => <CategoryIconPreview config={customIcon} size={16} />
   }
 
-  // Fallback to default icon - ensure these are always available
-  const config = LINK_CATEGORIES[category]
-  if (!config) return ExternalLink
-
-  // Map string icon names to actual icon components
-  switch (config.icon) {
-    case 'Github': return Github
-    case 'BookOpen': return BookOpen
-    case 'Award': return Award
-    case 'Mail': return Mail
-    case 'User': return User
-    case 'Share2': return Share2
-    case 'Link': return Link
+  // Fallback to default icon - map categories to icon components
+  switch (category) {
+    case 'projects': return Github
+    case 'blogs': return BookOpen
+    case 'achievements': return Award
+    case 'contact': return Mail
+    case 'personal': return User
+    case 'social': return Share2
+    case 'custom': return Link
     default: return ExternalLink
   }
 }
@@ -84,7 +78,7 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
 export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryOrder: propCategoryOrder, isPreview = false }: GitHubFocusTemplateProps) {
   const [copied, setCopied] = useState(false)
   const [categoryIcons, setCategoryIcons] = useState<Record<LinkCategory, CategoryIconConfig>>({} as Record<LinkCategory, CategoryIconConfig>)
-  const [categoryOrder, setCategoryOrder] = useState<LinkCategory[]>(propCategoryOrder || CategoryOrderService.DEFAULT_ORDER)
+  const [categoryOrder, setCategoryOrder] = useState<LinkCategory[]>(propCategoryOrder || ['personal', 'projects', 'blogs', 'achievements', 'contact', 'custom', 'social'])
 
   // Load fonts when appearance settings change
   useEffect(() => {
@@ -116,9 +110,10 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
 
       // Only load category order if not provided as prop
       if (!propCategoryOrder) {
-        CategoryOrderService.getCategoryOrder(user.id)
-          .then(order => setCategoryOrder(order))
-          .catch(error => console.error('Error loading category order:', error))
+        // For now, use default order since we're not using the old service
+        setCategoryOrder(['personal', 'projects', 'blogs', 'achievements', 'contact', 'custom', 'social'])
+      } else {
+        setCategoryOrder(propCategoryOrder)
       }
     }
   }, [user?.id, propCategoryOrder])
@@ -232,18 +227,14 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
   }
 
   const handleLinkClick = async (link: UserLinkWithPreview) => {
-    // Track the click for analytics
-    await ApiLinkService.trackLinkClick(link.id)
-
-    // Open the link
+    // For now, just open the link (analytics will be handled by the new clean architecture)
     window.open(link.url, '_blank', 'noopener,noreferrer')
   }
 
   const handleRefreshPreview = async (linkId: string) => {
     try {
-      await ApiLinkService.refreshLinkPreview(user.id, linkId)
-      // Optionally trigger a re-fetch of the links data
-      window.location.reload() // Simple approach for now
+      // For now, just reload the page (preview refresh will be handled by the new clean architecture)
+      window.location.reload()
     } catch (error) {
       console.error('Failed to refresh preview:', error)
     }
@@ -405,7 +396,6 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
                 )
               }
 
-              const categoryConfig = LINK_CATEGORIES[category]
               const CategoryIcon = getCategoryIcon(category, categoryIcons)
               
               return (
@@ -425,7 +415,7 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
                       </div>
                       <h2 className="text-[14px] font-semibold leading-[18px] font-inter text-[#F0F6FC]"
                           style={getTypographyStyle('subheading')}>
-                        {categoryConfig?.label || category}
+                        {category.charAt(0).toUpperCase() + category.slice(1)}
                       </h2>
                       <span className="text-[12px] text-[#8B949E] font-inter ml-auto"
                            style={getTypographyStyle('accent')}>

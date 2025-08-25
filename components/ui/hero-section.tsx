@@ -45,7 +45,7 @@ export function HeroSection() {
           {user && (
             <div className="mb-4">
               <div className="flex items-center gap-2 glassmorphic rounded-[12px] px-3 py-2 shadow-[0px_8px_16px_rgba(0,0,0,0.20)]">
-                {user.avatar_url ? (
+                {user.avatar_url && user.avatar_url.trim() !== '' ? (
                   <img
                     src={user.avatar_url}
                     alt={user.full_name || user.email}
@@ -130,7 +130,7 @@ export function HeroSection() {
               style={{ left: 'clamp(1rem, 10.3vw, 149px)', top: '235px' }}
             >
               <div className="flex items-center gap-2 glassmorphic rounded-[12px] px-4 py-2 shadow-[0px_8px_16px_rgba(0,0,0,0.20)]">
-                {user.avatar_url ? (
+                {user.avatar_url && user.avatar_url.trim() !== '' ? (
                   <img
                     src={user.avatar_url}
                     alt={user.full_name || user.email}

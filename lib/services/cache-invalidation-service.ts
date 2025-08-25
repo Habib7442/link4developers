@@ -13,7 +13,7 @@ export class CacheInvalidationService {
     
     try {
       // Invalidate user-specific caches
-      revalidateTag(`profile-${username}`)
+      revalidateTag(`public-profile-${username}`)
       revalidateTag(`user-stats-${userId}`)
       
       // Invalidate general caches that might include this user
@@ -41,7 +41,7 @@ export class CacheInvalidationService {
     
     try {
       // Invalidate user-specific caches
-      revalidateTag(`profile-${username}`)
+      revalidateTag(`public-profile-${username}`)
       revalidateTag(`user-stats-${userId}`)
       
       // Invalidate rich preview caches if needed
@@ -210,7 +210,7 @@ export class CacheInvalidationService {
     try {
       // Invalidate user profile cache
       if (username) {
-        revalidateTag(`profile-${username}`)
+        revalidateTag(`public-profile-${username}`)
         revalidatePath(`/${username}`)
       }
 
@@ -236,7 +236,7 @@ export class CacheInvalidationService {
     try {
       // Always invalidate user-specific caches
       if (username) {
-        revalidateTag(`profile-${username}`)
+        revalidateTag(`public-profile-${username}`)
         revalidatePath(`/${username}`)
       }
       

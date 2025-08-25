@@ -13,13 +13,16 @@ interface AuthState {
   error: string | null
   
   // Actions
-  signInWithGitHub: () => Promise<void>
-  signInWithGoogle: () => Promise<void>
-  signInWithEmail: (email: string, password: string) => Promise<void>
-  signUpWithEmail: (email: string, password: string, fullName?: string) => Promise<void>
+  signInWithGitHub: () => Promise<boolean>
+  signInWithGoogle: () => Promise<boolean>
+  signInWithEmail: (email: string, password: string) => Promise<boolean>
+  signUpWithEmail: (email: string, password: string, fullName?: string) => Promise<boolean>
   signOut: () => Promise<void>
   updateProfile: (updates: Partial<User>) => Promise<void>
   clearError: () => void
+  refreshAuth: () => Promise<void>
+  isSessionValid: () => Promise<boolean>
+  forceReAuth: () => Promise<void>
   
   // Internal actions
   setUser: (user: User | null) => void
@@ -52,9 +55,11 @@ export const useAuthStore = create<AuthState>()(
           })
           
           if (error) throw error
+          return true // Return success
         } catch (error) {
           console.error('GitHub sign in error:', error)
           set({ error: (error as AuthError).message, loading: false })
+          return false // Return failure
         }
       },
 
@@ -71,9 +76,11 @@ export const useAuthStore = create<AuthState>()(
           })
           
           if (error) throw error
+          return true // Return success
         } catch (error) {
           console.error('Google sign in error:', error)
           set({ error: (error as AuthError).message, loading: false })
+          return false // Return failure
         }
       },
 
@@ -87,9 +94,11 @@ export const useAuthStore = create<AuthState>()(
           })
           
           if (error) throw error
+          return true // Return success
         } catch (error) {
           console.error('Email sign in error:', error)
           set({ error: (error as AuthError).message, loading: false })
+          return false // Return failure
         }
       },
 
@@ -114,9 +123,11 @@ export const useAuthStore = create<AuthState>()(
             error: 'Please check your email for a confirmation link.',
             loading: false 
           })
+          return true // Return success
         } catch (error) {
           console.error('Email sign up error:', error)
           set({ error: (error as AuthError).message, loading: false })
+          return false // Return failure
         }
       },
 
@@ -159,6 +170,79 @@ export const useAuthStore = create<AuthState>()(
       },
 
       clearError: () => set({ error: null }),
+  
+  // Force refresh auth state
+  refreshAuth: async () => {
+    try {
+      set({ loading: true, error: null })
+      console.log('🔄 Manually refreshing auth state...')
+      
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) throw sessionError
+      
+      if (session?.user) {
+        const { data: userProfile } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+        
+        set({ 
+          session, 
+          user: userProfile || null,
+          loading: false 
+        })
+        
+        console.log('✅ Auth state refreshed successfully')
+      } else {
+        set({ session: null, user: null, loading: false })
+        console.log('🔓 No session found during refresh')
+      }
+    } catch (error) {
+      console.error('❌ Auth refresh error:', error)
+      set({ error: (error as Error).message, loading: false })
+    }
+  },
+
+  // Check if current session is still valid
+  isSessionValid: async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) return false
+      
+      // Check if token is expired
+      const now = Math.floor(Date.now() / 1000)
+      if (session.expires_at && session.expires_at < now) {
+        console.log('⚠️ Session token expired')
+        return false
+      }
+      
+      return true
+    } catch (error) {
+      console.error('❌ Error checking session validity:', error)
+      return false
+    }
+  },
+
+  // Force re-authentication by clearing state and re-initializing
+  forceReAuth: async () => {
+    try {
+      console.log('🔄 Force re-authentication...')
+      set({ user: null, session: null, loading: true, error: null })
+      
+      // Clear stored auth data
+      localStorage.removeItem('auth-storage')
+      
+      // Re-initialize
+      await get().initialize()
+      
+      console.log('✅ Force re-authentication completed')
+    } catch (error) {
+      console.error('❌ Force re-authentication error:', error)
+      set({ error: (error as Error).message, loading: false })
+    }
+  },
 
       // Internal actions
       setUser: (user) => set({ user }),
@@ -176,6 +260,8 @@ export const useAuthStore = create<AuthState>()(
           if (sessionError) throw sessionError
           
           if (session?.user) {
+            console.log('🔐 Initial session found for user:', session.user.id)
+            
             // Fetch user profile from our users table
             const { data: userProfile, error: profileError } = await supabase
               .from('users')
@@ -192,13 +278,16 @@ export const useAuthStore = create<AuthState>()(
               user: userProfile || null,
               loading: false 
             })
+            
+            console.log('✅ User profile loaded:', userProfile?.username || 'Unknown')
           } else {
+            console.log('🔓 No initial session found')
             set({ session: null, user: null, loading: false })
           }
           
           // Listen for auth changes
           supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth state changed:', event, session?.user?.id)
+            console.log('🔄 Auth state changed:', event, session?.user?.id)
             
             if (session?.user) {
               // Fetch user profile
@@ -213,16 +302,20 @@ export const useAuthStore = create<AuthState>()(
                 user: userProfile || null,
                 loading: false 
               })
+              
+              console.log('✅ Auth state updated - user profile loaded')
             } else {
               set({ 
                 session: null, 
                 user: null, 
                 loading: false 
               })
+              
+              console.log('🔓 Auth state updated - user signed out')
             }
           })
         } catch (error) {
-          console.error('Auth initialization error:', error)
+          console.error('❌ Auth initialization error:', error)
           set({ error: (error as Error).message, loading: false })
         }
       }
@@ -232,7 +325,17 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         session: state.session
-      })
+      }),
+      // Add rehydration logic to restore session on page load
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          console.log('🔄 Rehydrating auth state from storage...')
+          // Force re-initialization when rehydrating from storage
+          setTimeout(() => {
+            state.initialize()
+          }, 100)
+        }
+      }
     }
   )
 )

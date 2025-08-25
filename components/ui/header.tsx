@@ -70,7 +70,7 @@ export function Header() {
 
               {user ? (
                 <div className="flex items-center gap-2 sm:gap-3">
-                  {user.avatar_url ? (
+                  {user.avatar_url && user.avatar_url.trim() !== '' ? (
                     <Image
                       src={user.avatar_url}
                       alt={user.full_name || user.email || 'User avatar'}

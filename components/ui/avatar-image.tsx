@@ -11,6 +11,17 @@ interface AvatarImageProps {
 export function AvatarImage({ src, alt, fallback }: AvatarImageProps) {
   const [imgSrc, setImgSrc] = useState(src);
 
+  // Don't render if src is null, undefined, or empty string
+  if (!src || src.trim() === '') {
+    return (
+      <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600">
+        <span className="text-white font-bold text-sm">
+          {alt ? alt[0].toUpperCase() : 'U'}
+        </span>
+      </div>
+    );
+  }
+
   const handleError = () => {
     if (fallback) {
       setImgSrc(fallback);

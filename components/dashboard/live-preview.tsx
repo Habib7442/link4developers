@@ -1,102 +1,107 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/stores/auth-store'
-import { LinkService, UserLink, LinkCategory } from '@/lib/services/link-service'
-import { CategoryOrderService } from '@/lib/services/category-order-service'
+import { useQueryClient } from '@tanstack/react-query'
 import { TemplateRenderer } from '@/components/templates/template-renderer'
-import { User, UserAppearanceSettings } from '@/lib/supabase'
-import { AppearanceService } from '@/lib/services/appearance-service'
+import { User as SupabaseUser, UserAppearanceSettings as SupabaseUserAppearanceSettings, TemplateId } from '@/lib/types/supabase-types'
 import { useAppearanceSettings } from '@/contexts/appearance-context'
 import { ExternalLink, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { UserLinkWithPreview, isGitHubUrl, isBlogUrl } from '@/lib/types/rich-preview'
+import { useUserLinks, useCategoryOrder, useUserAppearance } from '@/lib/hooks/use-dashboard-queries'
+import { LinkCategory } from '@/lib/services/link-service'
 
 interface LivePreviewProps {
-  profileData?: Partial<User>
-  refreshTrigger?: number
+  profileData?: Partial<SupabaseUser>
 }
 
-export function LivePreview({ profileData, refreshTrigger = 0 }: LivePreviewProps) {
+export function LivePreview({ profileData }: LivePreviewProps) {
   const { user } = useAuthStore()
+  const queryClient = useQueryClient()
   const contextAppearanceSettings = useAppearanceSettings()
-  const [links, setLinks] = useState<Record<LinkCategory, UserLink[]>>({
-    social: [],
-    projects: [],
-    professional: [],
-    other: []
-  })
-  const [categoryOrder, setCategoryOrder] = useState<LinkCategory[]>([])
-  const [fallbackAppearanceSettings, setFallbackAppearanceSettings] = useState<UserAppearanceSettings | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [linksLoaded, setLinksLoaded] = useState(false)
   const [scale, setScale] = useState(0.6)
 
+  // Use TanStack Query hooks for data fetching
+  const { 
+    data: links = {} as Record<LinkCategory, UserLinkWithPreview[]>, 
+    isLoading: linksLoading, 
+    error: linksError 
+  } = useUserLinks(user?.id || '')
+
+  const { 
+    data: categoryOrder = [], 
+    isLoading: categoryOrderLoading 
+  } = useCategoryOrder(user?.id || '')
+
+  const { 
+    data: fallbackAppearanceSettings, 
+    isLoading: appearanceLoading 
+  } = useUserAppearance(user?.id || '')
+
   // Merge current user data with any profile updates
-  const previewUser: User = {
+  const previewUser: SupabaseUser = {
     ...user,
     ...profileData
-  } as User
+  } as SupabaseUser
 
-  // Load user links and category order
-  useEffect(() => {
-    const loadLinksAndOrder = async () => {
-      if (!user?.id) return
+  // Merge appearance settings from context and fallback
+  const finalAppearanceSettings = contextAppearanceSettings || fallbackAppearanceSettings
 
-      try {
-        setLoading(true)
-        setLinksLoaded(false)
-
-        // Load both links and category order in parallel
-        const [userLinks, userCategoryOrder] = await Promise.all([
-          LinkService.getUserLinks(user.id),
-          CategoryOrderService.getCategoryOrder(user.id)
-        ])
-
-        setLinks(userLinks)
-        setCategoryOrder(userCategoryOrder)
-        setLinksLoaded(true)
-      } catch (error) {
-        console.error('Error loading links and category order for preview:', error)
-      } finally {
-        setLoading(false)
-      }
+  // Manual refresh function
+  const handleManualRefresh = () => {
+    if (user?.id) {
+      queryClient.invalidateQueries({ queryKey: ['links', user.id] })
+      queryClient.invalidateQueries({ queryKey: ['categoryOrder', user.id] })
+      queryClient.invalidateQueries({ queryKey: ['appearance', user.id] })
     }
+  }
 
-    loadLinksAndOrder()
-  }, [user?.id, refreshTrigger])
+  // Loading states
+  const isLoading = linksLoading || categoryOrderLoading || appearanceLoading
+  const hasLinks = Object.values(links).some(categoryLinks => Array.isArray(categoryLinks) && categoryLinks.length > 0)
 
-  // Load fallback appearance settings only when context settings are not available
-  useEffect(() => {
-    const loadFallbackSettings = async () => {
-      if (!user?.id || contextAppearanceSettings) return
+  // Loading spinner component
+  const LoadingSpinner = () => (
+    <div className="flex flex-col items-center justify-center h-64 space-y-4">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <p className="text-gray-600 text-sm">Loading profile data...</p>
+    </div>
+  )
 
-      try {
-        const settings = await AppearanceService.getUserAppearanceSettings(user.id)
-        setFallbackAppearanceSettings(settings)
-      } catch (error) {
-        // User doesn't have premium access or settings don't exist
-        setFallbackAppearanceSettings(null)
-      }
-    }
+  // Error state component
+  const ErrorState = () => (
+    <div className="flex flex-col items-center justify-center h-64 space-y-4 text-center">
+      <div className="text-red-500 text-6xl">⚠️</div>
+      <h3 className="text-lg font-semibold text-gray-800">Failed to load profile</h3>
+      <p className="text-gray-600 text-sm max-w-md">
+        There was an error loading your profile data. Please try refreshing.
+      </p>
+      <Button onClick={handleManualRefresh} variant="outline" size="sm">
+        <RefreshCw className="w-4 h-4 mr-2" />
+        Retry
+      </Button>
+    </div>
+  )
 
-    loadFallbackSettings()
-  }, [user?.id, contextAppearanceSettings])
-
-  // Use context appearance settings (which includes real-time preview updates) if available, otherwise fallback
-  // Memoize to prevent unnecessary re-renders when object reference changes but content is the same
-  const appearanceSettings = useMemo(() => {
-    return contextAppearanceSettings || fallbackAppearanceSettings
-  }, [contextAppearanceSettings, fallbackAppearanceSettings])
+  // Empty state component
+  const EmptyState = () => (
+    <div className="flex flex-col items-center justify-center h-64 space-y-4 text-center">
+      <div className="text-gray-400 text-6xl">📝</div>
+      <h3 className="text-lg font-semibold text-gray-800">No Profile Data</h3>
+      <p className="text-gray-600 text-sm max-w-md">
+        Your profile doesn't have any links yet. Add some links to see them here.
+      </p>
+    </div>
+  )
 
   // Handle opening full preview in new tab
   const handleOpenFullPreview = () => {
-    if (!user?.profile_slug && !user?.github_username) {
-      return
+    if (user?.profile_slug) {
+      window.open(`/${user.profile_slug}`, '_blank')
+    } else if (user?.github_username) {
+      window.open(`/${user.github_username}`, '_blank')
     }
-    
-    const username = user.profile_slug || user.github_username
-    const previewUrl = `/${username}`
-    window.open(previewUrl, '_blank', 'noopener,noreferrer')
   }
 
   // Handle refresh
@@ -105,31 +110,33 @@ export function LivePreview({ profileData, refreshTrigger = 0 }: LivePreviewProp
   }
 
   // Only show loading if we're actually loading links and haven't loaded them yet
-  if (loading && !linksLoaded) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="animate-spin">
-          <RefreshCw className="w-6 h-6 text-[#54E0FF]" />
-        </div>
-      </div>
-    )
+  if (isLoading) {
+    return <LoadingSpinner />
   }
 
-  if (!user) {
-    return (
-      <div className="h-full flex items-center justify-center p-6">
-        <div className="text-center">
-          <p className="text-[14px] text-[#7a7a83] font-sharp-grotesk">
-            Please log in to see preview
-          </p>
-        </div>
-      </div>
-    )
+  // Show error state if there's an error
+  if (linksError) {
+    return <ErrorState />
+  }
+
+  // Don't render preview until we have complete user data
+  if (!user || !previewUser) {
+    return <EmptyState />
+  }
+
+  // Don't render if we don't have links data yet
+  if (!hasLinks) {
+    return <EmptyState />
+  }
+
+  // Show a message if we're still loading appearance settings
+  if (!fallbackAppearanceSettings && !contextAppearanceSettings) {
+    return <LoadingSpinner />
   }
 
   return (
     <div className="h-full flex flex-col">
-      
+
       {/* Preview Controls */}
       <div className="p-4 border-b border-[#33373b] flex-shrink-0">
         <div className="flex items-center justify-between gap-2">
@@ -141,7 +148,17 @@ export function LivePreview({ profileData, refreshTrigger = 0 }: LivePreviewProp
             >
               <RefreshCw className="w-3 h-3" />
             </Button>
-            
+
+            <Button
+              onClick={handleManualRefresh}
+              size="sm"
+              className="bg-transparent border border-[#33373b] text-[#7a7a83] hover:text-white hover:border-[#54E0FF] h-8 px-3"
+              title="Refresh rich previews for all links"
+            >
+              <RefreshCw className="w-3 h-3 mr-1" />
+              Rich Preview
+            </Button>
+
             <Button
               onClick={handleOpenFullPreview}
               size="sm"
@@ -177,9 +194,9 @@ export function LivePreview({ profileData, refreshTrigger = 0 }: LivePreviewProp
 
       {/* Preview Content */}
       <div className="flex-1 overflow-hidden bg-[#18181a] relative">
-        <div 
+        <div
           className="absolute inset-0 origin-top-left transition-transform duration-200"
-          style={{ 
+          style={{
             transform: `scale(${scale})`,
             width: `${100 / scale}%`,
             height: `${100 / scale}%`
@@ -189,8 +206,8 @@ export function LivePreview({ profileData, refreshTrigger = 0 }: LivePreviewProp
             <TemplateRenderer
               user={previewUser}
               links={links}
-              templateId={user?.theme_id}
-              appearanceSettings={appearanceSettings}
+              templateId={previewUser.theme_id as TemplateId | undefined}
+              appearanceSettings={finalAppearanceSettings}
               categoryOrder={categoryOrder}
               isPreview={true}
             />

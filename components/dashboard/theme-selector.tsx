@@ -8,17 +8,20 @@ import { TemplateId, TemplateConfig } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Check, Crown, Palette } from 'lucide-react'
 import { toast } from 'sonner'
+import { useUpdateTheme } from '@/lib/hooks/use-dashboard-queries'
 
 interface ThemeSelectorProps {
   onThemeChange?: () => void
 }
 
 export function ThemeSelector({ onThemeChange }: ThemeSelectorProps = {}) {
-  const { user, updateProfile } = useAuthStore()
+  const { user } = useAuthStore()
   const [currentTemplate, setCurrentTemplate] = useState<TemplateId>('developer-dark')
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>('developer-dark')
-  const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
+  
+  // Use the React Query mutation hook
+  const updateThemeMutation = useUpdateTheme()
 
   // Load user's current template
   useEffect(() => {
@@ -37,26 +40,17 @@ export function ThemeSelector({ onThemeChange }: ThemeSelectorProps = {}) {
   const handleSaveTemplate = async () => {
     if (!user || selectedTemplate === currentTemplate) return
 
-    setSaving(true)
-    try {
-      const success = await TemplateService.updateUserTemplate(user.id, selectedTemplate)
-      
-      if (success) {
-        // Update the auth store
-        await updateProfile({ theme_id: selectedTemplate })
+    updateThemeMutation.mutate({ 
+      userId: user.id, 
+      templateId: selectedTemplate 
+    }, {
+      onSuccess: () => {
+        // Update local state after successful mutation
         setCurrentTemplate(selectedTemplate)
         // Trigger preview refresh
         onThemeChange?.()
-        toast.success('Theme updated successfully!')
-      } else {
-        toast.error('Failed to update theme. Please try again.')
       }
-    } catch (error) {
-      console.error('Error updating theme:', error)
-      toast.error('Failed to update theme. Please try again.')
-    } finally {
-      setSaving(false)
-    }
+    })
   }
 
   if (loading) {
@@ -124,10 +118,10 @@ export function ThemeSelector({ onThemeChange }: ThemeSelectorProps = {}) {
           <div className="flex justify-center">
             <Button
               onClick={handleSaveTemplate}
-              disabled={saving}
+              disabled={updateThemeMutation.isPending}
               className="bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] text-[#18181a] hover:opacity-90 px-8 py-3"
             >
-              {saving ? (
+              {updateThemeMutation.isPending ? (
                 <>
                   <div className="w-4 h-4 border-2 border-[#18181a] border-t-transparent rounded-full animate-spin mr-2" />
                   Saving...

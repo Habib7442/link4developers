@@ -1,10 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useAuthStore } from '@/stores/auth-store'
-import { UserAppearanceSettings } from '@/lib/supabase'
+import { useState } from 'react'
 import { useAppearance } from '@/contexts/appearance-context'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
+import { Loader2 } from 'lucide-react'
+import { useUpdateAppearance } from '@/lib/hooks/use-dashboard-queries'
+import { useAuthStore } from '@/stores/auth-store'
+import { UserAppearanceSettings } from '@/lib/supabase'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BackgroundCustomizer } from './background-customizer'
 import { TypographyCustomizer } from './typography-customizer'
@@ -15,10 +18,8 @@ import {
   Paintbrush,
   Save,
   RotateCcw,
-  Loader2,
   CheckCircle
 } from 'lucide-react'
-import { toast } from 'sonner'
 
 interface AppearanceCustomizerProps {
   onPreviewUpdate?: () => void
@@ -28,15 +29,15 @@ export function AppearanceCustomizer({ onPreviewUpdate }: AppearanceCustomizerPr
   const { user } = useAuthStore()
   const {
     settings,
-    loading,
-    error,
     updateSettings,
     saveSettings,
     resetSettings,
     hasUnsavedChanges,
     previewSettings
   } = useAppearance()
-  const [saving, setSaving] = useState(false)
+  
+  // Use React Query mutations
+  const updateAppearanceMutation = useUpdateAppearance()
 
   // Handle settings updates
   const handleUpdate = (updates: Partial<UserAppearanceSettings>) => {
@@ -47,39 +48,39 @@ export function AppearanceCustomizer({ onPreviewUpdate }: AppearanceCustomizerPr
 
   // Save settings to database
   const handleSave = async () => {
-    setSaving(true)
-    try {
-      const success = await saveSettings()
-      if (success) {
+    if (!user?.id) return
+    
+    updateAppearanceMutation.mutate({ 
+      userId: user.id, 
+      settings: previewSettings 
+    }, {
+      onSuccess: () => {
         toast.success('Appearance settings saved successfully!')
-      } else {
+      },
+      onError: (error) => {
+        console.error('Error saving appearance settings:', error)
         toast.error('Failed to save appearance settings')
       }
-    } catch (error) {
-      console.error('Error saving appearance settings:', error)
-      toast.error('Failed to save appearance settings')
-    } finally {
-      setSaving(false)
-    }
+    })
   }
 
   // Reset to defaults
   const handleReset = async () => {
-    setSaving(true)
-    try {
-      const success = await resetSettings()
-      if (success) {
+    if (!user?.id) return
+    
+    updateAppearanceMutation.mutate({ 
+      userId: user.id, 
+      settings: {} // Reset to defaults
+    }, {
+      onSuccess: () => {
         onPreviewUpdate?.()
         toast.success('Appearance settings reset to defaults!')
-      } else {
+      },
+      onError: (error) => {
+        console.error('Error resetting appearance settings:', error)
         toast.error('Failed to reset appearance settings')
       }
-    } catch (error) {
-      console.error('Error resetting appearance settings:', error)
-      toast.error('Failed to reset appearance settings')
-    } finally {
-      setSaving(false)
-    }
+    })
   }
 
   if (loading) {
@@ -133,30 +134,42 @@ export function AppearanceCustomizer({ onPreviewUpdate }: AppearanceCustomizerPr
             </p>
           </div>
           
-          <div className="flex gap-2 sm:gap-3">
+          <div className="flex gap-3">
             <Button
-              variant="outline"
-              onClick={handleReset}
-              disabled={saving}
-              className="border-[#33373b] text-[#7a7a83] hover:text-white text-[12px] sm:text-[14px] h-8 sm:h-9 px-2 sm:px-3"
+              onClick={handleSave}
+              disabled={!hasUnsavedChanges || updateAppearanceMutation.isPending}
+              className="bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] text-[#18181a] hover:opacity-90 px-6 py-2.5"
             >
-              <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              Reset
+              {updateAppearanceMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Changes
+                </>
+              )}
             </Button>
             
             <Button
-              onClick={handleSave}
-              disabled={saving || !hasUnsavedChanges}
-              className="bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] text-[#18181a] hover:from-[#29ADFF] hover:to-[#54E0FF] text-[12px] sm:text-[14px] h-8 sm:h-9 px-2 sm:px-3"
+              onClick={handleReset}
+              disabled={updateAppearanceMutation.isPending}
+              variant="outline"
+              className="border-[#33373b] text-[#7a7a83] hover:text-white hover:border-[#54E0FF]/50 px-6 py-2.5"
             >
-              {saving ? (
-                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 animate-spin" />
-              ) : hasUnsavedChanges ? (
-                <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              {updateAppearanceMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Resetting...
+                </>
               ) : (
-                <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <>
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Reset to Defaults
+                </>
               )}
-              {saving ? 'Saving...' : hasUnsavedChanges ? 'Save' : 'Saved'}
             </Button>
           </div>
         </div>

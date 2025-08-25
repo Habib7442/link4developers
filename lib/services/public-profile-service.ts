@@ -85,6 +85,32 @@ export class PublicProfileService {
         return { user: null, links: {} as Record<LinkCategory, UserLink[]>, appearanceSettings: null, categoryOrder: CategoryOrderService.DEFAULT_ORDER }
       }
 
+      // Try to get category order first so we can sort the links correctly
+      let categoryOrder: LinkCategory[] = CategoryOrderService.DEFAULT_ORDER;
+      try {
+        // Get user's category order from users table (not user_category_order table)
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('category_order')
+          .eq('id', user.id)
+          .single();
+          
+        if (!userError && userData && userData.category_order) {
+          categoryOrder = userData.category_order as LinkCategory[];
+          console.log('✅ Server Service: Category order loaded from users table:', categoryOrder);
+        } else {
+          console.log('Server Service: No custom category order found, using default:', CategoryOrderService.DEFAULT_ORDER);
+          if (userError) {
+            console.log('Server Service: Database error:', userError);
+          }
+          if (userData) {
+            console.log('Server Service: User data found but no category_order:', userData);
+          }
+        }
+      } catch (orderError) {
+        console.log('Server Service: Error loading category order, using default:', orderError);
+      }
+
       // Get user's active links with rich preview data
       const { data: links, error: linksError } = await supabase
         .from('user_links')
@@ -96,7 +122,6 @@ export class PublicProfileService {
         `)
         .eq('user_id', user.id)
         .eq('is_active', true)
-        .order('category')
         .order('position')
         .order('created_at')
 
@@ -144,20 +169,12 @@ export class PublicProfileService {
         custom_domain: user.custom_domain
       }
 
-      // Try to get appearance settings and category order for the user
-      let appearanceSettings: UserAppearanceSettings | null = null
-      let categoryOrder: LinkCategory[] = CategoryOrderService.DEFAULT_ORDER
-
+      // Get appearance settings
+      let appearanceSettings: UserAppearanceSettings | null = null;
       try {
-        // Load both appearance settings and category order in parallel
-        const [settings, order] = await Promise.all([
-          AppearanceService.getPublicAppearanceSettings(user.id),
-          CategoryOrderService.getCategoryOrder(user.id)
-        ])
-        appearanceSettings = settings
-        categoryOrder = order
+        appearanceSettings = await AppearanceService.getPublicAppearanceSettings(user.id);
       } catch (error) {
-        console.log('Error loading appearance settings or category order for user:', user.id, error)
+        console.log('Error loading appearance settings for user:', user.id, error);
         // This is fine, user may not have custom settings
       }
 
@@ -186,7 +203,7 @@ export class PublicProfileService {
       [`public-profile-${username}`],
       {
         revalidate: 3600, // Cache for 1 hour
-        tags: [`profile-${username}`, 'public-profiles']
+        tags: [`public-profile-${username}`, 'public-profiles']
       }
     )()
   }

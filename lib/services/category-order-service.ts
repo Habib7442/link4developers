@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { LinkCategory } from './link-service'
+import { getAuthHeaders } from '@/lib/utils/auth-headers'
 
 /**
  * Service for managing category section order in the Link Manager
@@ -24,34 +25,41 @@ export class CategoryOrderService {
    */
   static async getCategoryOrder(userId: string): Promise<LinkCategory[]> {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('category_order')
-        .eq('id', userId)
-        .single()
+      console.log('🔄 Fetching category order from API...')
+      
+      const headers = await getAuthHeaders()
+      
+      const response = await fetch('/api/links/category-order', {
+        method: 'GET',
+        headers,
+      })
 
-      if (error) {
-        console.error('Error fetching category order:', error)
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ API Error fetching category order:', errorData)
         return this.DEFAULT_ORDER
       }
 
-      // If no custom order is set, return default
-      if (!data?.category_order || !Array.isArray(data.category_order)) {
+      const result = await response.json()
+      const categoryOrder = result.data
+
+      if (!categoryOrder || !Array.isArray(categoryOrder)) {
+        console.warn('⚠️ No valid category order from API, using default')
         return this.DEFAULT_ORDER
       }
 
       // Validate that all required categories are present
-      const customOrder = data.category_order as string[]
-      const isValid = this.validateCategoryOrder(customOrder)
+      const isValid = this.validateCategoryOrder(categoryOrder)
       
       if (!isValid) {
-        console.warn('Invalid category order found, returning default')
+        console.warn('⚠️ Invalid category order from API, using default')
         return this.DEFAULT_ORDER
       }
 
-      return customOrder as LinkCategory[]
+      console.log('✅ Category order fetched successfully:', categoryOrder)
+      return categoryOrder as LinkCategory[]
     } catch (error) {
-      console.error('Error in getCategoryOrder:', error)
+      console.error('❌ Error in getCategoryOrder:', error)
       return this.DEFAULT_ORDER
     }
   }
@@ -66,22 +74,27 @@ export class CategoryOrderService {
         throw new Error('Invalid category order provided')
       }
 
-      const { error } = await supabase
-        .from('users')
-        .update({
-          category_order: newOrder,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId)
+      console.log('🔄 Updating category order via API...')
+      
+      const headers = await getAuthHeaders()
+      
+      const response = await fetch('/api/links/category-order', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ categoryOrder: newOrder }),
+      })
 
-      if (error) {
-        console.error('Error updating category order:', error)
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ API Error updating category order:', errorData)
         return false
       }
 
-      return true
+      const result = await response.json()
+      console.log('✅ Category order updated successfully via API')
+      return result.data?.success || false
     } catch (error) {
-      console.error('Error in updateCategoryOrder:', error)
+      console.error('❌ Error in updateCategoryOrder:', error)
       return false
     }
   }
@@ -91,22 +104,26 @@ export class CategoryOrderService {
    */
   static async resetCategoryOrder(userId: string): Promise<boolean> {
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({
-          category_order: this.DEFAULT_ORDER,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId)
+      console.log('🔄 Resetting category order via API...')
+      
+      const headers = await getAuthHeaders()
+      
+      const response = await fetch('/api/links/category-order', {
+        method: 'POST',
+        headers,
+      })
 
-      if (error) {
-        console.error('Error resetting category order:', error)
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ API Error resetting category order:', errorData)
         return false
       }
 
-      return true
+      const result = await response.json()
+      console.log('✅ Category order reset successfully via API')
+      return result.data?.success || false
     } catch (error) {
-      console.error('Error in resetCategoryOrder:', error)
+      console.error('❌ Error in resetCategoryOrder:', error)
       return false
     }
   }
@@ -114,7 +131,7 @@ export class CategoryOrderService {
   /**
    * Validate that a category order contains all required categories
    */
-  static validateCategoryOrder(order: string[]): boolean {
+  static validateCategoryOrder(order: LinkCategory[]): boolean {
     if (!Array.isArray(order) || order.length !== this.DEFAULT_ORDER.length) {
       return false
     }

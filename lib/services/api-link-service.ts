@@ -3,21 +3,7 @@ import { CreateLinkData, UpdateLinkData, UserLink, LinkCategory, LINK_CATEGORIES
 import { User } from '@/lib/supabase'
 import { supabase } from '@/lib/supabase'
 import { UserLinkWithPreview } from '@/lib/types/rich-preview'
-
-// Helper function to get authorization headers
-async function getAuthHeaders(): Promise<Record<string, string>> {
-  const { data: { session } } = await supabase.auth.getSession()
-
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  }
-
-  if (session?.access_token) {
-    headers['Authorization'] = `Bearer ${session.access_token}`
-  }
-
-  return headers
-}
+import { getAuthHeaders } from '@/lib/utils/auth-headers'
 
 // Create a timeout promise that rejects after specified milliseconds
 const createTimeoutPromise = (ms: number) => {

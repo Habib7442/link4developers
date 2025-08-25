@@ -4,24 +4,27 @@ import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/stores/auth-store'
 import { ProfileService } from '@/lib/database'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { AvatarUpload } from '@/components/ui/avatar-upload'
-import { User, Save,  Camera, Check, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import { Lock, Loader2, User } from 'lucide-react'
+import { checkProfileCompletion, getCompletionMessage } from '@/lib/utils/profile-completion'
+import { useUpdateProfile } from '@/lib/hooks/use-dashboard-queries'
 
 interface ProfileFormData {
   full_name: string
-  profile_title: string
-  bio: string
   profile_slug: string
-  github_username: string
-  github_url: string
-  website_url: string
-  location: string
-  company: string
-  twitter_username: string
-  linkedin_url: string
-  avatar_url: string | undefined
-  is_public: boolean
+  bio: string
+  avatar_url?: string
+  github_username?: string
+  github_url?: string
+  website_url?: string
+  location?: string
+  company?: string
+  twitter_username?: string
+  linkedin_url?: string
+  profile_title?: string
 }
 
 export function ProfileEditor() {
@@ -38,13 +41,14 @@ export function ProfileEditor() {
     company: '',
     twitter_username: '',
     linkedin_url: '',
-    avatar_url: undefined,
-    is_public: true
+    avatar_url: undefined
   })
-  const [isLoading, setSaving] = useState(false)
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null)
   const [checkingSlug, setCheckingSlug] = useState(false)
   const [previewRefresh, setPreviewRefresh] = useState(0)
+
+  // Use the React Query mutation hook
+  const updateProfileMutation = useUpdateProfile()
 
   // Initialize form data when user loads
   useEffect(() => {
@@ -61,8 +65,7 @@ export function ProfileEditor() {
         company: user.company || '',
         twitter_username: user.twitter_username || '',
         linkedin_url: user.linkedin_url || '',
-        avatar_url: user.avatar_url || undefined,
-        is_public: user.is_public ?? true
+        avatar_url: user.avatar_url || undefined
       })
     }
   }, [user])
@@ -140,23 +143,16 @@ export function ProfileEditor() {
       return
     }
 
-    setSaving(true)
-    try {
-      const updatedUser = await ProfileService.updateUserProfile(user.id, formData)
-      
-      if (updatedUser) {
-        // Update the auth store with new user data
-        await updateProfile(formData)
-        // Trigger preview refresh
-        setPreviewRefresh(prev => prev + 1)
+    updateProfileMutation.mutate({ userId: user.id, profileData: formData }, {
+      onSuccess: () => {
         toast.success('Profile updated successfully!')
+        setPreviewRefresh(prev => prev + 1)
+      },
+      onError: (error) => {
+        console.error('Error updating profile:', error)
+        toast.error('Failed to update profile. Please try again.')
       }
-    } catch (error) {
-      console.error('Error updating profile:', error)
-      toast.error('Failed to update profile. Please try again.')
-    } finally {
-      setSaving(false)
-    }
+    })
   }
 
   if (!user) {
@@ -177,21 +173,58 @@ export function ProfileEditor() {
   return (
     <div className="space-y-3 sm:space-y-8 pb-20 sm:pb-8">
       
+      {/* Profile Completion Banner */}
+      {(() => {
+        try {
+          const profileStatus = checkProfileCompletion(user);
+          if (!profileStatus.isComplete) {
+            return (
+              <div className="glassmorphic rounded-[16px] sm:rounded-[20px] p-4 sm:p-6 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)] border-l-4 border-yellow-400">
+                <div className="flex items-start gap-3">
+                  <Lock className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h3 className="text-[16px] sm:text-[18px] font-medium text-white mb-2">
+                      Complete Your Profile
+                    </h3>
+                    <p className="text-[14px] text-[#7a7a83] mb-3">
+                      {getCompletionMessage(profileStatus)}
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <div className="flex justify-between text-sm text-[#7a7a83] mb-1">
+                          <span>Completion Progress</span>
+                          <span>{profileStatus.completionPercentage}%</span>
+                        </div>
+                        <div className="w-full bg-[#28282b] rounded-full h-2">
+                          <div 
+                            className="bg-yellow-400 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${profileStatus.completionPercentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+          return null;
+        } catch (error) {
+          console.error('Error rendering profile completion banner:', error);
+          return null;
+        }
+      })()}
+      
       {/* Current Profile Status */}
       <div className="glassmorphic rounded-[16px] sm:rounded-[20px] p-4 sm:p-6 shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)]">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
-          <div className="min-w-0 flex-1">
-            <h2 className="text-[16px] sm:text-[20px] font-medium leading-[20px] sm:leading-[24px] tracking-[-0.48px] sm:tracking-[-0.6px] font-sharp-grotesk text-white mb-1 sm:mb-2">
-              Profile Status
-            </h2>
-            <p className="text-[12px] sm:text-[14px] font-light text-[#7a7a83] font-sharp-grotesk truncate">
-              {formData.full_name ? `${formData.full_name} - ${formData.profile_title || 'No title set'}` : 'Complete your profile information'}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[20px] sm:text-[24px] font-medium leading-[24px] sm:leading-[28px] tracking-[-0.6px] sm:tracking-[-0.72px] font-sharp-grotesk text-white">
+            Profile Overview
+          </h2>
+          <div className="flex items-center gap-2">
             <User className="w-4 h-4 sm:w-5 sm:h-5 text-[#54E0FF]" />
             <span className="text-[12px] sm:text-[14px] font-medium text-[#54E0FF] font-sharp-grotesk">
-              {formData.is_public ? 'Public' : 'Private'}
+              Profile Settings
             </span>
           </div>
         </div>
@@ -204,7 +237,7 @@ export function ProfileEditor() {
             Profile Picture
           </h2>
           <div className="flex items-center gap-2">
-            <Camera className="w-5 h-5 text-[#54E0FF]" />
+            <Loader2 className="w-5 h-5 text-[#54E0FF]" />
             <span className="text-[14px] font-medium text-[#54E0FF] font-sharp-grotesk">
               {formData.avatar_url ? 'Customized' : 'Default'}
             </span>
@@ -234,15 +267,21 @@ export function ProfileEditor() {
               <Button
                 onClick={async () => {
                   try {
-                    setSaving(true)
-                    await ProfileService.updateUserProfile(user!.id, { avatar_url: undefined })
-                    handleAvatarUpdate(undefined)
-                    toast.success('Avatar removed successfully!')
+                    updateProfileMutation.mutate({ userId: user!.id, profileData: { avatar_url: undefined } }, {
+                      onSuccess: () => {
+                        handleAvatarUpdate(undefined)
+                        toast.success('Avatar removed successfully!')
+                      },
+                      onError: (error) => {
+                        console.error('Remove avatar error:', error)
+                        toast.error('Failed to remove avatar')
+                      }
+                    })
                   } catch (error) {
                     console.error('Remove avatar error:', error)
                     toast.error('Failed to remove avatar')
                   } finally {
-                    setSaving(false)
+                    // setSaving(false) // This line is no longer needed as updateProfileMutation handles loading state
                   }
                 }}
                 variant="outline"
@@ -348,20 +387,20 @@ export function ProfileEditor() {
               {/* Slug availability indicator */}
               {formData.profile_slug && formData.profile_slug !== user.profile_slug && (
                 <div className="flex items-center gap-2 mt-2">
-                  {checkingSlug ? (
+                  {updateProfileMutation.isPending ? (
                     <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-[#54E0FF] border-t-transparent rounded-full animate-spin" />
                   ) : slugAvailable === true ? (
-                    <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
+                    <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
                   ) : slugAvailable === false ? (
-                    <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />
+                    <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />
                   ) : null}
                   
                   <span className={`text-[11px] sm:text-[12px] font-sharp-grotesk ${
-                    checkingSlug ? 'text-[#7a7a83]' :
+                    updateProfileMutation.isPending ? 'text-[#7a7a83]' :
                     slugAvailable === true ? 'text-green-500' :
                     slugAvailable === false ? 'text-red-500' : 'text-[#7a7a83]'
                   }`}>
-                    {checkingSlug ? 'Checking...' :
+                    {updateProfileMutation.isPending ? 'Checking...' :
                      slugAvailable === true ? 'Available!' :
                      slugAvailable === false ? 'Already taken' : ''}
                   </span>
@@ -413,17 +452,17 @@ export function ProfileEditor() {
         <div className="flex justify-center mt-6 sm:mt-8">
           <Button
             onClick={handleSave}
-            disabled={isLoading || slugAvailable === false}
+            disabled={updateProfileMutation.isPending || slugAvailable === false}
             className="bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] text-[#18181a] hover:opacity-90 px-6 sm:px-8 py-2 sm:py-3 text-[13px] sm:text-[14px]"
           >
-            {isLoading ? (
+            {updateProfileMutation.isPending ? (
               <>
                 <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-[#18181a] border-t-transparent rounded-full animate-spin mr-2" />
                 Saving...
               </>
             ) : (
               <>
-                <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                 Save Changes
               </>
             )}

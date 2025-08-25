@@ -9,79 +9,40 @@ import { supabase } from '@/lib/supabase'
 // GET /api/links/preview/stats - Get preview statistics for user
 export async function GET(request: NextRequest) {
   try {
-    const user = await getUserFromRequest(request)
+    const { user, error } = await getUserFromRequest(request)
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: error || 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user-specific preview stats
-    const { data: userLinks, error: linksError } = await supabase
+    // Get preview statistics for the user
+    const { data: stats, error: statsError } = await supabase
       .from('user_links')
-      .select('preview_status, metadata, preview_fetched_at, created_at')
+      .select('preview_status, preview_fetched_at, preview_expires_at')
       .eq('user_id', user.id)
+      .not('preview_status', 'is', null)
 
-    if (linksError) {
-      return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 })
+    if (statsError) {
+      console.error('Error fetching preview stats:', statsError)
+      return NextResponse.json({ error: 'Failed to fetch preview statistics' }, { status: 500 })
     }
 
     // Calculate statistics
-    const stats = {
-      total: userLinks.length,
-      success: 0,
-      failed: 0,
-      pending: 0,
-      github: 0,
-      webpage: 0,
-      recentlyUpdated: 0,
-      needsRefresh: 0
-    }
-
-    const now = new Date()
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-
-    userLinks.forEach((link) => {
-      // Count by status
-      switch (link.preview_status) {
-        case 'success':
-          stats.success++
-          if (link.metadata?.type === 'github_repo') stats.github++
-          if (link.metadata?.type === 'webpage') stats.webpage++
-          break
-        case 'failed':
-          stats.failed++
-          break
-        case 'pending':
-          stats.pending++
-          break
-      }
-
-      // Count recently updated
-      if (link.preview_fetched_at) {
-        const fetchedAt = new Date(link.preview_fetched_at)
-        if (fetchedAt > oneDayAgo) {
-          stats.recentlyUpdated++
-        }
-      }
-
-      // Count links that might need refresh (older than 7 days)
-      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      if (!link.preview_fetched_at || new Date(link.preview_fetched_at) < sevenDaysAgo) {
-        stats.needsRefresh++
-      }
-    })
-
-    // Calculate percentages
-    const percentages = {
-      successRate: stats.total > 0 ? Math.round((stats.success / stats.total) * 100) : 0,
-      failureRate: stats.total > 0 ? Math.round((stats.failed / stats.total) * 100) : 0,
-      githubRatio: stats.success > 0 ? Math.round((stats.github / stats.success) * 100) : 0,
-      webpageRatio: stats.success > 0 ? Math.round((stats.webpage / stats.success) * 100) : 0
-    }
+    const total = stats.length
+    const pending = stats.filter(s => s.preview_status === 'pending').length
+    const completed = stats.filter(s => s.preview_status === 'completed').length
+    const failed = stats.filter(s => s.preview_status === 'failed').length
+    const expired = stats.filter(s => s.preview_expires_at && new Date(s.preview_expires_at) < new Date()).length
 
     return NextResponse.json({
-      stats,
-      percentages,
-      recommendations: generateRecommendations(stats, userLinks.length)
+      success: true,
+      stats: {
+        total,
+        pending,
+        completed,
+        failed,
+        expired,
+        successRate: total > 0 ? Math.round((completed / total) * 100) : 0
+      }
     })
 
   } catch (error) {

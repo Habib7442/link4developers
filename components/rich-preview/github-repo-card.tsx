@@ -190,7 +190,7 @@ export function GitHubRepoCard({
       <div className="relative z-10">
         {/* Header */}
         <div className="flex items-start gap-4 mb-4">
-          {metadata.owner?.avatar_url && !imageError && (
+          {metadata.owner?.avatar_url && metadata.owner.avatar_url.trim() !== '' && !imageError && (
             <div className={cn(
               "relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0",
               isLight
@@ -198,7 +198,7 @@ export function GitHubRepoCard({
                 : "ring-2 ring-white/10"
             )}>
               <Image
-                src={metadata.owner?.avatar_url || ''}
+                src={metadata.owner.avatar_url}
                 alt={metadata.owner?.login || 'Repository owner'}
                 fill
                 sizes="48px"

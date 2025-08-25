@@ -26,7 +26,9 @@ import {
   Award,
   Share2,
   Copy,
-  Check
+  Check,
+  User as UserIcon,
+  Link
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CategoryIconService, CategoryIconConfig } from '@/lib/services/category-icon-service'
@@ -89,7 +91,7 @@ const getLinkIcon = (link: UserLinkWithPreview) => {
     achievements: Award,
     contact: Mail,
     social: Globe,
-    custom: ExternalLink
+    custom: Link
   }
 
   const IconComponent = defaultIcons[link.category] || ExternalLink
@@ -104,13 +106,19 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
     return () => <CategoryIconPreview config={customIcon} size={20} />
   }
 
-  // Fallback to default icon
+  // Fallback to default icon - ensure these are always available
   const config = LINK_CATEGORIES[category]
-  switch (config?.icon) {
+  if (!config) return ExternalLink
+
+  // Map string icon names to actual icon components
+  switch (config.icon) {
     case 'Github': return Github
     case 'BookOpen': return BookOpen
     case 'Award': return Award
     case 'Mail': return Mail
+    case 'User': return UserIcon
+    case 'Share2': return Share2
+    case 'Link': return Link
     default: return ExternalLink
   }
 }
@@ -346,7 +354,7 @@ export function CyberpunkNeonTemplate({ user, links, appearanceSettings, categor
             
             {/* Left Side - Avatar and Basic Info */}
             <div className="flex-shrink-0">
-              {user.avatar_url ? (
+              {user.avatar_url && user.avatar_url.trim() !== '' ? (
                 <div className="relative">
                   <Image
                     src={user.avatar_url}
@@ -527,6 +535,7 @@ export function CyberpunkNeonTemplate({ user, links, appearanceSettings, categor
                             variant="default"
                             showRefreshButton={true}
                             className="bg-[#1A1A1A] border border-[#00F5FF]/20 hover:border-[#00F5FF]/50 rounded-xl transition-all duration-300 hover:shadow-[0_0_15px_rgba(0,245,255,0.3)] hover:scale-[1.02]"
+                            isPreviewMode={isPreview} // Pass explicit preview mode prop
                           />
                         </div>
                       ))}

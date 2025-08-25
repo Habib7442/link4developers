@@ -83,6 +83,8 @@ export default function UniversalIconSelector({
     setIconType(newType)
     setPreviewError(false)
     
+    console.log('Icon type changed to:', newType)
+    
     if (newType === 'default') {
       onIconChange('default')
     } else if (newType === 'platform' && platformConfig) {
@@ -91,11 +93,15 @@ export default function UniversalIconSelector({
       onIconChange('upload', undefined, undefined, uploadedUrl)
     } else if (newType === 'url' && customUrl && isValidUrl) {
       onIconChange('url', undefined, customUrl)
+    } else {
+      // For cases where we don't have the data yet, still notify parent
+      onIconChange(newType, selectedVariant, customUrl, uploadedUrl)
     }
   }
 
   const handleVariantChange = (variant: string) => {
     setSelectedVariant(variant)
+    console.log('Icon variant changed to:', variant)
     onIconChange('platform', variant)
   }
 
@@ -108,8 +114,13 @@ export default function UniversalIconSelector({
     const valid = !newUrl || urlPattern.test(newUrl)
     setIsValidUrl(valid)
     
+    console.log('Custom URL changed to:', newUrl, 'Valid:', valid)
+    
     if (valid && newUrl) {
       onIconChange('url', undefined, newUrl)
+    } else if (!newUrl) {
+      // Clear custom URL
+      onIconChange('url', undefined, undefined)
     }
   }
 

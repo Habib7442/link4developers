@@ -10,6 +10,9 @@ import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
 import { LoadingSkeleton } from "@/components/dashboard/loading-skeleton";
 import { performanceMonitor } from "@/lib/utils/performance";
 import ChainLinkIcon from "@/components/icons/ChainLinkIcon";
+import { ProfileCompletionBlocker } from "@/components/dashboard/profile-completion-blocker";
+import { checkProfileCompletion } from "@/lib/utils/profile-completion";
+import { toast } from "sonner";
 import {
   User,
   Settings,
@@ -24,7 +27,9 @@ import {
   X,
   LogOut,
   Loader2,
+  Lock,
 } from "lucide-react";
+import { DashboardDataPrefetcher } from "./dashboard-data-prefetcher";
 
 interface NavItem {
   id: string;
@@ -33,6 +38,7 @@ interface NavItem {
   href: string;
   description: string;
   isPremium?: boolean;
+  requiresProfile?: boolean;
 }
 
 const navigationItems: NavItem[] = [
@@ -49,6 +55,7 @@ const navigationItems: NavItem[] = [
     icon: Link,
     href: "/dashboard/links",
     description: "Manage your links and social profiles",
+    requiresProfile: true,
   },
   {
     id: "themes",
@@ -56,6 +63,7 @@ const navigationItems: NavItem[] = [
     icon: Palette,
     href: "/dashboard/themes",
     description: "Choose from pre-built templates",
+    requiresProfile: true,
   },
   {
     id: "appearance",
@@ -64,6 +72,7 @@ const navigationItems: NavItem[] = [
     href: "/dashboard/appearance",
     description: "Customize colors, fonts, and layout",
     isPremium: true,
+    requiresProfile: true,
   },
   {
     id: "analytics",
@@ -71,6 +80,7 @@ const navigationItems: NavItem[] = [
     icon: BarChart3,
     href: "/dashboard/analytics",
     description: "View your profile and link statistics",
+    requiresProfile: true,
   },
   {
     id: "settings",
@@ -92,11 +102,34 @@ export function DashboardLayout({
   showPreview = false,
   previewContent,
 }: DashboardLayoutProps) {
-  const { user, loading, signOut } = useAuthStore();
+  const { user, loading, signOut, refreshAuth, isSessionValid } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+
+  // Debug auth state and refresh on navigation
+  useEffect(() => {
+    console.log('🔍 Dashboard Layout - Auth State:', {
+      user: user?.id ? `User ${user.id}` : 'No user',
+      loading,
+      pathname
+    });
+
+    // Refresh auth state when navigating between dashboard pages
+    const refreshAuthOnNavigation = async () => {
+      if (user?.id && !loading) {
+        console.log('🔄 Navigation detected, validating session...');
+        const isValid = await isSessionValid();
+        if (!isValid) {
+          console.log('🔄 Session invalid on navigation, refreshing...');
+          await refreshAuth();
+        }
+      }
+    };
+
+    refreshAuthOnNavigation();
+  }, [user?.id, loading, pathname, refreshAuth, isSessionValid]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -109,7 +142,21 @@ export function DashboardLayout({
     setIsNavigating(false);
   }, [pathname]);
 
-  const handleNavigation = (href: string) => {
+  const handleNavigation = (href: string, requiresProfile?: boolean) => {
+    if (requiresProfile) {
+      try {
+        const profileStatus = checkProfileCompletion(user);
+        if (!profileStatus.canNavigate) {
+          toast.error("Please complete your profile first to access this feature");
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking profile completion for navigation:', error);
+        toast.error("Unable to verify profile completion. Please try again.");
+        return;
+      }
+    }
+    
     performanceMonitor.startNavigation()
     setIsNavigating(true);
     router.push(href);
@@ -162,6 +209,9 @@ export function DashboardLayout({
 
   return (
     <div className="h-screen bg-[#18181a] flex overflow-hidden">
+      {/* Data Prefetcher - invisible component that prefetches data */}
+      <DashboardDataPrefetcher />
+      
       {/* Sidebar - Hidden on mobile, visible on desktop */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-full sm:w-80 bg-[#1e1e20] border-r border-[#33373b] transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 hidden lg:flex flex-col`}
@@ -185,7 +235,7 @@ export function DashboardLayout({
         {/* User Profile Section */}
         <div className="p-4 sm:p-6 border-b border-[#33373b] flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-            {user.avatar_url ? (
+            {user.avatar_url && user.avatar_url.trim() !== '' ? (
               <img
                 src={user.avatar_url}
                 alt={user.full_name || user.email}
@@ -219,6 +269,43 @@ export function DashboardLayout({
                 "yourname"}
             </span>
           </div>
+
+          {/* Profile Completion Status */}
+          {(() => {
+            try {
+              const profileStatus = checkProfileCompletion(user);
+              return (
+                <div className="mt-3 bg-[#28282b] border border-[#33373b] rounded-[6px] sm:rounded-[8px] px-2 sm:px-3 py-1.5 sm:py-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[11px] sm:text-[12px] font-light text-[#7a7a83] font-sharp-grotesk">
+                      Profile Completion:
+                    </p>
+                    <span className={`text-[11px] sm:text-[12px] font-medium font-sharp-grotesk ${
+                      profileStatus.isComplete ? 'text-green-400' : 'text-yellow-400'
+                    }`}>
+                      {profileStatus.completionPercentage}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-[#1e1e20] rounded-full h-2">
+                    <div 
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        profileStatus.isComplete ? 'bg-green-400' : 'bg-yellow-400'
+                      }`}
+                      style={{ width: `${profileStatus.completionPercentage}%` }}
+                    />
+                  </div>
+                  {!profileStatus.isComplete && (
+                    <p className="text-[10px] text-[#7a7a83] mt-1">
+                      Complete profile to unlock all features
+                    </p>
+                  )}
+                </div>
+              );
+            } catch (error) {
+              console.error('Error rendering profile completion status:', error);
+              return null;
+            }
+          })()}
         </div>
 
         {/* Sidebar Navigation */}
@@ -231,7 +318,7 @@ export function DashboardLayout({
               return (
                 <Button
                   key={item.id}
-                  onClick={() => handleNavigation(item.href)}
+                  onClick={() => handleNavigation(item.href, item.requiresProfile)}
                   onMouseEnter={() => handlePrefetch(item.href)}
                   disabled={isNavigating}
                   className={`w-full justify-start text-left p-3 sm:p-4 h-auto rounded-[8px] sm:rounded-[12px] transition-all duration-200 ${
@@ -260,6 +347,17 @@ export function DashboardLayout({
                         {item.isPremium && (
                           <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] rounded-full flex-shrink-0"></div>
                         )}
+                        {item.requiresProfile && (() => {
+                          try {
+                            const profileStatus = checkProfileCompletion(user);
+                            return !profileStatus.canNavigate && (
+                              <Lock className="w-3 h-3 text-[#7a7a83] flex-shrink-0" />
+                            );
+                          } catch (error) {
+                            console.error('Error checking profile completion:', error);
+                            return null;
+                          }
+                        })()}
                       </div>
                       <div className="text-[11px] sm:text-[12px] font-light leading-[14px] sm:leading-[16px] tracking-[-0.33px] sm:tracking-[-0.36px] text-[#7a7a83] font-sharp-grotesk mt-0.5 sm:mt-1">
                         {item.description}
@@ -328,13 +426,17 @@ export function DashboardLayout({
 
           {/* Page Content */}
           <main className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar pb-20 sm:pb-24 lg:pb-0 mobile-safe-area ${showPreview ? 'lg:col-span-3 xl:col-span-4 2xl:col-span-2' : ''}`}>
-            {isNavigating ? (
-              <LoadingSkeleton type="page" />
-            ) : (
-              <Suspense fallback={<LoadingSkeleton type="page" />}>
-                {children}
-              </Suspense>
-            )}
+            <div className="h-full w-full">
+              {isNavigating ? (
+                <LoadingSkeleton type="page" />
+              ) : (
+                <Suspense fallback={<LoadingSkeleton type="page" />}>
+                  <ProfileCompletionBlocker currentPath={pathname}>
+                    {children}
+                  </ProfileCompletionBlocker>
+                </Suspense>
+              )}
+            </div>
           </main>
 
           {/* Live Preview Panel */}

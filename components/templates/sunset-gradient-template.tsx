@@ -2,16 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { User, UserAppearanceSettings } from '@/lib/supabase'
-import { UserLink, LinkCategory, LINK_CATEGORIES } from '@/lib/services/link-service'
-import { ApiLinkService } from '@/lib/services/api-link-service'
-import { CategoryOrderService } from '@/lib/services/category-order-service'
-import { Button } from '@/components/ui/button'
-import { RichLinkPreview } from '@/components/rich-preview/rich-link-preview'
-import { UserLinkWithPreview } from '@/lib/types/rich-preview'
-import { SocialMediaSection } from '@/components/social-media/social-media-section'
-import { getFontFamilyWithFallbacks, loadGoogleFont } from '@/lib/utils/font-loader'
-import { getSectionStyles, getSectionTypographyStyle } from '@/lib/utils/section-styling'
+import { UserLink, LinkCategory, LINK_CATEGORIES } from '../../lib/services/link-service'
+import { ApiLinkService } from '../../lib/services/api-link-service'
+import { CategoryOrderService } from '../../lib/services/category-order-service'
+import { Button } from '../ui/button'
+import { RichLinkPreview } from '../rich-preview/rich-link-preview'
+import { UserLinkWithPreview } from '../../lib/types/rich-preview'
+import { SocialMediaSection } from '../social-media/social-media-section'
+import { getFontFamilyWithFallbacks, loadGoogleFont } from '../../lib/utils/font-loader'
+import { getSectionStyles, getSectionTypographyStyle } from '../../lib/utils/section-styling'
 import { 
   MapPin, 
   Building, 
@@ -26,17 +25,20 @@ import {
   Award,
   Share2,
   Copy,
-  Check
+  Check,
+  Link,
+  User
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { CategoryIconService, CategoryIconConfig } from '@/lib/services/category-icon-service'
-import { CategoryIconPreview } from '@/components/category-icons/category-icon-preview'
+import { CategoryIconService, CategoryIconConfig } from '../../lib/services/category-icon-service'
+import { CategoryIconPreview } from '../category-icons/category-icon-preview'
 import React from 'react'
+import { User as SupabaseUser, UserAppearanceSettings as SupabaseUserAppearanceSettings } from '@/lib/types/supabase-types'
 
 interface SunsetGradientTemplateProps {
-  user: User
+  user: SupabaseUser
   links: Record<LinkCategory, UserLinkWithPreview[]>
-  appearanceSettings?: UserAppearanceSettings | null
+  appearanceSettings?: SupabaseUserAppearanceSettings | null
   categoryOrder?: LinkCategory[]
   isPreview?: boolean
 }
@@ -90,7 +92,7 @@ const getLinkIcon = (link: UserLinkWithPreview) => {
     achievements: Award,
     contact: Mail,
     social: Globe,
-    custom: ExternalLink
+    custom: Link
   }
 
   const IconComponent = defaultIcons[link.category] || ExternalLink
@@ -107,11 +109,17 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
 
   // Fallback to default icon - ensure these are always available
   const config = LINK_CATEGORIES[category]
-  switch (config?.icon) {
+  if (!config) return ExternalLink
+
+  // Map string icon names to actual icon components
+  switch (config.icon) {
     case 'Github': return Github
     case 'BookOpen': return BookOpen
     case 'Award': return Award
     case 'Mail': return Mail
+    case 'User': return User
+    case 'Share2': return Share2
+    case 'Link': return Link
     default: return ExternalLink
   }
 }
@@ -339,7 +347,7 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
             
             {/* Left Side - Avatar and Basic Info */}
             <div className="flex-shrink-0">
-              {user.avatar_url ? (
+              {user.avatar_url && user.avatar_url.trim() !== '' ? (
                 <div className="relative">
                   <Image
                     src={user.avatar_url}
@@ -469,24 +477,17 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
                     <div className="flex items-center gap-4">
                       <div className="p-3 rounded-xl bg-white shadow-sm">
                         {(() => {
-                          // For projects category, always show GitHub icon
-                          if (category === 'projects') {
-                            return <Github className="w-6 h-6 text-[#FF6F61]" />
+                          // Always show the correct icon based on category
+                          switch (category) {
+                            case 'projects': return <Github className="w-6 h-6 text-[#FF6F61]" />
+                            case 'blogs': return <BookOpen className="w-6 h-6 text-[#FF6F61]" />
+                            case 'personal': return <User className="w-6 h-6 text-[#FF6F61]" />
+                            case 'achievements': return <Award className="w-6 h-6 text-[#FF6F61]" />
+                            case 'contact': return <Mail className="w-6 h-6 text-[#FF6F61]" />
+                            case 'custom': return <Link className="w-6 h-6 text-[#FF6F61]" />
+                            case 'social': return <Share2 className="w-6 h-6 text-[#FF6F61]" />
+                            default: return <ExternalLink className="w-6 h-6 text-[#FF6F61]" />
                           }
-                          
-                          // For blogs category, always show BookOpen icon
-                          if (category === 'blogs') {
-                            return <BookOpen className="w-6 h-6 text-[#FF6F61]" />
-                          }
-                          
-                          // For other categories, use the mapped icon
-                          const IconComponent = CategoryIcon
-                          if (IconComponent && typeof IconComponent === 'function') {
-                            return <IconComponent className="w-6 h-6 text-[#FF6F61]" />
-                          }
-                          
-                          // Fallback
-                          return <ExternalLink className="w-6 h-6 text-[#FF6F61]" />
                         })()}
                       </div>
                       <div>
@@ -514,6 +515,7 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
                             variant="default"
                             showRefreshButton={true}
                             className="bg-white border border-gray-200 hover:border-[#FF6F61] rounded-2xl transition-all duration-300 hover:shadow-[0_5px_15px_rgba(255,100,70,0.2)]"
+                            isPreviewMode={isPreview} // Pass explicit preview mode prop
                           />
                         </div>
                       ))}
@@ -531,7 +533,7 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
             </h2>
             <p className="text-[18px] font-medium leading-[1.6] text-[#444444]"
                style={getTypographyStyle('body')}>
-              This developer hasn't added any links to their profile yet.
+              This developer hasn&apos;t added any links to their profile yet.
             </p>
           </div>
         )}

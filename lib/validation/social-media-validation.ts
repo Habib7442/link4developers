@@ -8,9 +8,11 @@ export interface SocialMediaLinkData {
   title: string
   category: 'social'
   custom_icon_url?: string
+  uploaded_icon_url?: string
   icon_variant?: string
   use_custom_icon?: boolean
   platform_detected?: string
+  icon_selection_type?: string
 }
 
 export interface ValidationResult {
@@ -30,38 +32,53 @@ export class SocialMediaValidator {
     const warnings: string[] = []
     const sanitizedData: Partial<SocialMediaLinkData> = { ...data }
 
-    // Validate URL
-    const urlValidation = this.validateUrl(data.url || '')
-    if (!urlValidation.isValid) {
-      errors.push(...urlValidation.errors)
+    // Basic URL validation
+    if (!data.url || data.url.trim().length === 0) {
+      errors.push('URL is required')
     } else {
-      sanitizedData.url = urlValidation.sanitizedUrl
-      sanitizedData.platform_detected = urlValidation.detectedPlatform
+      try {
+        const url = new URL(data.url.trim())
+        if (url.protocol !== 'https:') {
+          errors.push('Social media URLs must use HTTPS')
+        }
+        sanitizedData.url = data.url.trim()
+        sanitizedData.platform_detected = data.platform_detected || this.detectPlatformFromUrl(data.url)
+      } catch (error) {
+        errors.push('Invalid URL format')
+      }
     }
 
-    // Validate title
-    const titleValidation = this.validateTitle(data.title || '')
-    if (!titleValidation.isValid) {
-      errors.push(...titleValidation.errors)
+    // Basic title validation
+    if (!data.title || data.title.trim().length === 0) {
+      errors.push('Title is required')
+    } else if (data.title.trim().length > 100) {
+      errors.push('Title must be 100 characters or less')
     } else {
-      sanitizedData.title = titleValidation.sanitizedTitle
+      sanitizedData.title = data.title.trim()
     }
 
-    // Validate icon preferences
-    const iconValidation = this.validateIconPreferences({
-      custom_icon_url: data.custom_icon_url,
-      icon_variant: data.icon_variant,
-      use_custom_icon: data.use_custom_icon,
-      platform_detected: sanitizedData.platform_detected
-    })
-    
-    if (!iconValidation.isValid) {
-      errors.push(...iconValidation.errors)
+    // Basic icon validation - much simpler logic
+    if (data.use_custom_icon && data.icon_selection_type === 'upload' && data.uploaded_icon_url) {
+      // User wants custom uploaded icon and provided it
+      sanitizedData.uploaded_icon_url = data.uploaded_icon_url
+      sanitizedData.icon_selection_type = 'upload'
+      sanitizedData.use_custom_icon = true
+    } else if (data.use_custom_icon && data.icon_selection_type === 'url' && data.custom_icon_url) {
+      // User wants custom URL icon and provided it
+      sanitizedData.custom_icon_url = data.custom_icon_url
+      sanitizedData.icon_selection_type = 'url'
+      sanitizedData.use_custom_icon = true
+    } else {
+      // Fallback to platform icon
+      sanitizedData.use_custom_icon = false
+      sanitizedData.icon_selection_type = 'platform'
+      if (data.use_custom_icon) {
+        warnings.push('Custom icon setup incomplete, using platform icon instead')
+      }
     }
-    warnings.push(...iconValidation.warnings)
-    
-    // Apply sanitized icon data
-    Object.assign(sanitizedData, iconValidation.sanitizedData)
+
+    // Set default icon variant
+    sanitizedData.icon_variant = data.icon_variant || 'default'
 
     return {
       isValid: errors.length === 0,
@@ -162,6 +179,8 @@ export class SocialMediaValidator {
     icon_variant?: string
     use_custom_icon?: boolean
     platform_detected?: string
+    uploaded_icon_url?: string
+    icon_selection_type?: string
   }): {
     isValid: boolean
     errors: string[]
@@ -172,13 +191,29 @@ export class SocialMediaValidator {
     const warnings: string[] = []
     const sanitizedData: Partial<SocialMediaLinkData> = {}
 
-    const { custom_icon_url, icon_variant, use_custom_icon, platform_detected } = data
+    const { custom_icon_url, icon_variant, use_custom_icon, platform_detected, uploaded_icon_url, icon_selection_type } = data
 
-    // If using custom icon, validate the URL
+    // If using custom icon, validate the URL or uploaded icon
     if (use_custom_icon) {
-      if (!custom_icon_url || custom_icon_url.trim().length === 0) {
-        errors.push('Custom icon URL is required when using custom icon')
-      } else {
+      // Check if we're using an uploaded icon
+      if (icon_selection_type === 'upload' && uploaded_icon_url) {
+        // Validate uploaded icon URL
+        if (!uploaded_icon_url || uploaded_icon_url.trim().length === 0) {
+          errors.push('Uploaded icon is required when using uploaded icon')
+        } else {
+          try {
+            new URL(uploaded_icon_url.trim())
+            sanitizedData.uploaded_icon_url = uploaded_icon_url.trim()
+            sanitizedData.use_custom_icon = true
+            sanitizedData.icon_variant = data.icon_variant || 'custom'
+            sanitizedData.icon_selection_type = 'upload'
+          } catch (error) {
+            errors.push('Invalid uploaded icon URL format')
+          }
+        }
+      } 
+      // Check if we're using a custom URL icon
+      else if (icon_selection_type === 'url' && custom_icon_url) {
         const customUrlValidation = this.validateCustomIconUrl(custom_icon_url)
         if (!customUrlValidation.isValid) {
           errors.push(...customUrlValidation.errors)
@@ -186,11 +221,17 @@ export class SocialMediaValidator {
           sanitizedData.custom_icon_url = customUrlValidation.sanitizedUrl
           sanitizedData.use_custom_icon = true
           sanitizedData.icon_variant = 'custom'
+          sanitizedData.icon_selection_type = 'url'
         }
+      }
+      // If use_custom_icon is true but no icon URL is provided
+      else {
+        errors.push('Custom icon URL or uploaded icon is required when using custom icon')
       }
     } else {
       // Using platform icon
       sanitizedData.use_custom_icon = false
+      sanitizedData.icon_selection_type = 'platform'
       
       if (platform_detected && SOCIAL_PLATFORMS[platform_detected]) {
         const platformConfig = SOCIAL_PLATFORMS[platform_detected]
@@ -333,5 +374,28 @@ export class SocialMediaValidator {
     }
 
     return suggestions
+  }
+
+  /**
+   * Simple platform detection from URL
+   */
+  private static detectPlatformFromUrl(url: string): string | null {
+    const urlLower = url.toLowerCase()
+    
+    if (urlLower.includes('instagram.com')) return 'instagram'
+    if (urlLower.includes('twitter.com') || urlLower.includes('x.com')) return 'twitter'
+    if (urlLower.includes('linkedin.com')) return 'linkedin'
+    if (urlLower.includes('github.com')) return 'github'
+    if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be')) return 'youtube'
+    if (urlLower.includes('facebook.com')) return 'facebook'
+    if (urlLower.includes('tiktok.com')) return 'tiktok'
+    if (urlLower.includes('discord.com')) return 'discord'
+    if (urlLower.includes('t.me')) return 'telegram'
+    if (urlLower.includes('wa.me')) return 'whatsapp'
+    if (urlLower.includes('reddit.com')) return 'reddit'
+    if (urlLower.includes('twitch.tv')) return 'twitch'
+    if (urlLower.includes('snapchat.com')) return 'snapchat'
+    
+    return null
   }
 }

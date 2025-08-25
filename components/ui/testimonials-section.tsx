@@ -6,19 +6,19 @@ export function TestimonialsSection() {
       quote: "Link4Coders has completely transformed how I showcase my projects. The GitHub integration and interactive code snippets make my profile stand out to recruiters.",
       author: "Sarah Chen",
       role: "Senior Frontend Developer",
-      avatar: "/avatars/avatar-1.png",
+      avatar: null, // Remove non-existent image
     },
     {
       quote: "As a freelance developer, having a professional link-in-bio page has helped me land more clients. The project cards with live demos are a game-changer.",
       author: "Marcus Johnson",
       role: "Fullstack Freelancer",
-      avatar: "/avatars/avatar-2.png",
+      avatar: null, // Remove non-existent image
     },
     {
       quote: "I love how Link4Coders focuses on what matters to developers. It's not just about looking good, but showcasing technical skills in a meaningful way.",
       author: "Priya Sharma",
       role: "Open Source Contributor",
-      avatar: "/avatars/avatar-3.png",
+      avatar: null, // Remove non-existent image
     },
   ];
 
@@ -51,10 +51,18 @@ export function TestimonialsSection() {
                 </div>
                 <div className="flex items-center mt-6">
                   <div className="h-12 w-12 rounded-full bg-gradient-to-r from-[#54E0FF]/20 to-[#29ADFF]/20 overflow-hidden mr-4 flex items-center justify-center">
-                    <AvatarImage
-                      src={testimonial.avatar}
-                      alt={testimonial.author}
-                    />
+                    {testimonial.avatar ? (
+                      <AvatarImage
+                        src={testimonial.avatar}
+                        alt={testimonial.author}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-[18px] font-bold text-[#54E0FF]">
+                          {testimonial.author[0]}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <h4 className="text-[16px] font-medium leading-[20px] tracking-[-0.48px] font-sharp-grotesk text-white">{testimonial.author}</h4>

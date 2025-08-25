@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { User, UserAppearanceSettings } from '@/lib/supabase'
-import { UserLink, LinkCategory, LINK_CATEGORIES } from '@/lib/services/link-service'
+import {  LinkCategory, LINK_CATEGORIES } from '@/lib/services/link-service'
 import { CategoryOrderService } from '@/lib/services/category-order-service'
 import { Button } from '@/components/ui/button'
 import { RichLinkPreview } from '@/components/rich-preview/rich-link-preview'
@@ -26,7 +26,9 @@ import {
   Award,
   Share2,
   Check,
-  Heart
+  Heart,
+  User as UserIcon,
+  Link
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CategoryIconService, CategoryIconConfig } from '@/lib/services/category-icon-service'
@@ -89,7 +91,7 @@ const getLinkIcon = (link: UserLinkWithPreview) => {
     achievements: Award,
     contact: Mail,
     social: Globe,
-    custom: ExternalLink
+    custom: Link
   }
 
   const IconComponent = defaultIcons[link.category] || ExternalLink
@@ -108,11 +110,17 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
 
   // Fallback to default icon with neon styling
   const config = LINK_CATEGORIES[category]
-  switch (config?.icon) {
+  if (!config) return ExternalLink
+
+  // Map string icon names to actual icon components
+  switch (config.icon) {
     case 'Github': return Github
     case 'BookOpen': return BookOpen
     case 'Award': return Award
     case 'Mail': return Mail
+    case 'User': return UserIcon
+    case 'Share2': return Share2
+    case 'Link': return Link
     default: return ExternalLink
   }
 }
@@ -319,7 +327,7 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
           <div className="relative inline-block mb-6">
             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-pink-400 via-purple-500 to-cyan-400 blur-lg opacity-60 scale-110"></div>
             <Image
-              src={user.avatar_url || '/default-avatar.png'}
+              src={user.avatar_url && user.avatar_url.trim() !== '' ? user.avatar_url : '/default-avatar.png'}
               alt={user.full_name || user.github_username || 'User'}
               width={appearanceSettings?.profile_avatar_size || 140}
               height={appearanceSettings?.profile_avatar_size || 140}
@@ -472,6 +480,7 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
                               <RichLinkPreview 
                                 link={link} 
                                 onClick={() => handleLinkClick(link)}
+                                isPreviewMode={isPreview} // Pass explicit preview mode prop
                               />
                             </div>
                           </div>

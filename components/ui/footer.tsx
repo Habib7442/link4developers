@@ -1,7 +1,8 @@
 import ChainLinkIcon from '../icons/ChainLinkIcon';
 
 export function Footer() {
-  const currentYear = new Date().getFullYear();
+  // Use static year to prevent hydration mismatches
+  const currentYear = 2024;
 
   const socialLinks = [
     {

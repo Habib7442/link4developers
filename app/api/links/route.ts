@@ -25,25 +25,38 @@ const createLinkHandler = async (request: NextRequest, { userId }: { userId: str
 
     // Special validation for social media links
     let sanitizedData: any;
+    let validationSuccess = true;
     
     if (linkData.category === 'social') {
-      const socialValidation = SocialMediaValidator.validateSocialMediaLink({
-        url: linkData.url,
-        title: linkData.title,
-        category: linkData.category,
-        custom_icon_url: linkData.custom_icon_url,
-        icon_variant: linkData.icon_variant,
-        use_custom_icon: linkData.use_custom_icon
-      })
+      try {
+        const socialValidation = SocialMediaValidator.validateSocialMediaLink({
+          url: linkData.url,
+          title: linkData.title,
+          category: linkData.category,
+          custom_icon_url: linkData.custom_icon_url,
+          uploaded_icon_url: linkData.uploaded_icon_url,
+          icon_variant: linkData.icon_variant,
+          use_custom_icon: linkData.use_custom_icon,
+          icon_selection_type: linkData.icon_selection_type,
+          platform_detected: linkData.platform_detected
+        })
 
-      if (!socialValidation.isValid) {
+        if (!socialValidation.isValid) {
+          console.error('❌ API: Social media validation failed:', socialValidation.errors)
+          return NextResponse.json(
+            { error: 'Social media validation failed', details: socialValidation.errors },
+            { status: 400 }
+          )
+        }
+
+        sanitizedData = socialValidation.sanitizedData!
+      } catch (validationError) {
+        console.error('❌ API: Exception during social media validation:', validationError)
         return NextResponse.json(
-          { error: 'Social media validation failed', details: socialValidation.errors },
+          { error: 'Social media validation error', details: validationError instanceof Error ? validationError.message : 'Unknown validation error' },
           { status: 400 }
         )
       }
-
-      sanitizedData = socialValidation.sanitizedData!
     } else {
       // Regular validation for non-social links
       const validation = validateLink(linkData)
@@ -55,6 +68,19 @@ const createLinkHandler = async (request: NextRequest, { userId }: { userId: str
       }
 
       sanitizedData = validation.data
+      validationSuccess = validation.success
+    }
+    
+    // Log validation results for debugging
+    console.log('API: Validation results:', { 
+      success: linkData.category === 'social' ? true : validationSuccess, 
+      sanitizedData
+    })
+    
+    if (linkData.category !== 'social' && !validationSuccess) {
+      console.error('API: Validation failed')
+      // Error already handled above
+      return
     }
     
     // Get next position for the category
@@ -138,8 +164,16 @@ const createLinkHandler = async (request: NextRequest, { userId }: { userId: str
         statusCode = 500 // Server Error
       }
       
+      // Log the specific fields that might be causing issues
+      const problematicFields = Object.keys(insertData).filter(key => {
+        const value = insertData[key as keyof typeof insertData]
+        return value !== null && value !== undefined && String(value).length > 0
+      })
+      
+      console.error('API: Fields being inserted:', problematicFields)
+      
       return NextResponse.json(
-        { error: errorMessage, code: error.code },
+        { error: errorMessage, code: error.code, fields: problematicFields },
         { status: statusCode }
       )
     }
@@ -218,16 +252,42 @@ const updateLinkHandler = async (request: NextRequest, { userId }: { userId: str
     
     const { id, display_order, ...updateData } = linkData
 
-    // Validate and sanitize the update data (excluding id)
-    const validation = validateLink({ ...updateData, id: 'temp' }) // Add temp id for validation
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: validation.errors },
-        { status: 400 }
-      )
-    }
+    // Special validation for social media links
+    let sanitizedData: any;
+    
+    if (updateData.category === 'social') {
+      const socialValidation = SocialMediaValidator.validateSocialMediaLink({
+        url: updateData.url,
+        title: updateData.title,
+        category: updateData.category,
+        custom_icon_url: updateData.custom_icon_url,
+        uploaded_icon_url: updateData.uploaded_icon_url,
+        icon_variant: updateData.icon_variant,
+        use_custom_icon: updateData.use_custom_icon,
+        icon_selection_type: updateData.icon_selection_type,
+        platform_detected: updateData.platform_detected
+      })
 
-    const sanitizedData = validation.data
+      if (!socialValidation.isValid) {
+        return NextResponse.json(
+          { error: 'Social media validation failed', details: socialValidation.errors },
+          { status: 400 }
+        )
+      }
+
+      sanitizedData = socialValidation.sanitizedData!
+    } else {
+      // Regular validation for non-social links
+      const validation = validateLink(updateData)
+      if (!validation.success) {
+        return NextResponse.json(
+          { error: 'Validation failed', details: validation.errors },
+          { status: 400 }
+        )
+      }
+
+      sanitizedData = validation.data
+    }
 
     const updatePayload: any = {
       title: sanitizeText(sanitizedData.title, 100),

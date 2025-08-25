@@ -95,7 +95,7 @@ export const CACHE_CONFIG = {
   tags: {
     // User-related tags
     user: {
-      profile: (username: string) => `profile-${username}`,
+      profile: (username: string) => `public-profile-${username}`,
       stats: (userId: string) => `user-stats-${userId}`,
       links: (userId: string) => `user-links-${userId}`
     },

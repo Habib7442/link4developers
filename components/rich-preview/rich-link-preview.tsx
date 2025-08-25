@@ -16,6 +16,7 @@ interface RichLinkPreviewProps {
   variant?: 'default' | 'compact' | 'detailed'
   showRefreshButton?: boolean
   theme?: 'dark' | 'light'
+  isPreviewMode?: boolean // Add explicit preview mode prop
 }
 
 export function RichLinkPreview({
@@ -25,7 +26,8 @@ export function RichLinkPreview({
   className,
   variant = 'default',
   showRefreshButton = false,
-  theme = 'dark'
+  theme = 'dark',
+  isPreviewMode: explicitPreviewMode // Accept explicit preview mode prop
 }: RichLinkPreviewProps) {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState<string | null>(null)
@@ -35,6 +37,32 @@ export function RichLinkPreview({
       onClick()
     } else {
       window.open(link.url, '_blank', 'noopener,noreferrer')
+    }
+  }
+
+  // For preview mode, if we're inside a LivePreview component, 
+  // we should still show rich previews if the data is available
+  // Only fall back to BasicLinkCard if we don't have rich preview data
+  const isPreviewMode = explicitPreviewMode || (typeof window !== 'undefined' && 
+    (window.location.pathname.includes('/dashboard/preview') || 
+     window.location.pathname.includes('/dashboard/links')));
+  
+  // In preview mode, check if we have rich preview data
+  if (isPreviewMode) {
+    // If we have rich preview metadata, show the rich preview
+    if (link.metadata && Object.keys(link.metadata).length > 0) {
+      // Continue with normal rich preview rendering
+    } else {
+      // Fall back to BasicLinkCard only if no rich preview data
+      return (
+        <BasicLinkCard
+          link={link}
+          onClick={handleClick}
+          className={className}
+          variant={variant}
+          theme={theme}
+        />
+      );
     }
   }
 
@@ -55,6 +83,22 @@ export function RichLinkPreview({
 
   // Loading state
   if (link.preview_status === 'pending' || isRefreshing) {
+    // For all links in the preview, use BasicLinkCard instead of showing loading state
+    // Special handling only for GitHub repos, blogs and projects that actually need rich previews
+    const needsRichPreview = link.url.includes('github.com') && link.category === 'projects';
+    
+    if (!needsRichPreview) {
+      return (
+        <BasicLinkCard
+          link={link}
+          onClick={handleClick}
+          className={className}
+          variant={variant}
+          theme={theme}
+        />
+      );
+    }
+    
     const isLight = theme === 'light'
 
     return (
@@ -167,6 +211,20 @@ export function RichLinkPreview({
   // Rich preview with metadata
   if (link.metadata && link.preview_status === 'success') {
     const metadata = link.metadata as RichPreviewMetadata
+
+    // For links in preview context, prioritize immediate display over rich previews
+    // Only use rich preview components for specific types that need them
+    if (metadata.type === 'unknown') {
+      return (
+        <BasicLinkCard
+          link={link}
+          onClick={handleClick}
+          className={className}
+          variant={variant}
+          theme={theme}
+        />
+      );
+    }
 
     // GitHub repository preview
     if (metadata.type === 'github_repo') {

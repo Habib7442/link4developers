@@ -84,6 +84,25 @@ export const RATE_LIMITS = {
     windowMs: 60 * 1000, // 1 minute
     maxRequests: 60, // 60 requests per minute
     message: 'API rate limit exceeded. Please slow down.'
+  },
+  
+  // Category and link management
+  CATEGORY_ORDER_UPDATE: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: 20, // 20 updates per minute
+    message: 'Too many category order updates. Please slow down.'
+  },
+  
+  CATEGORY_ORDER_RESET: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: 10, // 10 resets per minute
+    message: 'Too many category order resets. Please slow down.'
+  },
+  
+  LINK_REORDER: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: 30, // 30 reorders per minute
+    message: 'Too many link reorders. Please slow down.'
   }
 } as const
 

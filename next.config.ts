@@ -11,14 +11,23 @@ const nextConfig: NextConfig = {
   // Performance optimizations
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
+  },
+
+  // Turbopack configuration (stable in Next.js 15+)
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.jsx',
       },
     },
+  },
+
+  // Suppress webpack warning when using Turbopack
+  onDemandEntries: {
+    // This helps suppress the webpack warning
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
   },
 
   // Bundle analyzer (optional - remove in production)

@@ -9,9 +9,9 @@ import { supabase } from '@/lib/supabase'
 // GET /api/links/preview?linkId=xxx - Get preview for a specific link
 export async function GET(request: NextRequest) {
   try {
-    const user = await getUserFromRequest(request)
+    const { user, error } = await getUserFromRequest(request)
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: error || 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
@@ -69,9 +69,9 @@ export async function GET(request: NextRequest) {
 // POST /api/links/preview - Refresh preview for a specific link
 export async function POST(request: NextRequest) {
   try {
-    const user = await getUserFromRequest(request)
+    const { user, error } = await getUserFromRequest(request)
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: error || 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
@@ -120,9 +120,9 @@ export async function POST(request: NextRequest) {
 // PUT /api/links/preview/batch - Batch refresh previews for multiple links
 export async function PUT(request: NextRequest) {
   try {
-    const user = await getUserFromRequest(request)
+    const { user, error } = await getUserFromRequest(request)
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: error || 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
@@ -178,9 +178,9 @@ export async function PUT(request: NextRequest) {
 // DELETE /api/links/preview - Clear preview data for a link
 export async function DELETE(request: NextRequest) {
   try {
-    const user = await getUserFromRequest(request)
+    const { user, error } = await getUserFromRequest(request)
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: error || 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
@@ -191,7 +191,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify user owns the link and clear preview data
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from('user_links')
       .update({
         metadata: null,
@@ -203,7 +203,7 @@ export async function DELETE(request: NextRequest) {
       .eq('id', linkId)
       .eq('user_id', user.id)
 
-    if (error) {
+    if (updateError) {
       return NextResponse.json({ error: 'Failed to clear preview' }, { status: 500 })
     }
 

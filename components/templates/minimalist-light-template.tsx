@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { User, UserAppearanceSettings } from '@/lib/supabase'
+import { User as SupabaseUser, UserAppearanceSettings as SupabaseUserAppearanceSettings } from '@/lib/types/supabase-types'
 import { UserLink, LinkCategory, LINK_CATEGORIES } from '@/lib/services/link-service'
 import { Button } from '@/components/ui/button'
 import { RichLinkPreview } from '@/components/rich-preview/rich-link-preview'
@@ -26,16 +26,18 @@ import {
   Share2,
   Copy,
   Check,
-  Heart
+  Heart,
+  User,
+  Link
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CategoryIconService, CategoryIconConfig } from '@/lib/services/category-icon-service'
 import { CategoryIconPreview } from '@/components/category-icons/category-icon-preview'
 
 interface MinimalistLightTemplateProps {
-  user: User
+  user: SupabaseUser
   links: Record<LinkCategory, UserLinkWithPreview[]>
-  appearanceSettings?: UserAppearanceSettings | null
+  appearanceSettings?: SupabaseUserAppearanceSettings | null
   categoryOrder?: LinkCategory[]
   isPreview?: boolean
 }
@@ -89,7 +91,7 @@ const getLinkIcon = (link: UserLinkWithPreview) => {
     achievements: Award,
     contact: Mail,
     social: Globe,
-    custom: ExternalLink
+    custom: Link
   }
 
   const IconComponent = defaultIcons[link.category] || ExternalLink
@@ -108,11 +110,17 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
 
   // Fallback to default icon with light theme styling
   const config = LINK_CATEGORIES[category]
-  switch (config?.icon) {
+  if (!config) return ExternalLink
+
+  // Map string icon names to actual icon components
+  switch (config.icon) {
     case 'Github': return Github
     case 'BookOpen': return BookOpen
     case 'Award': return Award
     case 'Mail': return Mail
+    case 'User': return User
+    case 'Share2': return Share2
+    case 'Link': return Link
     default: return ExternalLink
   }
 }
@@ -295,7 +303,7 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
           <div className="relative inline-block mb-6">
             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-600 blur-lg opacity-20 scale-110"></div>
             <Image
-              src={user.avatar_url || '/default-avatar.png'}
+              src={user.avatar_url && user.avatar_url.trim() !== '' ? user.avatar_url : '/default-avatar.png'}
               alt={user.full_name || user.github_username || 'User'}
               width={appearanceSettings?.profile_avatar_size || 120}
               height={appearanceSettings?.profile_avatar_size || 120}
@@ -435,6 +443,7 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
                               link={link} 
                               onClick={() => handleLinkClick(link)}
                               theme="light"
+                              isPreviewMode={isPreview} // Pass explicit preview mode prop
                             />
                           </div>
                         </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { memo } from 'react'
-import { User, TemplateId, UserAppearanceSettings } from '@/lib/supabase'
+import { User as SupabaseUser, UserAppearanceSettings as SupabaseUserAppearanceSettings, TemplateId } from '@/lib/types/supabase-types'
 import { UserLink, LinkCategory } from '@/lib/services/link-service'
 import { UserLinkWithPreview } from '@/lib/types/rich-preview'
 import { getTemplateConfig } from '@/lib/templates/template-config'
@@ -15,10 +15,10 @@ import { CyberpunkNeonTemplate } from './cyberpunk-neon-template'
 import { SunsetGradientTemplate } from './sunset-gradient-template'
 
 interface TemplateRendererProps {
-  user: User
+  user: SupabaseUser
   links: Record<LinkCategory, UserLinkWithPreview[]>
   templateId?: TemplateId
-  appearanceSettings?: UserAppearanceSettings | null
+  appearanceSettings?: SupabaseUserAppearanceSettings | null
   categoryOrder?: LinkCategory[]
   isPreview?: boolean
 }

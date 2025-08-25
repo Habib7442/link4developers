@@ -58,6 +58,7 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, defaultCategory, edit
     icon_variant: 'default',
     use_custom_icon: false,
     icon_selection_type: 'default' as 'default' | 'platform' | 'upload' | 'url',
+    platform_detected: '',
     // GitHub Projects specific field
     live_project_url: ''
   })
@@ -119,10 +120,34 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, defaultCategory, edit
     // Check custom URL or upload icon validation when selected
     if (formData.icon_selection_type === 'url' && !formData.custom_icon_url.trim()) {
       errors.push('Please provide a valid icon URL or select a different icon type')
+    } else if (formData.icon_selection_type === 'url' && formData.custom_icon_url.trim()) {
+      // Validate custom icon URL format
+      if (!isValidUrl(formData.custom_icon_url)) {
+        errors.push('Please enter a valid custom icon URL (must start with https://)')
+      } else {
+        // Check if it's an image URL
+        const imageExtensions = ['.png', '.jpg', '.jpeg', '.svg', '.webp', '.gif']
+        const hasImageExtension = imageExtensions.some(ext => 
+          formData.custom_icon_url.toLowerCase().includes(ext)
+        )
+        if (!hasImageExtension) {
+          errors.push('Custom icon URL must point to an image file (png, jpg, jpeg, svg, webp, gif)')
+        }
+      }
     }
 
     if (formData.icon_selection_type === 'upload' && !formData.uploaded_icon_url.trim()) {
       errors.push('Please upload an icon or select a different icon type')
+    }
+
+    // Validate icon variant format
+    if (formData.icon_variant && !/^[a-z0-9_-]+$/.test(formData.icon_variant)) {
+      errors.push('Icon variant contains invalid characters')
+    }
+
+    // Validate platform detected format
+    if (formData.platform_detected && !/^[a-z0-9_-]*$/.test(formData.platform_detected)) {
+      errors.push('Platform detected contains invalid characters')
     }
 
     return { 
@@ -171,6 +196,7 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, defaultCategory, edit
           icon_variant: editLink.icon_variant || 'default',
           use_custom_icon: editLink.use_custom_icon || false,
           icon_selection_type: editLink.icon_selection_type || 'default',
+          platform_detected: editLink.platform_detected || '',
           // GitHub Projects specific field
           live_project_url: editLink.live_project_url || ''
         })
@@ -189,6 +215,7 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, defaultCategory, edit
           icon_variant: 'default',
           use_custom_icon: false,
           icon_selection_type: 'default',
+          platform_detected: '',
           // GitHub Projects specific field
           live_project_url: ''
         })
@@ -273,27 +300,27 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, defaultCategory, edit
       if (editLink && editLink.id && editLink.id.trim() !== '') {
         // Update existing link
         console.log('📝 Updating existing link:', editLink.id)
-        console.log('📝 EditLink object:', editLink)
-
-        const updateData = {
+        const updateData: UpdateLinkData = {
           id: editLink.id,
           title: formData.title.trim(),
           url: formData.url.trim(),
           description: formData.description.trim() || undefined,
           icon_type: formData.icon_type,
           category: formData.category,
-          // Include all icon fields for updates
-          custom_icon_url: formData.custom_icon_url || undefined,
-          uploaded_icon_url: formData.uploaded_icon_url || undefined,
-          icon_variant: formData.icon_variant,
-          use_custom_icon: formData.use_custom_icon,
-          icon_selection_type: formData.icon_selection_type,
+          // Include universal icon data - ensure all fields are properly included
+          custom_icon_url: formData.custom_icon_url ? formData.custom_icon_url.trim() : undefined,
+          uploaded_icon_url: formData.uploaded_icon_url ? formData.uploaded_icon_url.trim() : undefined,
+          icon_variant: formData.icon_variant || 'default',
+          use_custom_icon: formData.use_custom_icon || false,
+          icon_selection_type: formData.icon_selection_type || 'default',
+          platform_detected: formData.platform_detected || undefined,
           // GitHub Projects specific field - only include if not empty
           live_project_url: formData.live_project_url && formData.live_project_url.trim() ? formData.live_project_url.trim() : undefined
         }
 
-        console.log('📝 Update data being sent:', updateData)
-
+        // Log the data being sent to help with debugging
+        console.log('📤 Sending update data to API:', JSON.stringify(updateData, null, 2))
+        
         const result = await ApiLinkService.updateLink(user.id, updateData)
         console.log('✅ Update successful:', result)
         toast.success('Link updated successfully!')
@@ -307,16 +334,20 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, defaultCategory, edit
           description: formData.description.trim() || undefined,
           icon_type: formData.icon_type,
           category: formData.category,
-          // Include universal icon data
-          custom_icon_url: formData.custom_icon_url || undefined,
-          uploaded_icon_url: formData.uploaded_icon_url || undefined,
-          icon_variant: formData.icon_variant,
-          use_custom_icon: formData.use_custom_icon,
-          icon_selection_type: formData.icon_selection_type,
+          // Include universal icon data - ensure all fields are properly included
+          custom_icon_url: formData.custom_icon_url ? formData.custom_icon_url.trim() : undefined,
+          uploaded_icon_url: formData.uploaded_icon_url ? formData.uploaded_icon_url.trim() : undefined,
+          icon_variant: formData.icon_variant || 'default',
+          use_custom_icon: formData.use_custom_icon || false,
+          icon_selection_type: formData.icon_selection_type || 'default',
+          platform_detected: formData.platform_detected || undefined,
           // GitHub Projects specific field - only include if not empty
           live_project_url: formData.live_project_url && formData.live_project_url.trim() ? formData.live_project_url.trim() : undefined
         }
 
+        // Log the data being sent to help with debugging
+        console.log('📤 Sending link data to API:', JSON.stringify(linkData, null, 2))
+        
         const result = await ApiLinkService.createLink(user.id, linkData)
         console.log('✅ Create successful:', result)
         toast.success('Link added successfully!')
@@ -372,6 +403,17 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, defaultCategory, edit
         }
       }
       
+      // Check if error has details from API
+      if (error && typeof error === 'object' && 'details' in error) {
+        const apiError = error as { details?: string[]; fields?: string[] };
+        if (apiError.details && Array.isArray(apiError.details)) {
+          errorMessage = `Validation failed: ${apiError.details.join(', ')}`
+        }
+        if (apiError.fields && Array.isArray(apiError.fields)) {
+          errorMessage += ` (Fields: ${apiError.fields.join(', ')})`
+        }
+      }
+      
       toast.error(errorMessage)
       isSubmissionSuccessful = false
     } finally {
@@ -404,18 +446,31 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, defaultCategory, edit
     customUrl?: string,
     uploadedUrl?: string
   ) => {
+    // Detect platform from current URL
+    const detectedPlatform = formData.url ? detectPlatformFromUrl(formData.url) : null
+    
+    console.log('Icon change:', { iconType, iconVariant, customUrl, uploadedUrl, detectedPlatform })
+    
     setValidatedFormData({
       icon_selection_type: iconType,
       use_custom_icon: iconType !== 'default' && iconType !== 'platform',
       icon_variant: iconVariant || 'default',
       custom_icon_url: customUrl || '',
-      uploaded_icon_url: uploadedUrl || ''
+      uploaded_icon_url: uploadedUrl || '',
+      platform_detected: detectedPlatform || ''
     })
   }
 
   // Auto-detect social media URLs and suggest category
   const handleUrlChange = (url: string) => {
-    setValidatedFormData({ url })
+    // Detect platform from URL
+    const detectedPlatform = url ? detectPlatformFromUrl(url) : null
+    
+    // Update form data with URL and detected platform
+    setValidatedFormData({ 
+      url,
+      platform_detected: detectedPlatform || ''
+    })
     
     // Skip further processing if URL is empty or invalid
     if (!url.trim() || !isValidUrl(url)) {
@@ -427,16 +482,24 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, defaultCategory, edit
     // 1. There's no defaultCategory (modal opened from general Add Link button)
     // 2. Current category is 'personal' (default fallback)
     // 3. URL is detected as a social platform
-    if (!defaultCategory && formData.category === 'personal' && url && detectPlatformFromUrl(url)) {
+    if (!defaultCategory && formData.category === 'personal' && detectedPlatform) {
       // Auto-set to social category for better UX, but only when appropriate
       console.log('🔍 Auto-detected social platform, setting category to social')
-      setValidatedFormData({ category: 'social' })
+      setValidatedFormData({ 
+        url,
+        category: 'social',
+        platform_detected: detectedPlatform
+      })
     }
     
     // Special case: GitHub URLs should go to projects category if no specific category is set
     if (!defaultCategory && formData.category === 'personal' && url && url.includes('github.com')) {
       console.log('🔍 Auto-detected GitHub URL, setting category to projects')
-      setValidatedFormData({ category: 'projects' })
+      setValidatedFormData({ 
+        url,
+        category: 'projects',
+        platform_detected: detectedPlatform || ''
+      })
     }
   }
 
@@ -532,10 +595,15 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, defaultCategory, edit
               onValueChange={(value) => {
                 console.log('📊 Category changed to:', value)
                 // Validate that the value is a valid LinkCategory
-                if (value && Object.keys(LINK_CATEGORIES).includes(value)) {
+                const validCategories = Object.keys(LINK_CATEGORIES) as LinkCategory[]
+                if (value && validCategories.includes(value as LinkCategory)) {
                   setValidatedFormData({ category: value as LinkCategory })
                 } else {
                   console.warn('Invalid category value received:', value, 'Keeping current:', formData.category)
+                  // Set to a valid default if current category is also invalid
+                  if (!validCategories.includes(formData.category)) {
+                    setValidatedFormData({ category: 'personal' })
+                  }
                 }
               }}
             >

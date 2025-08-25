@@ -42,17 +42,24 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'signin' }: AuthModal
     e.preventDefault()
     
     if (mode === 'signin') {
-      await signInWithEmail(email, password)
+      const success = await signInWithEmail(email, password)
+      if (success) {
+        onClose() // Close modal on successful sign-in
+      }
     } else {
-      await signUpWithEmail(email, password, fullName)
+      const success = await signUpWithEmail(email, password, fullName)
+      // For sign-up, we don't close the modal immediately as user needs to check email
+      // The success message is displayed in the modal
     }
   }
 
   const handleGitHubAuth = async () => {
+    // For OAuth, we don't close the modal immediately as it redirects
     await signInWithGitHub()
   }
 
   const handleGoogleAuth = async () => {
+    // For OAuth, we don't close the modal immediately as it redirects
     await signInWithGoogle()
   }
 

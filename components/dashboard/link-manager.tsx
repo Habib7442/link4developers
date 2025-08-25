@@ -289,7 +289,7 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
         try {
           const username = user?.profile_slug || user?.github_username;
           if (username) {
-            await fetch(`/api/revalidate?tag=profile-${username}`, {
+            await fetch(`/api/revalidate?tag=public-profile-${username}`, {
               method: "POST",
             });
             console.log("✅ Cache invalidated for profile:", username);
@@ -333,7 +333,7 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
       try {
         const username = user?.profile_slug || user?.github_username;
         if (username) {
-          await fetch(`/api/revalidate?tag=profile-${username}`, {
+          await fetch(`/api/revalidate?tag=public-profile-${username}`, {
             method: "POST",
           });
           console.log("✅ Cache invalidated for profile:", username);
@@ -362,7 +362,7 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
       try {
         const username = user?.profile_slug || user?.github_username;
         if (username) {
-          await fetch(`/api/revalidate?tag=profile-${username}`, {
+          await fetch(`/api/revalidate?tag=public-profile-${username}`, {
             method: "POST",
           });
           console.log("✅ Cache invalidated for profile:", username);
@@ -425,9 +425,9 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
   );
 
   return (
-    <div className="responsive-container px-2 sm:px-3 md:px-4 lg:px-6 space-y-4 sm:space-y-6 md:space-y-8 pb-16 sm:pb-8">
+    <div className="h-full p-1 sm:p-2 space-y-2 sm:space-y-3">
       {/* Link Statistics Status */}
-      <div className="glassmorphic rounded-xl p-3 sm:p-4 md:p-6 shadow-lg w-full">
+      <div className="glassmorphic rounded-xl p-2 sm:p-3 md:p-4 shadow-lg w-full">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <div className="min-w-0 flex-1">
             <h2 className="text-base sm:text-lg md:text-xl font-medium text-white mb-1 sm:mb-2">
@@ -446,9 +446,9 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
         </div>
       </div>
 
-             {/* Analytics Overview */}
-       {analytics && (
-         <div className="glassmorphic rounded-xl p-3 sm:p-4 md:p-6 lg:p-8 shadow-lg responsive-container">
+      {/* Analytics Overview */}
+      {analytics && (
+        <div className="glassmorphic rounded-xl p-2 sm:p-3 md:p-4 lg:p-6 shadow-lg w-full">
           <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
             <h2 className="text-base sm:text-lg md:text-xl font-medium text-white">
               Analytics Overview
@@ -456,7 +456,7 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-            <div className="text-center bg-[#28282b]/70 rounded-lg p-3 sm:p-4 w-full">
+            <div className="text-center bg-[#28282b]/70 rounded-lg p-2 sm:p-3 w-full">
               <div className="text-lg sm:text-xl font-medium text-[#54E0FF]">
                 {analytics.totalClicks}
               </div>
@@ -465,7 +465,7 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
               </div>
             </div>
 
-            <div className="text-center bg-[#28282b]/70 rounded-lg p-3 sm:p-4 w-full">
+            <div className="text-center bg-[#28282b]/70 rounded-lg p-2 sm:p-3 w-full">
               <div className="text-lg sm:text-xl font-medium text-[#54E0FF]">
                 {totalLinks}
               </div>
@@ -474,7 +474,7 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
               </div>
             </div>
 
-            <div className="text-center bg-[#28282b]/70 rounded-lg p-3 sm:p-4 w-full">
+            <div className="text-center bg-[#28282b]/70 rounded-lg p-2 sm:p-3 w-full">
               <div className="text-lg sm:text-xl font-medium text-[#54E0FF]">
                 {activeLinks}
               </div>
@@ -487,8 +487,8 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
       )}
 
       {/* Link Management */}
-      <div className="glassmorphic rounded-xl p-3 sm:p-4 md:p-6 lg:p-8 shadow-lg w-full">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4 md:mb-6">
+      <div className="glassmorphic rounded-xl p-2 sm:p-3 md:p-4 lg:p-6 shadow-lg w-full">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4 md:mb-6">
           <div className="min-w-0 flex-1">
             <h2 className="text-base sm:text-lg md:text-xl font-medium text-white">
               Manage Your Links

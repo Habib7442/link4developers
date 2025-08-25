@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { getAuthHeaders } from '@/lib/utils/auth-headers'
 
 export interface UserLink {
   id: string
@@ -338,27 +339,28 @@ export class LinkService {
 
   // Reorder links within a category
   static async reorderLinks(userId: string, category: LinkCategory, linkIds: string[]): Promise<void> {
-    const updates = linkIds.map((linkId, index) => ({
-      id: linkId,
-      position: index,
-      updated_at: new Date().toISOString()
-    }))
+    try {
+      console.log('🔄 Reordering links via API...')
+      
+      const headers = await getAuthHeaders()
+      
+      const response = await fetch('/api/links/reorder', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ category, linkIds }),
+      })
 
-    for (const update of updates) {
-      const { error } = await supabase
-        .from('user_links')
-        .update({
-          position: update.position,
-          updated_at: update.updated_at
-        })
-        .eq('id', update.id)
-        .eq('user_id', userId)
-        .eq('category', category)
-
-      if (error) {
-        console.error('Error reordering links:', error)
-        throw error
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ API Error reordering links:', errorData)
+        throw new Error(`Failed to reorder links: ${errorData.error}`)
       }
+
+      const result = await response.json()
+      console.log('✅ Links reordered successfully via API')
+    } catch (error) {
+      console.error('❌ Error in reorderLinks:', error)
+      throw error
     }
   }
 
@@ -417,34 +419,43 @@ export class LinkService {
     linksByCategory: Record<LinkCategory, number>
     topLinks: Array<{ title: string; clicks: number; url: string }>
   }> {
-    const { data, error } = await supabase
-      .from('user_links')
-      .select('title, url, category, click_count')
-      .eq('user_id', userId)
-      .eq('is_active', true)
+    try {
+      console.log('🔄 Fetching link analytics from API...')
+      
+      const headers = await getAuthHeaders()
+      
+      const response = await fetch('/api/links/analytics', {
+        method: 'GET',
+        headers,
+      })
 
-    if (error) {
-      console.error('Error fetching link analytics:', error)
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ API Error fetching analytics:', errorData)
+        throw new Error(`Failed to fetch analytics: ${errorData.error}`)
+      }
+
+      const result = await response.json()
+      const analytics = result.data
+
+      if (!analytics) {
+        console.warn('⚠️ No analytics data from API')
+        return {
+          totalClicks: 0,
+          linksByCategory: {} as Record<LinkCategory, number>,
+          topLinks: []
+        }
+      }
+
+      console.log('✅ Analytics fetched successfully via API')
+      return {
+        totalClicks: analytics.totalClicks || 0,
+        linksByCategory: analytics.linksByCategory || {},
+        topLinks: analytics.topLinks || []
+      }
+    } catch (error) {
+      console.error('❌ Error in getLinkAnalytics:', error)
       throw error
     }
-
-    const totalClicks = data?.reduce((sum, link) => sum + (link.click_count || 0), 0) || 0
-    
-    const linksByCategory = data?.reduce((acc, link) => {
-      const category = link.category as LinkCategory
-      acc[category] = (acc[category] || 0) + (link.click_count || 0)
-      return acc
-    }, {} as Record<LinkCategory, number>) || {}
-
-    const topLinks = data
-      ?.sort((a, b) => (b.click_count || 0) - (a.click_count || 0))
-      .slice(0, 5)
-      .map(link => ({
-        title: link.title,
-        clicks: link.click_count || 0,
-        url: link.url
-      })) || []
-
-    return { totalClicks, linksByCategory, topLinks }
   }
 }

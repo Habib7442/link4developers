@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { User, UserAppearanceSettings } from '@/lib/supabase'
+import { User as SupabaseUser, UserAppearanceSettings as SupabaseUserAppearanceSettings } from '@/lib/types/supabase-types'
 import { UserLink, LinkCategory, LINK_CATEGORIES } from '@/lib/services/link-service'
 import { ApiLinkService } from '@/lib/services/api-link-service'
 import { CategoryOrderService } from '@/lib/services/category-order-service'
@@ -26,16 +26,18 @@ import {
   Award,
   Share2,
   Copy,
-  Check
+  Check,
+  User,
+  Link
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CategoryIconService, CategoryIconConfig } from '@/lib/services/category-icon-service'
 import { CategoryIconPreview } from '@/components/category-icons/category-icon-preview'
 
 interface DeveloperDarkTemplateProps {
-  user: User
+  user: SupabaseUser
   links: Record<LinkCategory, UserLinkWithPreview[]>
-  appearanceSettings?: UserAppearanceSettings | null
+  appearanceSettings?: SupabaseUserAppearanceSettings | null
   categoryOrder?: LinkCategory[]
   isPreview?: boolean
 }
@@ -89,7 +91,7 @@ const getLinkIcon = (link: UserLinkWithPreview) => {
     achievements: Award,
     contact: Mail,
     social: Globe,
-    custom: ExternalLink
+    custom: Link
   }
 
   const IconComponent = defaultIcons[link.category] || ExternalLink
@@ -104,13 +106,19 @@ const getCategoryIcon = (category: LinkCategory, customIcons: Record<LinkCategor
     return () => <CategoryIconPreview config={customIcon} size={20} />
   }
 
-  // Fallback to default icon
+  // Fallback to default icon - ensure these are always available
   const config = LINK_CATEGORIES[category]
-  switch (config?.icon) {
+  if (!config) return ExternalLink
+
+  // Map string icon names to actual icon components
+  switch (config.icon) {
     case 'Github': return Github
     case 'BookOpen': return BookOpen
     case 'Award': return Award
     case 'Mail': return Mail
+    case 'User': return User
+    case 'Share2': return Share2
+    case 'Link': return Link
     default: return ExternalLink
   }
 }
@@ -329,7 +337,7 @@ export function DeveloperDarkTemplate({ user, links, appearanceSettings, categor
           
           {/* Avatar */}
           <div className="mb-6">
-            {user.avatar_url ? (
+            {user.avatar_url && user.avatar_url.trim() !== '' ? (
               <Image
                 src={user.avatar_url}
                 alt={`${user.full_name || user.github_username}'s avatar`}
@@ -499,6 +507,7 @@ export function DeveloperDarkTemplate({ user, links, appearanceSettings, categor
                           onRefresh={handleRefreshPreview}
                           variant="default"
                           showRefreshButton={true}
+                          isPreviewMode={isPreview} // Pass explicit preview mode prop
                         />
                       </div>
                     ))}

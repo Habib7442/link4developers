@@ -21,6 +21,13 @@ export async function getUserFromRequest(request: NextRequest): Promise<{
   error?: string
 }> {
   try {
+    console.log('🔐 Auth: Verifying user from request', {
+      url: request.url,
+      method: request.method,
+      headers: Object.fromEntries(request.headers.entries()),
+      cookies: request.cookies.getAll()
+    });
+
     const ip = getClientIp(request)
     const userAgent = request.headers.get('user-agent') || 'unknown'
 
@@ -32,8 +39,11 @@ export async function getUserFromRequest(request: NextRequest): Promise<{
 
     // Try to get JWT token from Authorization header
     const authHeader = request.headers.get('authorization')
+    console.log('🔐 Auth: Authorization header', authHeader);
+    
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.replace('Bearer ', '')
+      console.log('🔐 Auth: Found Bearer token', { tokenLength: token.length });
 
       // Validate token format
       if (!isValidJwtFormat(token)) {
@@ -43,6 +53,7 @@ export async function getUserFromRequest(request: NextRequest): Promise<{
 
       // Verify the JWT token with Supabase
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token)
+      console.log('🔐 Auth: Supabase getUser result', { authUser: authUser?.id, authError });
 
       if (authError || !authUser) {
         logAuthenticationFailure(request, 'Token verification failed', authUser?.id)
@@ -76,11 +87,15 @@ export async function getUserFromRequest(request: NextRequest): Promise<{
     
     // Try to get from session cookie (for browser requests)
     const sessionCookie = request.cookies.get('sb-access-token')
+    console.log('🔐 Auth: Session cookie', sessionCookie);
+    
     if (sessionCookie) {
       const token = sessionCookie.value
+      console.log('🔐 Auth: Found session cookie token', { tokenLength: token.length });
       
       // Verify the session token
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token)
+      console.log('🔐 Auth: Supabase getUser result from cookie', { authUser: authUser?.id, authError });
       
       if (authError || !authUser) {
         return { user: null, error: 'Invalid session' }
@@ -101,6 +116,7 @@ export async function getUserFromRequest(request: NextRequest): Promise<{
       return { user: userProfile }
     }
     
+    console.log('🔐 Auth: No authentication provided');
     return { user: null, error: 'No authentication provided' }
     
   } catch (error) {

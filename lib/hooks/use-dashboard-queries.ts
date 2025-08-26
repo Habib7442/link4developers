@@ -30,16 +30,45 @@ export function useUserLinks(userId: string) {
     queryFn: async () => {
       try {
         // Make authenticated API request
-        return await ApiLinkService.getUserLinks(userId);
+        const result = await ApiLinkService.getUserLinks(userId);
+        return result;
       } catch (error) {
         console.error('Error fetching links:', error);
         throw error;
       }
     },
     enabled: !!userId && !!session,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0, // Always consider data stale to ensure freshness
     gcTime: 30 * 60 * 1000, // 30 minutes
     retry: 3,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+  })
+}
+
+// Link Analytics Query
+export function useLinkAnalytics(userId: string) {
+  const queryClient = useQueryClient();
+  const { session } = useAuthStore();
+  
+  return useQuery({
+    queryKey: ['linkAnalytics', userId],
+    queryFn: async () => {
+      try {
+        return await LinkService.getLinkAnalytics(userId);
+      } catch (error) {
+        console.error('Error fetching link analytics:', error);
+        return {
+          totalClicks: 0,
+          linksByCategory: {},
+          topLinks: []
+        };
+      }
+    },
+    enabled: !!userId && !!session,
+    staleTime: 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   })
@@ -121,7 +150,9 @@ export function useUserProfile(userId: string) {
     queryFn: () => UserService.getUserProfile(userId),
     enabled: !!userId && !!session,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   })
 }
 
@@ -156,7 +187,7 @@ export function useToggleLinkStatus() {
 
   return useMutation({
     mutationFn: async ({ userId, linkId }: { userId: string; linkId: string }) => {
-      return LinkService.toggleLinkStatus(userId, linkId)
+      return ApiLinkService.toggleLinkStatus(userId, linkId)
     },
     onSuccess: (data, { userId }) => {
       // Invalidate links query
@@ -166,7 +197,7 @@ export function useToggleLinkStatus() {
     },
     onError: (error) => {
       console.error('Failed to toggle link status:', error)
-      toast.error('Failed to update link status')
+      toast.error('Failed to update link status: ' + (error as Error).message)
     },
   })
 }
@@ -177,17 +208,18 @@ export function useDeleteLink() {
 
   return useMutation({
     mutationFn: async ({ userId, linkId }: { userId: string; linkId: string }) => {
-      return LinkService.deleteLink(userId, linkId)
+      return ApiLinkService.deleteLink(userId, linkId)
     },
-    onSuccess: (data, { userId }) => {
-      // Invalidate links query
-      queryClient.invalidateQueries({ queryKey: queryKeys.links(userId) })
+    onSuccess: async (data, { userId }) => {
+      // Completely invalidate and refresh the links cache
+      await queryClient.invalidateQueries({ queryKey: queryKeys.links(userId) })
+      await queryClient.refetchQueries({ queryKey: queryKeys.links(userId), exact: true })
       
       toast.success('Link deleted successfully')
     },
     onError: (error) => {
       console.error('Failed to delete link:', error)
-      toast.error('Failed to delete link')
+      toast.error('Failed to delete link: ' + (error as Error).message)
     },
   })
 }
@@ -231,6 +263,12 @@ export function useUpdateProfile() {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: queryKeys.profile(userId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.user(userId) })
+      
+      // Also invalidate other related queries that might be affected
+      queryClient.invalidateQueries({ queryKey: queryKeys.links(userId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.categoryOrder(userId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.appearance(userId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.userTheme(userId) })
       
       toast.success('Profile updated successfully')
       return updatedUser

@@ -30,6 +30,8 @@ import {
   useDeleteLink,
   usePrefetchDashboardData,
 } from "@/lib/hooks/use-dashboard-queries";
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/hooks/use-dashboard-queries';
 
 // Import the new components
 import { LinkStatistics } from "./link-statistics";
@@ -38,8 +40,20 @@ import { LinkManagementHeader } from "./link-management-header";
 import { LinkCategorySection } from "./link-category-section";
 import { LinksLoadingState } from "../query-loading-states";
 
+// Interfaces for proper typing
+import { UserLinkWithPreview, RichPreviewMetadata } from '@/lib/types/rich-preview';
+
+// Just using UserLinkWithPreview directly from the types
+type LinkWithPreview = UserLinkWithPreview;
+
+interface LinkAnalytics {
+  totalClicks: number;
+  linksByCategory: Record<string, number>;
+  topLinks: Array<{ title: string; clicks: number; url: string }>;
+}
+
 // Function to get the appropriate icon for a link
-const getLinkIcon = (link: UserLink) => {
+const getLinkIcon = (link: UserLinkWithPreview) => {
   // Check for uploaded icon
   if (link.icon_selection_type === "upload" && link.uploaded_icon_url) {
     return (
@@ -86,7 +100,7 @@ const getLinkIcon = (link: UserLink) => {
   }
 
   // Default icons based on category
-  const defaultIcons = {
+  const defaultIcons: Record<string, string> = {
     personal: "🔗",
     projects: "📁",
     blogs: "📝",
@@ -129,8 +143,9 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
   });
 
   // React Query hooks
-  const { data: links = {}, isLoading: linksLoading, error: linksError } = useUserLinks(user?.id || '');
-  const { data: analytics, isLoading: analyticsLoading } = useLinkAnalytics(user?.id || '');
+  const queryClient = useQueryClient();
+  const { data: links = {} as Record<LinkCategory, LinkWithPreview[]>, isLoading: linksLoading, error: linksError } = useUserLinks(user?.id || '');
+  const { data: analytics = null as LinkAnalytics | null, isLoading: analyticsLoading } = useLinkAnalytics(user?.id || '');
   const { data: categoryOrder = [], isLoading: orderLoading } = useCategoryOrder(user?.id || '');
   
   // Mutations
@@ -179,25 +194,42 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
     if (!user?.id) return;
     
     try {
+      console.log('🗑️ LinkManager: Deleting link...', { 
+        userId: user.id, 
+        linkId: deleteDialog.linkId 
+      });
+      
       await deleteLinkMutation.mutateAsync({ 
         userId: user.id, 
         linkId: deleteDialog.linkId 
       });
-      onPreviewRefresh();
-      closeDeleteDialog();
+      
+      console.log('🗑️ LinkManager: Link deleted successfully');
+      
+      // Force refresh the links data with a complete cache reset
+      await queryClient.invalidateQueries({ queryKey: queryKeys.links(user.id) });
+      await queryClient.refetchQueries({ queryKey: queryKeys.links(user.id), exact: true });
+      
+      // Wait a bit to ensure the UI has time to process the updated data
+      setTimeout(() => {
+        onPreviewRefresh();
+        closeDeleteDialog();
+      }, 100);
     } catch (error) {
-      // Error is handled by the mutation
+      // Show error to user
+      toast.error('Failed to delete link: ' + (error as Error).message);
+      console.error('Failed to delete link:', error);
     }
   };
 
-  const handleEditLink = (link: UserLink) => {
+  const handleEditLink = (link: LinkWithPreview) => {
     setEditingLink({
       id: link.id,
       title: link.title,
       url: link.url,
       description: link.description,
       icon_type: link.icon_type,
-      category: link.category,
+      category: link.category as LinkCategory,
       live_project_url: link.live_project_url || '',
     });
   };
@@ -312,13 +344,13 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
   }
 
   const totalLinks = Object.values(links).reduce(
-    (sum, categoryLinks) => sum + categoryLinks.length,
+    (sum: number, categoryLinks: UserLinkWithPreview[]) => sum + categoryLinks.length,
     0
   );
 
   const activeLinks = Object.values(links).reduce(
-    (sum, categoryLinks) =>
-      sum + categoryLinks.filter((link) => link.is_active).length,
+    (sum: number, categoryLinks: UserLinkWithPreview[]) =>
+      sum + categoryLinks.filter((link: UserLinkWithPreview) => link.is_active).length,
     0
   );
 
@@ -360,7 +392,7 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
                     <LinkCategorySection
                       key={category}
                       category={category}
-                      categoryLinks={categoryLinks}
+                      categoryLinks={categoryLinks as UserLinkWithPreview[]}
                       index={index}
                       onAddLink={handleAddLink}
                       onToggleStatus={handleToggleStatus}

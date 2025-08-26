@@ -8,8 +8,10 @@ import { Button } from '@/components/ui/button'
 import { RichLinkPreview } from '@/components/rich-preview/rich-link-preview'
 import { UserLinkWithPreview } from '@/lib/types/rich-preview'
 import { SocialMediaSection } from '@/components/social-media/social-media-section'
+import { TechStackDisplay } from '@/components/dashboard/tech-stack-display'
 import { getFontFamilyWithFallbacks } from '@/lib/utils/font-loader'
 import { getSectionStyles, getSectionTypographyStyle } from '@/lib/utils/section-styling'
+import { ApiLinkService } from '@/lib/services/api-link-service'
 
 import { 
   MapPin, 
@@ -153,6 +155,28 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
     window.open(link.url, '_blank', 'noopener,noreferrer')
   }
 
+  const handleRefreshPreview = async (linkId: string) => {
+    try {
+      // Use API service to refresh preview data
+      await ApiLinkService.refreshLinkPreview(user.id, linkId);
+      toast.success('Preview refreshed successfully');
+      
+      // Use toast to inform user instead of reloading the whole page
+      // Will be properly handled through state management in the future
+      if (!isPreview) {
+        toast.info('Reload the page to see the updated preview', {
+          action: {
+            label: 'Reload',
+            onClick: () => window.location.reload()
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Failed to refresh preview:', error);
+      toast.error('Failed to refresh preview');
+    }
+  }
+
   const handleShare = async () => {
     const profileUrl = `${window.location.origin}/${user.profile_slug || user.github_username}`
     
@@ -211,13 +235,13 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
   // Generate typography styles from appearance settings with Minimalist Light theme defaults
   const getTypographyStyle = (type: 'heading' | 'subheading' | 'body' | 'accent' | 'link', isHover = false): React.CSSProperties => {
     if (!appearanceSettings) {
-      // Default styles for Minimalist Light theme - EXACT specifications with better contrast
+      // Default styles for Minimalist Light theme - EXACT specifications with better contrast but smaller sizes
       const defaults = {
-        heading: { fontFamily: 'Roboto Mono, monospace', fontSize: '32px', color: '#111827', lineHeight: '1.2', fontWeight: '600' }, // Dark gray headings with Roboto Mono
-        subheading: { fontFamily: 'Inter, sans-serif', fontSize: '18px', color: '#111827', lineHeight: '1.4', fontWeight: '500' }, // Dark gray subheadings for better visibility
-        body: { fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#111827', lineHeight: '1.6', fontWeight: '400' }, // Dark gray body for better visibility
-        accent: { fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#374151', lineHeight: '1.4', fontWeight: '500' }, // Medium gray for better visibility
-        link: { fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#2563EB', lineHeight: '1.6', fontWeight: '500' } // Blue links
+        heading: { fontFamily: 'Roboto Mono, monospace', fontSize: '24px', color: '#111827', lineHeight: '1.2', fontWeight: '600' }, // Dark gray headings with Roboto Mono
+        subheading: { fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#111827', lineHeight: '1.4', fontWeight: '500' }, // Dark gray subheadings for better visibility
+        body: { fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#111827', lineHeight: '1.5', fontWeight: '400' }, // Dark gray body for better visibility
+        accent: { fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#374151', lineHeight: '1.4', fontWeight: '500' }, // Medium gray for better visibility
+        link: { fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#2563EB', lineHeight: '1.5', fontWeight: '500' } // Blue links
       }
       return defaults[type]
     }
@@ -233,21 +257,21 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
       style.fontFamily = getFontFamilyWithFallbacks(appearanceSettings.secondary_font || 'Inter')
     }
 
-    // Apply font size
+    // Apply font size (reduced from original)
     switch (type) {
       case 'heading':
-        style.fontSize = `${appearanceSettings.font_size_heading || 32}px`
+        style.fontSize = `${(appearanceSettings.font_size_heading || 32) * 0.75}px`
         style.lineHeight = `${appearanceSettings.line_height_heading || 1.2}`
         break
       case 'subheading':
-        style.fontSize = `${appearanceSettings.font_size_subheading || 18}px`
+        style.fontSize = `${(appearanceSettings.font_size_subheading || 18) * 0.85}px`
         style.lineHeight = `${appearanceSettings.line_height_base || 1.4}`
         break
       case 'body':
       case 'accent':
       case 'link':
-        style.fontSize = `${appearanceSettings.font_size_base || 16}px`
-        style.lineHeight = `${appearanceSettings.line_height_base || 1.6}`
+        style.fontSize = `${(appearanceSettings.font_size_base || 16) * 0.85}px`
+        style.lineHeight = `${appearanceSettings.line_height_base || 1.5}`
         break
     }
 
@@ -304,26 +328,26 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
         }}></div>
       </div> */}
       
-      <div className="relative z-10 container mx-auto px-6 py-12 max-w-2xl">
+      <div className="relative z-10 container mx-auto px-4 py-8 max-w-xl">
         {/* Header Section */}
         <div 
-          className="text-center mb-12 bg-white border border-[#E5E7EB] rounded-xl p-8 shadow-[0_2px_6px_rgba(0,0,0,0.08)]"
+          className="text-center mb-8 bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-[0_2px_6px_rgba(0,0,0,0.08)]"
         >
           {/* Avatar */}
-          <div className="relative inline-block mb-6">
+          <div className="relative inline-block mb-4">
             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-600 blur-lg opacity-20 scale-110"></div>
             <Image
               src={user.avatar_url && user.avatar_url.trim() !== '' ? user.avatar_url : '/default-avatar.png'}
               alt={user.full_name || user.github_username || 'User'}
-              width={appearanceSettings?.profile_avatar_size || 120}
-              height={appearanceSettings?.profile_avatar_size || 120}
+              width={appearanceSettings?.profile_avatar_size || 100}
+              height={appearanceSettings?.profile_avatar_size || 100}
               className="relative rounded-full border-4 border-white shadow-[0_2px_6px_rgba(0,0,0,0.08)] backdrop-blur-sm"
             />
           </div>
 
           {/* Name */}
           <h1 
-            className="text-3xl font-semibold mb-3 text-[#111827] font-inter"
+            className="text-2xl font-semibold mb-2 text-[#111827] font-inter"
           >
             {user.full_name || user.github_username}
           </h1>
@@ -331,7 +355,7 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
           {/* Title */}
           {user.profile_title && (
             <p 
-              className="text-lg font-medium mb-4 text-[#111827] font-inter"
+              className="text-base font-medium mb-3 text-[#111827] font-inter"
             >
               {user.profile_title}
             </p>
@@ -340,33 +364,42 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
           {/* Bio */}
           {user.bio && (
             <p 
-              className="text-base mb-6 leading-relaxed max-w-lg mx-auto text-[#111827] font-medium font-inter"
+              className="text-sm mb-4 leading-relaxed max-w-lg mx-auto text-[#111827] font-medium font-inter"
             >
               {user.bio}
             </p>
           )}
 
+          {/* Tech Stacks */}
+          {user.tech_stacks && user.tech_stacks.length > 0 && (
+            <div className="mb-4 flex justify-center">
+              <div className="flex flex-wrap justify-center gap-1.5">
+                <TechStackDisplay techStackIds={user.tech_stacks} />
+              </div>
+            </div>
+          )}
+
           {/* Location, Company, Join Date */}
           <div 
-            className="flex flex-wrap justify-center items-center gap-6 mb-8 text-[#374151]"
+            className="flex flex-wrap justify-center items-center gap-4 mb-5 text-[#374151]"
             style={getTypographyStyle('accent')}
           >
             {user.location && (
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-[#6B7280]" />
-                <span className="text-sm font-medium text-[#374151]">{user.location}</span>
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-[#6B7280]" />
+                <span className="text-xs font-medium text-[#374151]">{user.location}</span>
               </div>
             )}
             {user.company && (
-              <div className="flex items-center gap-2">
-                <Building className="w-4 h-4 text-[#6B7280]" />
-                <span className="text-sm font-medium text-[#374151]">{user.company}</span>
+              <div className="flex items-center gap-1.5">
+                <Building className="w-3.5 h-3.5 text-[#6B7280]" />
+                <span className="text-xs font-medium text-[#374151]">{user.company}</span>
               </div>
             )}
             {joinedDate && (
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[#6B7280]" />
-                <span className="text-sm font-medium text-[#374151]">Joined {joinedDate}</span>
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-[#6B7280]" />
+                <span className="text-xs font-medium text-[#374151]">Joined {joinedDate}</span>
               </div>
             )}
           </div>
@@ -374,16 +407,16 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
           {/* Share Button - Minimalist Light Style */}
           <Button
             onClick={handleShare}
-            className="font-medium px-8 py-3 rounded-full hover:scale-105 transition-all duration-300 shadow-[0_2px_6px_rgba(0,0,0,0.08)] mb-8 bg-[#2563EB] hover:bg-[#1D4ED8] text-white border-0"
+            className="font-medium px-6 py-2 text-sm rounded-full hover:scale-105 transition-all duration-300 shadow-[0_2px_6px_rgba(0,0,0,0.08)] bg-[#2563EB] hover:bg-[#1D4ED8] text-white border-0"
           >
             {copied ? (
               <>
-                <Check className="w-5 h-5 mr-2" />
+                <Check className="w-4 h-4 mr-1.5" />
                 Copied!
               </>
             ) : (
               <>
-                <Share2 className="w-5 h-5 mr-2" />
+                <Share2 className="w-4 h-4 mr-1.5" />
                 Share Profile
               </>
             )}
@@ -391,7 +424,7 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
         </div>
 
         {/* Links Section */}
-        <div className="space-y-8">
+        <div className="space-y-6">
           {orderedCategories.map((category) => {
             const categoryLinks = links[category]
             const IconComponent = getCategoryIcon(category, categoryIcons)
@@ -411,87 +444,50 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
             }
 
             return (
-              <div key={category} className="mb-10">
+              <div key={category} className="mb-6">
                 {/* Category Header */}
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="p-3 bg-white border border-[#E5E7EB] rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.08)]">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-white border border-[#E5E7EB] rounded-lg shadow-[0_2px_6px_rgba(0,0,0,0.08)]">
                     {(() => {
                       // For projects category, always show GitHub icon
                       if (category === 'projects') {
-                        return <Github className="w-6 h-6 text-[#374151]" />
+                        return <Github className="w-5 h-5 text-[#374151]" />
                       }
                       
                       // For blogs category, always show BookOpen icon
                       if (category === 'blogs') {
-                        return <BookOpen className="w-6 h-6 text-[#374151]" />
+                        return <BookOpen className="w-5 h-5 text-[#374151]" />
                       }
                       
                       // For other categories, use the mapped icon
                       if (IconComponent && typeof IconComponent === 'function') {
-                        return <IconComponent className="w-6 h-6 text-[#374151]" />
+                        return <IconComponent className="w-5 h-5 text-[#374151]" />
                       }
                       
                       // Fallback
-                      return <ExternalLink className="w-6 h-6 text-[#374151]" />
+                      return <ExternalLink className="w-5 h-5 text-[#374151]" />
                     })()}
                   </div>
-                  <h2 className="text-xl font-semibold text-[#111827]"
+                  <h2 className="text-lg font-semibold text-[#111827]"
                       style={getTypographyStyle('heading')}>
                     {category.charAt(0).toUpperCase() + category.slice(1)}
                   </h2>
                 </div>
 
                 {/* Category Links */}
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {categoryLinks.map((link) => (
-                    <div key={link.id}>
-                      {link.metadata?.type === 'github_repo' || link.metadata?.type === 'webpage' || link.metadata?.type === 'blog_post' ? (
-                        <div className="group">
-                          <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden transition-all duration-300 transform hover:scale-[1.02] hover:shadow-[0_2px_6px_rgba(0,0,0,0.08)]">
-                            <RichLinkPreview 
-                              link={link} 
-                              onClick={() => handleLinkClick(link)}
-                              theme="light"
-                              isPreviewMode={isPreview} // Pass explicit preview mode prop
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <button
+                    <div key={link.id} className="group">
+                      <div className="bg-white border border-[#E5E7EB] rounded-lg overflow-hidden transition-all duration-300 transform hover:scale-[1.02] hover:shadow-[0_2px_6px_rgba(0,0,0,0.08)]">
+                        <RichLinkPreview 
+                          link={link} 
                           onClick={() => handleLinkClick(link)}
-                          className="w-full group"
-                        >
-                          <div 
-                            className="bg-white border border-[#E5E7EB] rounded-xl p-6 text-left transition-all duration-300 transform hover:scale-[1.02] hover:shadow-[0_2px_6px_rgba(0,0,0,0.08)] hover:border-[#2563EB]"
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="flex-shrink-0 p-3 bg-[#F3F4F6] border border-[#E5E7EB] rounded-xl">
-                                <div style={{ color: '#374151' }}>
-                                  {getLinkIcon(link)}
-                                </div>
-                              </div>
-                              <div className="flex-grow min-w-0">
-                                <h3 className="text-lg font-semibold mb-1 text-[#111827] transition-colors group-hover:text-[#2563EB]"
-                                    style={getTypographyStyle('heading')}>
-                                  {link.title}
-                                </h3>
-                                {link.description && (
-                                  <p className="text-sm text-[#6B7280] line-clamp-2"
-                                     style={getTypographyStyle('accent')}>
-                                    {link.description}
-                                  </p>
-                                )}
-                              </div>
-                              <div className="flex-shrink-0">
-                                <ExternalLink 
-                                  className="w-5 h-5 text-[#374151] transition-colors"
-                                  style={{ color: '#374151' }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      )}
+                          onRefresh={handleRefreshPreview}
+                          theme="light"
+                          isPreviewMode={isPreview}
+                          variant="compact"
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -502,12 +498,12 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
 
         {/* No Links Message */}
         {!hasLinks && (
-          <div className="bg-white border border-[#E5E7EB] rounded-xl p-10 shadow-[0_2px_6px_rgba(0,0,0,0.08)] text-center">
-            <h2 className="text-xl font-semibold mb-4 text-[#111827]"
+          <div className="bg-white border border-[#E5E7EB] rounded-lg p-6 shadow-[0_2px_6px_rgba(0,0,0,0.08)] text-center">
+            <h2 className="text-lg font-semibold mb-2 text-[#111827]"
                  style={getTypographyStyle('heading')}>
               No Links Yet
             </h2>
-            <p className="text-[#6B7280]"
+            <p className="text-sm text-[#6B7280]"
                style={getTypographyStyle('body')}>
               This developer hasn&apos;t added any links to their profile yet.
             </p>
@@ -516,16 +512,16 @@ export function MinimalistLightTemplate({ user, links, appearanceSettings, categ
 
         {/* Footer */}
         {!user.is_premium && !isPreview && (
-          <div className="text-center mt-16 pt-8 border-t border-[#E5E7EB]">
-            <div className="flex items-center justify-center gap-2 text-[#6B7280]"
+          <div className="text-center mt-10 pt-6 border-t border-[#E5E7EB]">
+            <div className="flex items-center justify-center gap-1.5 text-[#6B7280]"
                  style={getTypographyStyle('accent')}>
-              <Heart className="w-4 h-4 text-red-500" />
-              <span className="text-sm font-medium">Powered by</span>
+              <Heart className="w-3.5 h-3.5 text-red-500" />
+              <span className="text-xs font-medium">Powered by</span>
               <a 
                 href="https://link4coders.in?ref=profile" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-sm font-bold text-[#2563EB] hover:text-[#1E40AF] transition-colors"
+                className="text-xs font-bold text-[#2563EB] hover:text-[#1E40AF] transition-colors"
                 style={getTypographyStyle('link')}
               >
                 Link4Coders

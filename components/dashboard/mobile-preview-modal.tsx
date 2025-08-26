@@ -27,16 +27,16 @@ export function MobilePreviewModal({ isOpen, onClose, previewContent }: MobilePr
         </div>
         
         {/* Modal Header - Simplified to avoid duplication */}
-        <div className="p-4 border-b border-[#33373b] flex-shrink-0 flex items-center justify-between">
-          <h3 className="text-[16px] font-medium text-white font-sharp-grotesk">
+        <div className="p-3 border-b border-[#33373b] flex-shrink-0 flex items-center justify-between">
+          <h3 className="text-[14px] font-medium text-white font-sharp-grotesk">
             Live Preview
           </h3>
           <Button
             onClick={onClose}
             size="sm"
-            className="bg-transparent border-none text-[#7a7a83] hover:text-white p-2"
+            className="bg-transparent border-none text-[#7a7a83] hover:text-white p-1.5"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </Button>
         </div>
 

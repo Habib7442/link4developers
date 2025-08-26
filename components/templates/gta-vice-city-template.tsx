@@ -8,9 +8,11 @@ import { Button } from '@/components/ui/button'
 import { RichLinkPreview } from '@/components/rich-preview/rich-link-preview'
 import { UserLinkWithPreview } from '@/lib/types/rich-preview'
 import { SocialMediaSection } from '@/components/social-media/social-media-section'
+import { TechStackDisplay } from '@/components/dashboard/tech-stack-display'
 
 import { getFontFamilyWithFallbacks, loadGoogleFont } from '@/lib/utils/font-loader'
 import { getSectionStyles, getSectionTypographyStyle } from '@/lib/utils/section-styling'
+import { ApiLinkService } from '@/lib/services/api-link-service'
 import { 
   MapPin, 
   Building, 
@@ -229,11 +231,11 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
     if (!appearanceSettings) {
       // Default styles for GTA theme
       const defaults = {
-        heading: { fontFamily: 'Orbitron, monospace', fontSize: '36px', color: '#ffffff', lineHeight: '1.2', fontWeight: 'bold', textShadow: '0 0 20px rgba(243, 139, 168, 0.8), 0 0 40px rgba(243, 139, 168, 0.4)' },
-        subheading: { fontFamily: 'Rajdhani, sans-serif', fontSize: '20px', color: '#ffc0cb', lineHeight: '1.4', fontWeight: '600' },
-        body: { fontFamily: 'Rajdhani, sans-serif', fontSize: '18px', color: 'rgba(255, 255, 255, 0.9)', lineHeight: '1.5', fontWeight: 'normal' },
-        accent: { fontFamily: 'Rajdhani, sans-serif', fontSize: '14px', color: 'rgba(255, 255, 255, 0.8)', lineHeight: '1.4', fontWeight: 'medium' },
-        link: { fontFamily: 'Rajdhani, sans-serif', fontSize: '18px', color: '#ffffff', lineHeight: '1.5', fontWeight: '600' }
+        heading: { fontFamily: 'Orbitron, monospace', fontSize: '28px', color: '#ffffff', lineHeight: '1.2', fontWeight: 'bold', textShadow: '0 0 20px rgba(243, 139, 168, 0.8), 0 0 40px rgba(243, 139, 168, 0.4)' },
+        subheading: { fontFamily: 'Rajdhani, sans-serif', fontSize: '18px', color: '#ffc0cb', lineHeight: '1.3', fontWeight: '600' },
+        body: { fontFamily: 'Rajdhani, sans-serif', fontSize: '16px', color: 'rgba(255, 255, 255, 0.9)', lineHeight: '1.4', fontWeight: 'normal' },
+        accent: { fontFamily: 'Rajdhani, sans-serif', fontSize: '13px', color: 'rgba(255, 255, 255, 0.8)', lineHeight: '1.3', fontWeight: 'medium' },
+        link: { fontFamily: 'Rajdhani, sans-serif', fontSize: '16px', color: '#ffffff', lineHeight: '1.4', fontWeight: '600' }
       }
       return defaults[type]
     }
@@ -250,18 +252,18 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
     // Apply font size
     switch (type) {
       case 'heading':
-        style.fontSize = `${appearanceSettings.font_size_heading || 36}px`
+        style.fontSize = `${appearanceSettings.font_size_heading ? appearanceSettings.font_size_heading * 0.8 : 28}px`
         style.lineHeight = `${appearanceSettings.line_height_heading || 1.2}`
         break
       case 'subheading':
-        style.fontSize = `${appearanceSettings.font_size_subheading || 20}px`
-        style.lineHeight = `${appearanceSettings.line_height_base || 1.5}`
+        style.fontSize = `${appearanceSettings.font_size_subheading ? appearanceSettings.font_size_subheading * 0.9 : 18}px`
+        style.lineHeight = `${appearanceSettings.line_height_base ? appearanceSettings.line_height_base * 0.95 : 1.3}`
         break
       case 'body':
       case 'accent':
       case 'link':
-        style.fontSize = `${appearanceSettings.font_size_base || 18}px`
-        style.lineHeight = `${appearanceSettings.line_height_base || 1.5}`
+        style.fontSize = `${appearanceSettings.font_size_base ? appearanceSettings.font_size_base * 0.9 : 16}px`
+        style.lineHeight = `${appearanceSettings.line_height_base ? appearanceSettings.line_height_base * 0.95 : 1.4}`
         break
     }
 
@@ -296,6 +298,28 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
     window.open(link.url, '_blank', 'noopener,noreferrer')
   }
 
+  const handleRefreshPreview = async (linkId: string) => {
+    try {
+      // Use API service to refresh preview data
+      await ApiLinkService.refreshLinkPreview(user.id, linkId);
+      toast.success('Preview refreshed successfully');
+      
+      // Use toast to inform user instead of reloading the whole page
+      // Will be properly handled through state management in the future
+      if (!isPreview) {
+        toast.info('Reload the page to see the updated preview', {
+          action: {
+            label: 'Reload',
+            onClick: () => window.location.reload()
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Failed to refresh preview:', error);
+      toast.error('Failed to refresh preview');
+    }
+  }
+
   const joinedDate = user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { 
     year: 'numeric', 
     month: 'long' 
@@ -315,24 +339,24 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
       {/* Subtle overlay for better readability */}
       <div className="absolute inset-0 bg-black/20"></div>
       
-      <div className="relative z-10 container mx-auto px-6 py-12 max-w-2xl">
+      <div className="relative z-10 container mx-auto px-5 py-8 max-w-2xl">
         {/* Header Section */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           {/* Avatar */}
-          <div className="relative inline-block mb-6">
+          <div className="relative inline-block mb-5">
             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-pink-400 via-purple-500 to-cyan-400 blur-lg opacity-60 scale-110"></div>
             <Image
               src={user.avatar_url && user.avatar_url.trim() !== '' ? user.avatar_url : '/default-avatar.png'}
               alt={user.full_name || user.github_username || 'User'}
-              width={appearanceSettings?.profile_avatar_size || 140}
-              height={appearanceSettings?.profile_avatar_size || 140}
+              width={appearanceSettings?.profile_avatar_size ? appearanceSettings.profile_avatar_size * 0.8 : 110}
+              height={appearanceSettings?.profile_avatar_size ? appearanceSettings.profile_avatar_size * 0.8 : 110}
               className="relative rounded-full border-4 border-white/20 shadow-2xl backdrop-blur-sm"
             />
           </div>
 
           {/* Name */}
           <h1 
-            className="text-4xl font-bold mb-3"
+            className="text-3xl font-bold mb-2.5"
             style={getTypographyStyle('heading')}
           >
             {user.full_name || user.github_username}
@@ -341,7 +365,7 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
           {/* Title */}
           {user.profile_title && (
             <p 
-              className="text-xl font-semibold mb-4"
+              className="text-lg font-semibold mb-3"
               style={getTypographyStyle('subheading')}
             >
               {user.profile_title}
@@ -351,33 +375,42 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
           {/* Bio */}
           {user.bio && (
             <p 
-              className="text-lg mb-6 leading-relaxed max-w-lg mx-auto"
+              className="text-base mb-5 leading-relaxed max-w-lg mx-auto"
               style={getTypographyStyle('body')}
             >
               {user.bio}
             </p>
           )}
 
+          {/* Tech Stacks */}
+          {user.tech_stacks && user.tech_stacks.length > 0 && (
+            <div className="mb-5 flex justify-center">
+              <div className="flex flex-wrap justify-center gap-1.5">
+                <TechStackDisplay techStackIds={user.tech_stacks} />
+              </div>
+            </div>
+          )}
+
           {/* Location, Company, Join Date */}
           <div 
-            className="flex flex-wrap justify-center items-center gap-6 mb-8"
+            className="flex flex-wrap justify-center items-center gap-5 mb-6"
             style={getTypographyStyle('accent')}
           >
             {user.location && (
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" style={{ color: appearanceSettings?.text_accent_color || '#ffc0cb' }} />
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5" style={{ color: appearanceSettings?.text_accent_color || '#ffc0cb' }} />
                 <span className="text-sm">{user.location}</span>
               </div>
             )}
             {user.company && (
-              <div className="flex items-center gap-2">
-                <Building className="w-4 h-4" style={{ color: appearanceSettings?.text_accent_color || '#00ffff' }} />
+              <div className="flex items-center gap-1.5">
+                <Building className="w-3.5 h-3.5" style={{ color: appearanceSettings?.text_accent_color || '#00ffff' }} />
                 <span className="text-sm">{user.company}</span>
               </div>
             )}
             {joinedDate && (
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" style={{ color: appearanceSettings?.text_accent_color || '#c084fc' }} />
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" style={{ color: appearanceSettings?.text_accent_color || '#c084fc' }} />
                 <span className="text-sm">Joined {joinedDate}</span>
               </div>
             )}
@@ -386,7 +419,7 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
           {/* Share Button */}
           <Button
             onClick={handleCopyProfile}
-            className="font-semibold px-8 py-3 rounded-full hover:scale-105 transition-all duration-300 shadow-lg mb-8"
+            className="font-semibold px-6 py-2.5 rounded-full hover:scale-105 transition-all duration-300 shadow-lg mb-6"
             style={{
               backgroundColor: appearanceSettings?.link_color || '#e94560',
               color: appearanceSettings?.text_primary_color || '#ffffff',
@@ -396,12 +429,12 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
           >
             {copied ? (
               <>
-                <Check className="w-5 h-5 mr-2" />
+                <Check className="w-4 h-4 mr-1.5" />
                 Copied!
               </>
             ) : (
               <>
-                <Share2 className="w-5 h-5 mr-2" />
+                <Share2 className="w-4 h-4 mr-1.5" />
                 Share Profile
               </>
             )}
@@ -409,7 +442,7 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
         </div>
 
         {/* Links Section */}
-        <div className="space-y-10">
+        <div className="space-y-8">
           {orderedCategories.map((category) => {
             const categoryLinks = links[category]
             const config = LINK_CATEGORIES[category]
@@ -430,25 +463,25 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
             }
 
             return (
-              <div key={category} className="mb-12">
+              <div key={category} className="mb-8">
                 {/* Category Header */}
-                <div className="flex items-center gap-4 mb-6">
+                <div className="flex items-center gap-3 mb-5">
                   <div 
-                    className="p-3 rounded-xl backdrop-blur-sm border"
+                    className="p-2.5 rounded-xl backdrop-blur-sm border"
                     style={{
                       ...getSectionStyles(category, appearanceSettings),
                       borderColor: getSectionStyles(category, appearanceSettings).sectionColors.card_border_color
                     }}
                   >
                     <IconComponent 
-                      className="w-6 h-6" 
+                      className="w-5 h-5" 
                       style={{ 
                         color: getSectionStyles(category, appearanceSettings).sectionColors.accent_color || '#ffffff' 
                       }} 
                     />
                   </div>
                   <h2 
-                    className="text-2xl font-bold"
+                    className="text-xl font-bold"
                     style={{
                       ...getSectionTypographyStyle(category, 'subheading', appearanceSettings),
                       textShadow: !appearanceSettings?.text_accent_color ? '0 0 15px rgba(255, 255, 255, 0.3)' : undefined
@@ -459,81 +492,26 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
                 </div>
 
                 {/* Category Links */}
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {categoryLinks.map((link) => (
-                    <div key={link.id}>
-                      {link.metadata?.type === 'github_repo' || link.metadata?.type === 'webpage' || link.metadata?.type === 'blog_post' ? (
-                        <div className="group">
-                          <div
-                            className="backdrop-blur-md border rounded-2xl overflow-hidden transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl"
-                            style={{
-                              ...getSectionStyles(category, appearanceSettings),
-                              borderRadius: `${getSectionStyles(category, appearanceSettings).sectionColors.card_border_radius || 20}px`
-                            }}
-                          >
-                            <div style={{ ...getSectionStyles(category, appearanceSettings) }}>
-                              <RichLinkPreview 
-                                link={link} 
-                                onClick={() => handleLinkClick(link)}
-                                isPreviewMode={isPreview} // Pass explicit preview mode prop
-                              />
-                            </div>
-                          </div>
+                    <div key={link.id} className="group">
+                      <div
+                        className="backdrop-blur-md border rounded-2xl overflow-hidden transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl"
+                        style={{
+                          ...getSectionStyles(category, appearanceSettings),
+                          borderRadius: `${getSectionStyles(category, appearanceSettings).sectionColors.card_border_radius || 16}px`
+                        }}
+                      >
+                        <div style={{ ...getSectionStyles(category, appearanceSettings) }}>
+                          <RichLinkPreview 
+                            link={link} 
+                            onClick={() => handleLinkClick(link)}
+                            onRefresh={handleRefreshPreview}
+                            isPreviewMode={isPreview}
+                            variant="compact"
+                          />
                         </div>
-                      ) : (
-                        <button
-                          onClick={() => handleLinkClick(link)}
-                          className="w-full group"
-                        >
-                          <div 
-                            className="backdrop-blur-md border rounded-2xl p-6 text-left transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl"
-                            style={{
-                              ...getSectionStyles(category, appearanceSettings),
-                              borderRadius: `${getSectionStyles(category, appearanceSettings).sectionColors.card_border_radius || 20}px`
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor = getSectionStyles(category, appearanceSettings).sectionColors.link_hover_color || 'rgba(255, 255, 255, 0.3)'
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = getSectionStyles(category, appearanceSettings).sectionColors.card_border_color || 'rgba(255, 255, 255, 0.2)'
-                            }}
-                          >
-                            <div className="flex items-center gap-4">
-                              <div 
-                                className="flex-shrink-0 p-3 rounded-xl border"
-                                style={{
-                                  backgroundColor: getSectionStyles(category, appearanceSettings).sectionColors.card_background_color || 'rgba(243, 139, 168, 0.2)',
-                                  borderColor: getSectionStyles(category, appearanceSettings).sectionColors.card_border_color || 'rgba(255, 255, 255, 0.1)'
-                                }}
-                              >
-                                {getLinkIcon(link)}
-                              </div>
-                              <div className="flex-grow min-w-0">
-                                <h3 
-                                  className="text-lg font-semibold mb-1 group-hover:transition-colors"
-                                  style={getSectionTypographyStyle(category, 'link', appearanceSettings)}
-                                >
-                                  {link.title}
-                                </h3>
-                                {link.description && (
-                                  <p 
-                                    className="text-sm line-clamp-2"
-                                    style={getSectionTypographyStyle(category, 'body', appearanceSettings)}
-                                  >
-                                    {link.description}
-                                  </p>
-                                )}
-                              </div>
-                              <div className="flex-shrink-0">
-                                <ExternalLink 
-                                  className="w-5 h-5 group-hover:transition-colors" 
-                                  style={{ color: getSectionStyles(category, appearanceSettings).sectionColors.text_color || 'rgba(255, 255, 255, 0.6)' }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -544,9 +522,9 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
 
         {/* Footer */}
         {!user.is_premium && !isPreview && (
-          <div className="text-center mt-16 pt-8" style={{ borderTop: `1px solid ${appearanceSettings?.border_color || 'rgba(255, 255, 255, 0.2)'}` }}>
-            <div className="flex items-center justify-center gap-2" style={getTypographyStyle('accent')}>
-              <Heart className="w-4 h-4" style={{ color: appearanceSettings?.text_accent_color || '#ffc0cb' }} />
+          <div className="text-center mt-12 pt-6" style={{ borderTop: `1px solid ${appearanceSettings?.border_color || 'rgba(255, 255, 255, 0.2)'}` }}>
+            <div className="flex items-center justify-center gap-1.5" style={getTypographyStyle('accent')}>
+              <Heart className="w-3.5 h-3.5" style={{ color: appearanceSettings?.text_accent_color || '#ffc0cb' }} />
               <span className="text-sm">Powered by</span>
               <span 
                 className="text-sm font-bold"

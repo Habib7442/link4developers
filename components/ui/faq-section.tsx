@@ -55,7 +55,7 @@ export function FaqSection() {
     },
     {
       question: "How does the GitHub integration work?",
-      answer: "Our GitHub integration automatically pulls repository data, stars, contributions, and other metrics to showcase your open source work. It updates dynamically to always show your latest projects and contributions."
+      answer: "Our GitHub integration allows you to connect your GitHub account and manually add your repository links through our link manager. You can showcase your open source work by adding project details and links directly through our intuitive dashboard."
     },
     {
       question: "Can I showcase projects that aren't on GitHub?",

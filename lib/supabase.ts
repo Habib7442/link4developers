@@ -36,6 +36,7 @@ export interface User {
   custom_domain?: string
   is_public: boolean
   category_order?: string[] // Custom order of category sections
+  tech_stacks?: string[] // Array of tech stack IDs
   created_at: string
   updated_at: string
 }

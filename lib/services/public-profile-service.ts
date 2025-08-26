@@ -6,7 +6,7 @@ import { LINK_CATEGORIES } from './link-constants'
 import { UserLinkWithPreview } from '@/lib/types/rich-preview'
 import { CategoryOrderService } from './category-order-service'
 import { AppearanceService } from './appearance-service'
-import { unstable_cache } from 'next/cache'
+// Removed cache import since we're removing caching
 
 // Create a server-side Supabase client
 const supabase = createClient(
@@ -14,21 +14,16 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY! // Use service role key for server-side operations
 )
 
+// Removed the getProfileCache function that was using React's cache
+
 export class PublicProfileService {
-  // Get public profile data by username/slug (server-side) with caching
+  // Get public profile data by username/slug (server-side) without caching
   static async getPublicProfile(username: string): Promise<{
     user: User | null
     links: Record<LinkCategory, UserLinkWithPreview[]>
     appearanceSettings: UserAppearanceSettings | null
     categoryOrder: LinkCategory[]
   }> {
-    return unstable_cache(
-      async (): Promise<{
-        user: User | null
-        links: Record<LinkCategory, UserLinkWithPreview[]>
-        appearanceSettings: UserAppearanceSettings | null
-        categoryOrder: LinkCategory[]
-      }> => {
     try {
       console.log('🔍 Server Service: Fetching profile for username:', username)
       console.log('🔍 Server Service: Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
@@ -51,17 +46,22 @@ export class PublicProfileService {
       }
 
       // First, get the user profile by slug or github_username
-      console.log('🔍 Server Service: Executing user query...')
+      console.log('🔍 Server Service: Executing user query for username:', username)
       let user, userError
       try {
         const result = await supabase
           .from('users')
-          .select('*')
+          .select('*, theme_id') // Explicitly include theme_id
           .or(`profile_slug.eq.${username},github_username.eq.${username}`)
           .eq('is_public', true)
           .single()
         user = result.data
         userError = result.error
+        
+        // Add theme debugging
+        if (user) {
+          console.log('🔍 Server Service: Found user with theme_id:', user.theme_id)
+        }
       } catch (networkError) {
         const errorMessage = networkError instanceof Error ? networkError.message : 'Unknown error';
         console.error('🔍 Server Service: Network error during user query:', networkError)
@@ -159,29 +159,8 @@ export class PublicProfileService {
         }
       })
 
-      // Remove sensitive information from user object
-      const publicUser: User = {
-        id: user.id,
-        email: '', // Don't expose email
-        full_name: user.full_name,
-        profile_title: user.profile_title,
-        bio: user.bio,
-        avatar_url: user.avatar_url,
-        github_username: user.github_username,
-        github_url: user.github_url,
-        website_url: user.website_url,
-        location: user.location,
-        company: user.company,
-        twitter_username: user.twitter_username,
-        linkedin_url: user.linkedin_url,
-        profile_slug: user.profile_slug,
-        theme_id: user.theme_id,
-        is_premium: user.is_premium,
-        is_public: user.is_public,
-        created_at: user.created_at,
-        updated_at: user.updated_at,
-        custom_domain: user.custom_domain
-      }
+      // Public user includes all fields needed for rendering
+      const publicUser: User = user
 
       // Get appearance settings
       let appearanceSettings: UserAppearanceSettings | null = null;
@@ -220,12 +199,5 @@ export class PublicProfileService {
 
       throw error
     }
-      },
-      [`public-profile-${username}`],
-      {
-        revalidate: 3600, // Cache for 1 hour
-        tags: [`public-profile-${username}`, 'public-profiles']
-      }
-    )()
   }
 }

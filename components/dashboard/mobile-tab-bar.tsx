@@ -62,14 +62,20 @@ export function MobileTabBar({ showPreview = false, previewContent }: MobileTabB
 
   // Listen for modal state changes
   useEffect(() => {
-    const handleModalStateChange = (event: any) => {
+    interface ModalStateEvent extends Event {
+      detail?: {
+        isModalOpen: boolean;
+      };
+    }
+
+    const handleModalStateChange = (event: ModalStateEvent) => {
       if (event.detail && typeof event.detail.isModalOpen === 'boolean') {
         setIsModalOpen(event.detail.isModalOpen);
       }
     };
     
     // Listen for custom events from other components
-    window.addEventListener('modalStateChange', handleModalStateChange);
+    window.addEventListener('modalStateChange', handleModalStateChange as EventListener);
     
     // Check if any modals are currently open (for AddLinkModal, etc.)
     const checkForModals = () => {
@@ -83,7 +89,7 @@ export function MobileTabBar({ showPreview = false, previewContent }: MobileTabB
     observer.observe(document.body, { childList: true, subtree: true });
     
     return () => {
-      window.removeEventListener('modalStateChange', handleModalStateChange);
+      window.removeEventListener('modalStateChange', handleModalStateChange as EventListener);
       observer.disconnect();
     };
   }, []);
@@ -93,7 +99,7 @@ export function MobileTabBar({ showPreview = false, previewContent }: MobileTabB
       {/* Mobile Tab Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#1e1e20] border-t border-[#33373b] z-50">
         <Tabs defaultValue={activeTab} value={activeTab} className="w-full">
-          <TabsList className="h-14 bg-transparent grid grid-cols-6 gap-0.5">
+          <TabsList className="h-12 bg-transparent grid grid-cols-6 gap-0.5">
             {navigationItems.map((item) => {
               const Icon = item.icon
               const isActive = activeTab === item.id
@@ -112,10 +118,10 @@ export function MobileTabBar({ showPreview = false, previewContent }: MobileTabB
                   )}
                 >
                   <Icon className={cn(
-                    "h-5 w-5",
+                    "h-4 w-4",
                     isActive ? "text-[#54E0FF]" : "text-[#7a7a83]"
                   )} />
-                  <span className="text-[8px] font-medium tracking-tight">{item.label}</span>
+                  <span className="text-[7px] font-medium tracking-tight">{item.label}</span>
                 </TabsTrigger>
               )
             })}

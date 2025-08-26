@@ -24,12 +24,21 @@ export function PublicProfile({ user, links, appearanceSettings, categoryOrder }
     templateId = previewTemplate as TemplateId
   }
 
+  // Add debugging log to check user data and theme
+  console.log('🔍 Public Profile - User:', { 
+    id: user.id, 
+    theme_id: user.theme_id, 
+    username: user.profile_slug || user.github_username 
+  })
+  console.log('🔍 Public Profile - Template ID:', templateId || 'Using user.theme_id')
+  console.log('🔍 Public Profile - Appearance Settings:', !!appearanceSettings)
+
   // Use the TemplateRenderer to dynamically render the appropriate template
   return (
     <TemplateRenderer
       user={user}
       links={links}
-      templateId={templateId}
+      templateId={templateId || user.theme_id}
       appearanceSettings={appearanceSettings}
       categoryOrder={categoryOrder}
     />

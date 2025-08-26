@@ -66,3 +66,4 @@ export class LinkUseCaseImpl implements LinkUseCases {
     return this.linkRepository.updateCategoryOrder(userId, categoryOrder)
   }
 }
+

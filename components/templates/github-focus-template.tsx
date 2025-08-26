@@ -8,8 +8,10 @@ import { Button } from '@/components/ui/button'
 import { RichLinkPreview } from '@/components/rich-preview/rich-link-preview'
 import { UserLinkWithPreview } from '@/lib/types/rich-preview'
 import { SocialMediaSection } from '@/components/social-media/social-media-section'
+import { TechStackDisplay } from '@/components/dashboard/tech-stack-display'
 import { getFontFamilyWithFallbacks, loadGoogleFont } from '@/lib/utils/font-loader'
 import { getSectionStyles, getSectionTypographyStyle } from '@/lib/utils/section-styling'
+import { ApiLinkService } from '@/lib/services/api-link-service'
 import { 
   MapPin, 
   Building, 
@@ -166,11 +168,11 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
     if (!appearanceSettings) {
       // Default styles for GitHub Focus theme - EXACT specifications
       const defaults = {
-        heading: { fontFamily: 'Inter, sans-serif', fontSize: '32px', color: '#F0F6FC', lineHeight: '1.2' }, // White headings
-        subheading: { fontFamily: 'Inter, sans-serif', fontSize: '18px', color: '#58A6FF', lineHeight: '1.4' }, // Blue subheadings
-        body: { fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#C9D1D9', lineHeight: '1.6' }, // Light gray body
-        accent: { fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#8B949E', lineHeight: '1.4' }, // Muted gray
-        link: { fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#58A6FF', lineHeight: '1.6' } // Blue links
+        heading: { fontFamily: 'Inter, sans-serif', fontSize: '28px', color: '#F0F6FC', lineHeight: '1.2' }, // White headings
+        subheading: { fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#58A6FF', lineHeight: '1.3' }, // Blue subheadings
+        body: { fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#C9D1D9', lineHeight: '1.5' }, // Light gray body
+        accent: { fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8B949E', lineHeight: '1.3' }, // Muted gray
+        link: { fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#58A6FF', lineHeight: '1.5' } // Blue links
       }
       return defaults[type]
     }
@@ -187,18 +189,18 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
     // Apply font size
     switch (type) {
       case 'heading':
-        style.fontSize = `${appearanceSettings.font_size_heading || 32}px`
+        style.fontSize = `${appearanceSettings.font_size_heading ? appearanceSettings.font_size_heading * 0.85 : 28}px`
         style.lineHeight = `${appearanceSettings.line_height_heading || 1.2}`
         break
       case 'subheading':
-        style.fontSize = `${appearanceSettings.font_size_subheading || 18}px`
-        style.lineHeight = `${appearanceSettings.line_height_base || 1.4}`
+        style.fontSize = `${appearanceSettings.font_size_subheading ? appearanceSettings.font_size_subheading * 0.85 : 16}px`
+        style.lineHeight = `${appearanceSettings.line_height_base ? appearanceSettings.line_height_base * 0.95 : 1.3}`
         break
       case 'body':
       case 'accent':
       case 'link':
-        style.fontSize = `${appearanceSettings.font_size_base || 16}px`
-        style.lineHeight = `${appearanceSettings.line_height_base || 1.6}`
+        style.fontSize = `${appearanceSettings.font_size_base ? appearanceSettings.font_size_base * 0.85 : 14}px`
+        style.lineHeight = `${appearanceSettings.line_height_base ? appearanceSettings.line_height_base * 0.95 : 1.5}`
         break
     }
 
@@ -233,10 +235,23 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
 
   const handleRefreshPreview = async (linkId: string) => {
     try {
-      // For now, just reload the page (preview refresh will be handled by the new clean architecture)
-      window.location.reload()
+      // Use API service to refresh preview data
+      await ApiLinkService.refreshLinkPreview(user.id, linkId);
+      toast.success('Preview refreshed successfully');
+      
+      // Use toast to inform user instead of reloading the whole page
+      // Will be properly handled through state management in the future
+      if (!isPreview) {
+        toast.info('Reload the page to see the updated preview', {
+          action: {
+            label: 'Reload',
+            onClick: () => window.location.reload()
+          },
+        });
+      }
     } catch (error) {
-      console.error('Failed to refresh preview:', error)
+      console.error('Failed to refresh preview:', error);
+      toast.error('Failed to refresh preview');
     }
   }
 
@@ -275,11 +290,11 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
 
   return (
     <div className="min-h-screen" style={getBackgroundStyle()}>
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-4xl mx-auto px-4 py-5">
         
         {/* Profile Header - GitHub Focus Style */}
-        <div className="bg-[#161B22] border border-[#30363D] rounded-[12px] p-6 mb-6">
-          <div className="flex flex-col md:flex-row gap-6">
+        <div className="bg-[#161B22] border border-[#30363D] rounded-[12px] p-5 mb-5">
+          <div className="flex flex-col md:flex-row gap-5">
             
             {/* Left Side - Avatar and Basic Info */}
             <div className="flex-shrink-0">
@@ -287,13 +302,13 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
                 <Image
                   src={user.avatar_url}
                   alt={`${user.full_name || user.github_username}'s avatar`}
-                  width={80}
-                  height={80}
-                  className="w-[80px] h-[80px] rounded-full object-cover border border-[#30363D]"
+                  width={70}
+                  height={70}
+                  className="w-[70px] h-[70px] rounded-full object-cover border border-[#30363D]"
                 />
               ) : (
-                <div className="w-[80px] h-[80px] rounded-full bg-[#238636] flex items-center justify-center border border-[#30363D]">
-                  <span className="text-[32px] font-bold text-white font-inter">
+                <div className="w-[70px] h-[70px] rounded-full bg-[#238636] flex items-center justify-center border border-[#30363D]">
+                  <span className="text-[28px] font-bold text-white font-inter">
                     {(user.full_name || user.github_username || 'U')[0].toUpperCase()}
                   </span>
                 </div>
@@ -304,20 +319,20 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
             <div className="flex-1 min-w-0">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-[24px] font-semibold leading-[30px] tracking-[-0.72px] font-inter text-[#F0F6FC] mb-1"
+                  <h1 className="text-[22px] font-semibold leading-[26px] tracking-[-0.66px] font-inter text-[#F0F6FC] mb-1"
                        style={getTypographyStyle('heading')}>
                     {user.full_name || user.github_username || 'Developer'}
                   </h1>
                   
                   {user.github_username && (
-                    <p className="text-[16px] font-normal leading-[22px] text-[#8B949E] font-inter mb-3"
+                    <p className="text-[14px] font-normal leading-[18px] text-[#8B949E] font-inter mb-2"
                        style={getTypographyStyle('accent')}>
                       @{user.github_username}
                     </p>
                   )}
 
                   {user.profile_title && (
-                    <p className="text-[14px] font-medium leading-[20px] text-[#238636] font-inter mb-3"
+                    <p className="text-[13px] font-medium leading-[18px] text-[#238636] font-inter mb-2"
                        style={getTypographyStyle('subheading')}>
                       {user.profile_title}
                     </p>
@@ -325,14 +340,23 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
 
                   {/* Bio */}
                   {user.bio && (
-                    <p className="text-[14px] font-normal leading-[20px] text-[#C9D1D9] font-inter mb-4"
+                    <p className="text-[13px] font-normal leading-[18px] text-[#C9D1D9] font-inter mb-3"
                        style={getTypographyStyle('body')}>
                       {user.bio}
                     </p>
                   )}
 
+                  {/* Tech Stacks */}
+                  {user.tech_stacks && user.tech_stacks.length > 0 && (
+                    <div className="mb-3 flex justify-start">
+                      <div className="flex flex-wrap justify-start gap-1.5">
+                        <TechStackDisplay techStackIds={user.tech_stacks} align="left" />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Meta Information */}
-                  <div className="flex flex-wrap items-center gap-4 text-[12px] text-[#8B949E] font-inter"
+                  <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#8B949E] font-inter"
                        style={getTypographyStyle('accent')}>
                     {user.location && (
                       <div className="flex items-center gap-1">
@@ -356,16 +380,16 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
                 {/* Share Button - GitHub Focus Style */}
                 <Button
                   onClick={handleShare}
-                  className="bg-[#238636] hover:bg-[#2EA043] text-white border-0 px-4 py-2 rounded-[6px] font-medium text-[14px] font-inter transition-colors"
+                  className="bg-[#238636] hover:bg-[#2EA043] text-white border-0 px-3.5 py-1.5 rounded-[6px] font-medium text-[13px] font-inter transition-colors"
                 >
                   {copied ? (
                     <>
-                      <Check className="w-4 h-4 mr-2" />
+                      <Check className="w-3.5 h-3.5 mr-1.5" />
                       Copied!
                     </>
                   ) : (
                     <>
-                      <Share2 className="w-4 h-4 mr-2" />
+                      <Share2 className="w-3.5 h-3.5 mr-1.5" />
                       Share
                     </>
                   )}
@@ -377,7 +401,7 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
 
         {/* All Categories Section - Respecting Category Order */}
         {hasLinks ? (
-          <div className="space-y-4">
+          <div className="space-y-3.5">
             {categoryOrder.map((category) => {
               const categoryLinks = links[category] || []
               if (categoryLinks.length === 0) return null
@@ -405,19 +429,19 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
                 >
                   
                   {/* Category Header */}
-                  <div className="bg-[#1C2128] border-b border-[#30363D] px-4 py-3">
+                  <div className="bg-[#1C2128] border-b border-[#30363D] px-3.5 py-2.5">
                     <div className="flex items-center gap-2">
                       <div className="p-1 rounded bg-[#238636]/20 border border-[#238636]/30">
                         <CategoryIcon 
-                          className="w-4 h-4" 
+                          className="w-3.5 h-3.5" 
                           style={{ color: '#238636' }}
                         />
                       </div>
-                      <h2 className="text-[14px] font-semibold leading-[18px] font-inter text-[#F0F6FC]"
+                      <h2 className="text-[13px] font-semibold leading-[16px] font-inter text-[#F0F6FC]"
                           style={getTypographyStyle('subheading')}>
                         {category.charAt(0).toUpperCase() + category.slice(1)}
                       </h2>
-                      <span className="text-[12px] text-[#8B949E] font-inter ml-auto"
+                      <span className="text-[11px] text-[#8B949E] font-inter ml-auto"
                            style={getTypographyStyle('accent')}>
                         {categoryLinks.length} {categoryLinks.length === 1 ? 'link' : 'links'}
                       </span>
@@ -425,9 +449,9 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
                   </div>
 
                   {/* Rich Link Previews */}
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {categoryLinks.map((link) => (
-                      <div key={link.id} className="px-4 py-2">
+                      <div key={link.id} className="px-3.5 py-1.5">
                         <RichLinkPreview
                           link={link}
                           onClick={() => handleLinkClick(link)}
@@ -445,12 +469,12 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
             })}
           </div>
         ) : (
-          <div className="bg-[#161B22] border border-[#30363D] rounded-[12px] p-8 text-center">
-            <h2 className="text-[16px] font-semibold leading-[20px] font-inter text-[#F0F6FC] mb-2"
+          <div className="bg-[#161B22] border border-[#30363D] rounded-[12px] p-6 text-center">
+            <h2 className="text-[14px] font-semibold leading-[18px] font-inter text-[#F0F6FC] mb-2"
                  style={getTypographyStyle('heading')}>
               No repositories yet
             </h2>
-            <p className="text-[14px] font-normal leading-[20px] text-[#8B949E] font-inter"
+            <p className="text-[13px] font-normal leading-[18px] text-[#8B949E] font-inter"
                style={getTypographyStyle('body')}>
               This developer hasn&apos;t added any links to their profile yet.
             </p>
@@ -459,9 +483,9 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
 
         {/* Powered by Link4Coders Footer */}
         {!user.is_premium && !isPreview && (
-          <div className="mt-8 text-center">
-            <div className="bg-[#161B22] border border-[#30363D] rounded-[8px] p-3 inline-block">
-              <p className="text-[12px] font-normal text-[#8B949E] font-inter"
+          <div className="mt-6 text-center">
+            <div className="bg-[#161B22] border border-[#30363D] rounded-[8px] p-2.5 inline-block">
+              <p className="text-[11px] font-normal text-[#8B949E] font-inter"
                  style={getTypographyStyle('accent')}>
                 Powered by{' '}
                 <a 
@@ -484,7 +508,7 @@ export function GitHubFocusTemplate({ user, links, appearanceSettings, categoryO
                 </a>
                 {' '}⭐
               </p>
-              <p className="text-[10px] text-[#8B949E] font-inter mt-1"
+              <p className="text-[9px] text-[#8B949E] font-inter mt-1"
                  style={getTypographyStyle('accent')}>
                 Create your developer profile for free
               </p>

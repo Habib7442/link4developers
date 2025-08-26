@@ -13,7 +13,7 @@ export function PreviewCard({ className = "" }: PreviewCardProps) {
         width={444}
         height={536}
         className="w-full h-full object-contain"
-        unoptimized
+        priority
         onError={(e) => {
           console.error('Failed to load preview card image:', e);
         }}

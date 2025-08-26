@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react'
-import { UserLinkWithPreview, RichPreviewMetadata, PreviewStatus } from '@/lib/types/rich-preview'
+import { UserLinkWithPreview, RichPreviewMetadata, PreviewStatus, GitHubRepoMetadata, WebpageMetadata, BlogPostMetadata } from '@/lib/types/rich-preview'
 import { GitHubRepoCard } from './github-repo-card'
 import { WebpagePreviewCard, BasicLinkCard } from './webpage-preview-card'
 import { BlogPostCard } from './blog-post-card'
@@ -41,31 +41,11 @@ export function RichLinkPreview({
   }
 
   // For preview mode, if we're inside a LivePreview component, 
-  // we should still show rich previews if the data is available
-  // Only fall back to BasicLinkCard if we don't have rich preview data
+  // we should always show rich previews regardless of loading state
   const isPreviewMode = explicitPreviewMode || (typeof window !== 'undefined' && 
     (window.location.pathname.includes('/dashboard/preview') || 
      window.location.pathname.includes('/dashboard/links')));
   
-  // In preview mode, check if we have rich preview data
-  if (isPreviewMode) {
-    // If we have rich preview metadata, show the rich preview
-    if (link.metadata && Object.keys(link.metadata).length > 0) {
-      // Continue with normal rich preview rendering
-    } else {
-      // Fall back to BasicLinkCard only if no rich preview data
-      return (
-        <BasicLinkCard
-          link={link}
-          onClick={handleClick}
-          className={className}
-          variant={variant}
-          theme={theme}
-        />
-      );
-    }
-  }
-
   const handleRefresh = async () => {
     if (!onRefresh || isRefreshing) return
 
@@ -81,23 +61,11 @@ export function RichLinkPreview({
     }
   }
 
-  // Loading state
-  if (link.preview_status === 'pending' || isRefreshing) {
-    // For all links in the preview, use BasicLinkCard instead of showing loading state
-    // Special handling only for GitHub repos, blogs and projects that actually need rich previews
-    const needsRichPreview = link.url.includes('github.com') && link.category === 'projects';
-    
-    if (!needsRichPreview) {
-      return (
-        <BasicLinkCard
-          link={link}
-          onClick={handleClick}
-          className={className}
-          variant={variant}
-          theme={theme}
-        />
-      );
-    }
+  // Loading state - only show loading in non-preview mode when there's no metadata
+  // In preview mode, prioritize showing cards over loading indicators
+  if (!isPreviewMode && (link.preview_status === 'pending' || isRefreshing) && (!link.metadata || Object.keys(link.metadata).length === 0)) {
+    // Only show loading state in non-preview modes for links with no metadata
+    // For links with metadata, we'll show a preview card even if status is pending
     
     const isLight = theme === 'light'
 
@@ -138,8 +106,9 @@ export function RichLinkPreview({
     )
   }
 
-  // Error state
-  if (link.preview_status === 'failed' && !link.metadata) {
+  // Error state - only show error card in non-preview mode
+  // In preview mode, show a basic card instead of error state
+  if (!isPreviewMode && link.preview_status === 'failed' && (!link.metadata || Object.keys(link.metadata).length === 0)) {
     const isLight = theme === 'light'
 
     return (
@@ -209,29 +178,22 @@ export function RichLinkPreview({
   }
 
   // Rich preview with metadata
-  if (link.metadata && link.preview_status === 'success') {
+  // Show rich preview for links with metadata, regardless of preview status
+  // This ensures links with metadata show as rich cards even if status is pending or failed
+  if (link.metadata && Object.keys(link.metadata).length > 0) {
     const metadata = link.metadata as RichPreviewMetadata
 
-    // For links in preview context, prioritize immediate display over rich previews
-    // Only use rich preview components for specific types that need them
-    if (metadata.type === 'unknown') {
-      return (
-        <BasicLinkCard
-          link={link}
-          onClick={handleClick}
-          className={className}
-          variant={variant}
-          theme={theme}
-        />
-      );
-    }
+    // Always try to use rich previews for better user experience
+    // Instead of limiting to specific types, use WebpagePreviewCard as default
+    // Only fallback to BasicLinkCard for truly unknown types with no usable metadata
 
     // GitHub repository preview
     if (metadata.type === 'github_repo') {
+      const githubMetadata = metadata as GitHubRepoMetadata;
       return (
         <GitHubRepoCard
           link={link}
-          metadata={metadata}
+          metadata={githubMetadata}
           onClick={handleClick}
           onRefresh={showRefreshButton ? handleRefresh : undefined}
           className={className}
@@ -243,10 +205,11 @@ export function RichLinkPreview({
 
     // Blog post preview
     if (metadata.type === 'blog_post') {
+      const blogMetadata = metadata as BlogPostMetadata;
       return (
         <BlogPostCard
           link={link}
-          metadata={metadata}
+          metadata={blogMetadata}
           onClick={handleClick}
           onRefresh={showRefreshButton ? handleRefresh : undefined}
           className={className}
@@ -256,29 +219,66 @@ export function RichLinkPreview({
       )
     }
 
-    // Webpage preview
-    if (metadata.type === 'webpage') {
-      return (
-        <WebpagePreviewCard
-          link={link}
-          metadata={metadata}
-          onClick={handleClick}
-          onRefresh={showRefreshButton ? handleRefresh : undefined}
-          className={className}
-          variant={variant}
-          theme={theme}
-        />
-      )
-    }
+    // Webpage preview - this will handle most generic links
+    // including personal, custom and projects links that don't match other types
+    const webpageMetadata = metadata as WebpageMetadata;
+    return (
+      <WebpagePreviewCard
+        link={link}
+        metadata={webpageMetadata}
+        onClick={handleClick}
+        onRefresh={showRefreshButton ? handleRefresh : undefined}
+        className={className}
+        variant={variant}
+        theme={theme}
+      />
+    )
   }
 
-  // Fallback to basic link card
+  // In preview mode, always try to show a rich card even without metadata
+  // Create minimal metadata for display
+  if (isPreviewMode) {
+    // Extract domain from URL
+    let domain = '';
+    try {
+      const urlObj = new URL(link.url);
+      domain = urlObj.hostname;
+    } catch (e) {
+      domain = link.url;
+    }
+    
+    const minimalMetadata: WebpageMetadata = {
+      type: 'webpage',
+      title: link.title || 'Untitled Link',
+      description: link.description || 'No description available',
+      image: link.image_url || null,
+      url: link.url,
+      site_name: '',
+      favicon: '',
+      domain: domain,
+      fetched_at: new Date().toISOString()
+    };
+    
+    return (
+      <WebpagePreviewCard
+        link={link}
+        metadata={minimalMetadata}
+        onClick={handleClick}
+        onRefresh={showRefreshButton ? handleRefresh : undefined}
+        className={className}
+        variant={variant}
+        theme={theme}
+      />
+    )
+  }
+
+  // Fallback to basic link card only when not in preview mode and no metadata is available
   return (
     <BasicLinkCard
       link={link}
       onClick={handleClick}
       className={className}
-      variant={variant}
+      variant={variant === 'detailed' ? 'default' : variant}
       theme={theme}
     />
   )

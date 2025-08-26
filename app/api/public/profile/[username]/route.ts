@@ -116,6 +116,7 @@ const getPublicProfileHandler = async (
       profile_slug: user.profile_slug,
       theme_id: user.theme_id,
       is_premium: user.is_premium,
+      tech_stacks: user.tech_stacks, // Include tech stacks in the public response
       created_at: user.created_at
     }
 

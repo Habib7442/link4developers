@@ -112,17 +112,17 @@ export function WebpagePreviewCard({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         className={cn(
-          "group relative w-full rounded-2xl p-4 transition-all duration-300 text-left shadow-sm cursor-pointer",
+          "group relative w-full rounded-lg p-3 transition-all duration-300 text-left shadow-sm cursor-pointer",
           isLight
             ? "bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300"
             : "glassmorphic shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)] hover:shadow-[0px_20px_35px_rgba(0,0,0,0.40)]",
           className
         )}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {/* Favicon */}
           <div className={cn(
-            "relative w-8 h-8 rounded-lg overflow-hidden flex-shrink-0",
+            "relative w-6 h-6 rounded-md overflow-hidden flex-shrink-0",
             isLight ? "bg-gray-100 border border-gray-200" : "bg-white/5"
           )}>
             {metadata.favicon && !faviconError ? (
@@ -130,14 +130,14 @@ export function WebpagePreviewCard({
                 src={metadata.favicon}
                 alt=""
                 fill
-                sizes="32px"
+                sizes="24px"
                 className="object-cover"
                 onError={() => setFaviconError(true)}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <Globe className={cn(
-                  "w-4 h-4",
+                  "w-3 h-3",
                   isLight ? "text-gray-500" : "text-gray-400"
                 )} />
               </div>
@@ -146,13 +146,13 @@ export function WebpagePreviewCard({
 
           <div className="flex-1 min-w-0">
             <h3 className={cn(
-              "text-sm font-semibold truncate font-['Sharp_Grotesk']",
+              "text-xs font-semibold truncate font-['Sharp_Grotesk']",
               isLight ? "text-gray-900" : "text-white"
             )}>
               {displayTitle}
             </h3>
             <p className={cn(
-              "text-xs truncate mt-1",
+              "text-[10px] truncate mt-0.5",
               isLight ? "text-gray-600" : "text-gray-400"
             )}>
               {displayDomain}
@@ -160,7 +160,7 @@ export function WebpagePreviewCard({
           </div>
 
           <ExternalLink className={cn(
-            "w-4 h-4 group-hover:text-blue-400 transition-colors flex-shrink-0",
+            "w-3.5 h-3.5 group-hover:text-blue-400 transition-colors flex-shrink-0",
             isLight ? "text-gray-500" : "text-gray-400"
           )} />
         </div>
@@ -176,7 +176,7 @@ export function WebpagePreviewCard({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "group relative w-full rounded-3xl overflow-hidden transition-all duration-500 text-left transform hover:scale-[1.02] cursor-pointer",
+        "group relative w-full rounded-xl overflow-hidden transition-all duration-500 text-left transform hover:scale-[1.02] cursor-pointer",
         isLight
           ? "bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 shadow-sm hover:shadow-md"
           : "glassmorphic shadow-[0px_16px_30.7px_rgba(0,0,0,0.30)] hover:shadow-[0px_20px_40px_rgba(0,0,0,0.40)]",
@@ -191,7 +191,7 @@ export function WebpagePreviewCard({
       
       {/* Preview Image */}
       {metadata.image && !imageError && (
-        <div className="relative w-full h-48 overflow-hidden">
+        <div className="relative w-full h-36 overflow-hidden">
           <Image
             src={metadata.image}
             alt=""
@@ -200,55 +200,19 @@ export function WebpagePreviewCard({
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             onError={() => setImageError(true)}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
         </div>
       )}
-      
-      {/* Content */}
-      <div className="relative z-10 p-6">
-        {/* Header */}
-        <div className="flex items-start gap-4 mb-3">
-          {/* Favicon */}
-          <div className={cn(
-            "relative w-10 h-10 rounded-xl overflow-hidden flex-shrink-0",
-            isLight
-              ? "bg-gray-100 border border-gray-200"
-              : "bg-white/5 ring-2 ring-white/10"
-          )}>
-            {metadata.favicon && !faviconError ? (
-              <Image
-                src={metadata.favicon}
-                alt=""
-                fill
-                sizes="40px"
-                className="object-cover"
-                onError={() => setFaviconError(true)}
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Globe className={cn(
-                  "w-5 h-5",
-                  isLight ? "text-gray-500" : "text-gray-400"
-                )} />
-              </div>
-            )}
-          </div>
 
-          <div className="flex-1 min-w-0">
-            <h3 className={cn(
-              "text-lg font-bold line-clamp-2 font-['Sharp_Grotesk'] mb-1",
-              isLight ? "text-gray-900" : "text-white"
-            )}>
-              {displayTitle}
-            </h3>
-            <p className={cn(
-              "text-sm font-medium",
-              isLight ? "text-gray-600" : "text-gray-400"
-            )}>
-              {metadata.site_name || displayDomain}
-            </p>
-          </div>
-          
+      {/* Content */}
+      <div className="p-4">
+        {/* Title and icon */}
+        <div className="flex justify-between items-start gap-4 mb-2">
+          <h3 className={cn(
+            "text-base font-bold font-['Sharp_Grotesk'] leading-tight",
+            isLight ? "text-gray-900" : "text-white"
+          )}>
+            {displayTitle}
+          </h3>
           <div className="flex items-center gap-2">
             {onRefresh && (
               <button
@@ -347,16 +311,16 @@ export function BasicLinkCard({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         className={cn(
-          "group relative w-full rounded-2xl p-4 transition-all duration-300 text-left shadow-sm cursor-pointer",
+          "group relative w-full rounded-lg p-3 transition-all duration-300 text-left shadow-sm cursor-pointer",
           isLight
             ? "bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300"
             : "bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/[0.08] hover:from-white/[0.12] hover:to-white/[0.04] hover:border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.16)]",
           className
         )}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <div className={cn(
-            "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
+            "w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0",
             isLight ? "bg-gray-100 border border-gray-200" : "bg-white/5"
           )}>
             <div className={cn(
@@ -367,20 +331,20 @@ export function BasicLinkCard({
           </div>
           <div className="flex-1 min-w-0">
             <h3 className={cn(
-              "text-sm font-semibold truncate font-['Sharp_Grotesk']",
+              "text-xs font-semibold truncate font-['Sharp_Grotesk']",
               isLight ? "text-gray-900" : "text-white"
             )}>
               {link.title}
             </h3>
             <p className={cn(
-              "text-xs truncate mt-1",
+              "text-[10px] truncate mt-0.5",
               isLight ? "text-gray-600" : "text-gray-400"
             )}>
               {domain}
             </p>
           </div>
           <ExternalLink className={cn(
-            "w-4 h-4 group-hover:text-blue-400 transition-colors flex-shrink-0",
+            "w-3.5 h-3.5 group-hover:text-blue-400 transition-colors flex-shrink-0",
             isLight ? "text-gray-500" : "text-gray-400"
           )} />
         </div>
@@ -396,22 +360,22 @@ export function BasicLinkCard({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "group relative w-full rounded-3xl p-6 transition-all duration-500 text-left transform hover:scale-[1.02] cursor-pointer",
+        "group relative w-full rounded-xl p-4 transition-all duration-500 text-left transform hover:scale-[1.02] cursor-pointer",
         isLight
           ? "bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 shadow-sm hover:shadow-md"
           : "bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/[0.08] hover:from-white/[0.12] hover:to-white/[0.04] hover:border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_20px_60px_rgba(0,0,0,0.2)]",
         className
       )}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <div className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
+          "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
           isLight
             ? "bg-gray-100 border border-gray-200"
             : "bg-white/5 ring-2 ring-white/10"
         )}>
           <div className={cn(
-            "w-6 h-6 flex items-center justify-center",
+            "w-5 h-5 flex items-center justify-center",
             isLight ? "text-gray-500" : "text-gray-400"
           )} style={{ color: isLight ? '#6b7280' : undefined }}>
             {getLinkIcon(link)}
@@ -419,28 +383,28 @@ export function BasicLinkCard({
         </div>
         <div className="flex-1 min-w-0">
           <h3 className={cn(
-            "text-lg font-bold truncate font-['Sharp_Grotesk'] mb-1",
+            "text-base font-bold truncate font-['Sharp_Grotesk'] mb-0.5",
             isLight ? "text-gray-900" : "text-white"
           )}>
             {link.title}
           </h3>
           {link.description && (
             <p className={cn(
-              "text-sm line-clamp-2 mb-2",
+              "text-xs line-clamp-2 mb-1",
               isLight ? "text-gray-700" : "text-gray-300"
             )}>
               {link.description}
             </p>
           )}
           <p className={cn(
-            "text-sm",
+            "text-xs",
             isLight ? "text-gray-600" : "text-gray-400"
           )}>
             {domain}
           </p>
         </div>
         <ExternalLink className={cn(
-          "w-5 h-5 group-hover:text-blue-400 transition-colors flex-shrink-0",
+          "w-4 h-4 group-hover:text-blue-400 transition-colors flex-shrink-0",
           isLight ? "text-gray-500" : "text-gray-400"
         )} />
       </div>

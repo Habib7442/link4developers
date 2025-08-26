@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from './button';
 import { PreviewCard } from './preview-card';
-import ChainLinkIcon from '../icons/ChainLinkIcon';
 import ArrowRightIcon from '../icons/ArrowRightIcon';
 import { AuthModal } from './auth-modal';
 import { useAuthStore } from '@/stores/auth-store';
@@ -12,11 +12,14 @@ import { LayoutDashboard, User } from 'lucide-react';
 
 export function HeroSection() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const { user, loading } = useAuthStore();
   const router = useRouter();
 
   const handleCTAClick = () => {
     if (user) {
+      // Set navigating state to show loading indicator
+      setIsNavigating(true);
       // Navigate to dashboard
       router.push('/dashboard');
     } else {
@@ -67,8 +70,8 @@ export function HeroSection() {
           <div className="mb-4">
             <h1 className="text-[36px] leading-[42px] font-normal tracking-[-1.8px] font-sharp-grotesk gradient-text-primary">
               One link{' '}
-              <span className="inline-flex items-center rotate-12">
-                <ChainLinkIcon width={36} height={36} />
+              <span className="inline-flex items-center justify-center rotate-12">
+                <Image src="/logo.png" alt="Link4Devs Logo" width={46} height={46} className="relative -mb-[3px]" />
               </span>{' '}
               for
               <br />
@@ -91,15 +94,15 @@ export function HeroSection() {
           <div className="w-full max-w-xs">
             <Button
               onClick={handleCTAClick}
-              disabled={loading}
+              disabled={loading || isNavigating}
               size="default"
               className={`font-medium text-[14px] tracking-[-0.42px] font-sharp-grotesk rounded-[12px] shadow-[0px_8px_20px_rgba(0,0,0,0.30)] h-[44px] w-full flex items-center justify-center transition-all duration-300 ${
                 user
                   ? 'bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] text-[#18181a] hover:from-[#29ADFF] hover:to-[#54E0FF]'
                   : 'bg-white text-[#18181a] hover:bg-gray-100'
-              } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              } ${(loading || isNavigating) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {loading ? (
+              {loading || isNavigating ? (
                 <div className="w-4 h-4 border-2 border-[#18181a] border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
@@ -155,8 +158,9 @@ export function HeroSection() {
           >
             <h1 className="text-[66.22px] font-normal leading-[78.80px] tracking-[-3.97px] font-sharp-grotesk gradient-text-primary whitespace-nowrap">
               One link{' '}
-              <span className="inline-flex items-center rotate-12">
-                <ChainLinkIcon width={66} height={66} />
+              <span className="inline-flex items-center justify-center rotate-12">
+                
+                <Image src="/logo.png" alt="Link4Devs Logo" width={76} height={76} className="relative -mb-[5px]" />
               </span>{' '}
               for
               <br />
@@ -185,15 +189,15 @@ export function HeroSection() {
           >
             <Button
               onClick={handleCTAClick}
-              disabled={loading}
+              disabled={loading || isNavigating}
               size="default"
               className={`font-medium text-[20px] tracking-[-0.6px] font-sharp-grotesk rounded-[15px] shadow-[0px_12px_32px_rgba(0,0,0,0.40)] h-full w-full flex items-center justify-center transition-all duration-300 ${
                 user
                   ? 'bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] text-[#18181a] hover:from-[#29ADFF] hover:to-[#54E0FF]'
                   : 'bg-white text-[#18181a] hover:bg-gray-100'
-              } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              } ${(loading || isNavigating) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {loading ? (
+              {loading || isNavigating ? (
                 <div className="w-6 h-6 border-2 border-[#18181a] border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
@@ -219,7 +223,7 @@ export function HeroSection() {
             className="absolute"
             style={{
               left: 'clamp(calc(100% - 444px - 2rem), 58.8vw, 846px)',
-              top: '235px',
+              top: '195px',  /* Changed from 235px to 195px to move it up */
               width: 'min(444px, 31vw)',
               height: '536px'
             }}

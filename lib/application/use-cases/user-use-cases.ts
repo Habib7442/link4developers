@@ -36,3 +36,4 @@ export class UserUseCaseImpl implements UserUseCases {
     return this.userRepository.getUserByUsername(username)
   }
 }
+

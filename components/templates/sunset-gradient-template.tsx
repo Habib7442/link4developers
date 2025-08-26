@@ -7,8 +7,10 @@ import { Button } from '../ui/button'
 import { RichLinkPreview } from '../rich-preview/rich-link-preview'
 import { UserLinkWithPreview } from '../../lib/types/rich-preview'
 import { SocialMediaSection } from '../social-media/social-media-section'
+import { TechStackDisplay } from '@/components/dashboard/tech-stack-display'
 import { getFontFamilyWithFallbacks, loadGoogleFont } from '../../lib/utils/font-loader'
 import { getSectionStyles, getSectionTypographyStyle } from '../../lib/utils/section-styling'
+import { ApiLinkService } from '../../lib/services/api-link-service'
 import { 
   MapPin, 
   Building, 
@@ -216,11 +218,11 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
     if (!appearanceSettings) {
       // Default styles for Sunset Gradient theme based on user specifications
       const defaults = {
-        heading: { fontFamily: 'Poppins, sans-serif', fontSize: '32px', color: '#2C2C2C', lineHeight: '1.2', fontWeight: '700' }, // Deep charcoal
-        subheading: { fontFamily: 'Poppins, sans-serif', fontSize: '18px', color: '#FF6F61', lineHeight: '1.4', fontWeight: '600' }, // Coral
-        body: { fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#444444', lineHeight: '1.6' }, // Dark warm gray
-        accent: { fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#6E6E6E', lineHeight: '1.4' }, // Muted/subtext
-        link: { fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#FF6F61', lineHeight: '1.6' } // Bright coral
+        heading: { fontFamily: 'Poppins, sans-serif', fontSize: '26px', color: '#2C2C2C', lineHeight: '1.2', fontWeight: '700' }, // Deep charcoal
+        subheading: { fontFamily: 'Poppins, sans-serif', fontSize: '16px', color: '#FF6F61', lineHeight: '1.3', fontWeight: '600' }, // Coral
+        body: { fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#444444', lineHeight: '1.5' }, // Dark warm gray
+        accent: { fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#6E6E6E', lineHeight: '1.3' }, // Muted/subtext
+        link: { fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#FF6F61', lineHeight: '1.5' } // Bright coral
       }
       return defaults[type]
     }
@@ -237,20 +239,20 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
     // Apply font size and weight
     switch (type) {
       case 'heading':
-        style.fontSize = `${appearanceSettings.font_size_heading || 32}px`
+        style.fontSize = `${appearanceSettings.font_size_heading ? appearanceSettings.font_size_heading * 0.8 : 26}px`
         style.lineHeight = `${appearanceSettings.line_height_heading || 1.2}`
         style.fontWeight = '700'
         break
       case 'subheading':
-        style.fontSize = `${appearanceSettings.font_size_subheading || 18}px`
-        style.lineHeight = `${appearanceSettings.line_height_base || 1.4}`
+        style.fontSize = `${appearanceSettings.font_size_subheading ? appearanceSettings.font_size_subheading * 0.85 : 16}px`
+        style.lineHeight = `${appearanceSettings.line_height_base ? appearanceSettings.line_height_base * 0.95 : 1.3}`
         style.fontWeight = '600'
         break
       case 'body':
       case 'accent':
       case 'link':
-        style.fontSize = `${appearanceSettings.font_size_base || 16}px`
-        style.lineHeight = `${appearanceSettings.line_height_base || 1.6}`
+        style.fontSize = `${appearanceSettings.font_size_base ? appearanceSettings.font_size_base * 0.85 : 14}px`
+        style.lineHeight = `${appearanceSettings.line_height_base ? appearanceSettings.line_height_base * 0.95 : 1.5}`
         break
     }
 
@@ -288,11 +290,23 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
 
   const handleRefreshPreview = async (linkId: string) => {
     try {
-      await ApiLinkService.refreshLinkPreview(user.id, linkId)
-      // Optionally trigger a re-fetch of the links data
-      window.location.reload() // Simple approach for now
+      // Use API service to refresh preview data
+      await ApiLinkService.refreshLinkPreview(user.id, linkId);
+      toast.success('Preview refreshed successfully');
+      
+      // Use toast to inform user instead of reloading the whole page
+      // Will be properly handled through state management in the future
+      if (!isPreview) {
+        toast.info('Reload the page to see the updated preview', {
+          action: {
+            label: 'Reload',
+            onClick: () => window.location.reload()
+          },
+        });
+      }
     } catch (error) {
-      console.error('Failed to refresh preview:', error)
+      console.error('Failed to refresh preview:', error);
+      toast.error('Failed to refresh preview');
     }
   }
 
@@ -331,14 +345,14 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
 
   return (
     <div className="min-h-screen relative" style={getBackgroundStyle()}>
-      <div className="max-w-4xl mx-auto px-4 py-8 relative z-10">
+      <div className="max-w-4xl mx-auto px-4 py-6 relative z-10">
         
         {/* Profile Header */}
-        <div className="bg-[#FFE9DC] rounded-3xl p-8 mb-8 shadow-[0_8px_30px_rgba(255,100,70,0.2)] border border-white/60 relative overflow-hidden">
+        <div className="bg-[#FFE9DC] rounded-2xl p-6 mb-6 shadow-[0_8px_30px_rgba(255,100,70,0.2)] border border-white/60 relative overflow-hidden">
           {/* Soft shadow effect */}
-          <div className="absolute inset-0 rounded-3xl shadow-[0_10px_30px_rgba(255,100,70,0.2)]"></div>
+          <div className="absolute inset-0 rounded-2xl shadow-[0_10px_30px_rgba(255,100,70,0.2)]"></div>
           
-          <div className="flex flex-col md:flex-row gap-8 relative z-10">
+          <div className="flex flex-col md:flex-row gap-6 relative z-10">
             
             {/* Left Side - Avatar and Basic Info */}
             <div className="flex-shrink-0">
@@ -347,14 +361,14 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
                   <Image
                     src={user.avatar_url}
                     alt={`${user.full_name || user.github_username}'s avatar`}
-                    width={120}
-                    height={120}
-                    className="w-[120px] h-[120px] rounded-full object-cover border-4 border-white shadow-lg"
+                    width={100}
+                    height={100}
+                    className="w-[100px] h-[100px] rounded-full object-cover border-4 border-white shadow-lg"
                   />
                 </div>
               ) : (
-                <div className="w-[120px] h-[120px] rounded-full bg-gradient-to-r from-[#FF7E5F] to-[#FEB47B] flex items-center justify-center border-4 border-white shadow-lg">
-                  <span className="text-[48px] font-bold text-white font-poppins">
+                <div className="w-[100px] h-[100px] rounded-full bg-gradient-to-r from-[#FF7E5F] to-[#FEB47B] flex items-center justify-center border-4 border-white shadow-lg">
+                  <span className="text-[40px] font-bold text-white font-poppins">
                     {(user.full_name || user.github_username || 'U')[0].toUpperCase()}
                   </span>
                 </div>
@@ -363,22 +377,22 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
 
             {/* Right Side - Profile Details */}
             <div className="flex-1 min-w-0">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5">
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-[32px] font-bold leading-[1.2] tracking-[-0.5px] mb-2 text-[#2C2C2C]"
+                  <h1 className="text-[26px] font-bold leading-[1.2] tracking-[-0.5px] mb-2 text-[#2C2C2C]"
                       style={getTypographyStyle('heading')}>
                     {user.full_name || user.github_username || 'Developer'}
                   </h1>
                   
                   {user.github_username && (
-                    <p className="text-[18px] font-semibold leading-[1.4] mb-3 text-[#FF6F61]"
+                    <p className="text-[16px] font-semibold leading-[1.3] mb-2.5 text-[#FF6F61]"
                        style={getTypographyStyle('subheading')}>
                       @{user.github_username}
                     </p>
                   )}
 
                   {user.profile_title && (
-                    <p className="text-[18px] font-semibold leading-[1.4] mb-4 text-[#FF6F61]"
+                    <p className="text-[16px] font-semibold leading-[1.3] mb-3 text-[#FF6F61]"
                        style={getTypographyStyle('subheading')}>
                       {user.profile_title}
                     </p>
@@ -386,29 +400,38 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
 
                   {/* Bio */}
                   {user.bio && (
-                    <p className="text-[16px] leading-[1.6] mb-5 text-[#444444]"
+                    <p className="text-[14px] leading-[1.5] mb-4 text-[#444444]"
                        style={getTypographyStyle('body')}>
                       {user.bio}
                     </p>
                   )}
 
+                  {/* Tech Stacks */}
+                  {user.tech_stacks && user.tech_stacks.length > 0 && (
+                    <div className="mb-4 flex justify-start">
+                      <div className="flex flex-wrap justify-start gap-1.5">
+                        <TechStackDisplay techStackIds={user.tech_stacks} align="left" />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Meta Information */}
-                  <div className="flex flex-wrap items-center gap-5 text-[14px] text-[#6E6E6E] font-medium"
+                  <div className="flex flex-wrap items-center gap-4 text-[12px] text-[#6E6E6E] font-medium"
                        style={getTypographyStyle('accent')}>
                     {user.location && (
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-[#FF6F61]" />
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-[#FF6F61]" />
                         <span>{user.location}</span>
                       </div>
                     )}
                     {user.company && (
-                      <div className="flex items-center gap-2">
-                        <Building className="w-4 h-4 text-[#FF6F61]" />
+                      <div className="flex items-center gap-1.5">
+                        <Building className="w-3.5 h-3.5 text-[#FF6F61]" />
                         <span>{user.company}</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-[#FF6F61]" />
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-[#FF6F61]" />
                       <span>Joined {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
                     </div>
                   </div>
@@ -417,17 +440,17 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
                 {/* Share Button */}
                 <Button
                   onClick={handleShare}
-                  className="bg-gradient-to-r from-[#FF5E62] to-[#FF9966] hover:from-[#FF9966] hover:to-[#FF5E62] text-white border-0 px-6 py-3 rounded-xl font-bold text-[16px] shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  className="bg-gradient-to-r from-[#FF5E62] to-[#FF9966] hover:from-[#FF9966] hover:to-[#FF5E62] text-white border-0 px-5 py-2.5 rounded-xl font-bold text-[14px] shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                 >
                   <span className="flex items-center">
                     {copied ? (
                       <>
-                        <Check className="w-5 h-5 mr-2" />
+                        <Check className="w-4 h-4 mr-1.5" />
                         Copied!
                       </>
                     ) : (
                       <>
-                        <Share2 className="w-5 h-5 mr-2" />
+                        <Share2 className="w-4 h-4 mr-1.5" />
                         Share Profile
                       </>
                     )}
@@ -440,7 +463,7 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
 
         {/* All Categories Section - Respecting Category Order */}
         {hasLinks ? (
-          <div className="space-y-8">
+          <div className="space-y-6">
             {categoryOrder.map((category, index) => {
               const categoryLinks = links[category] || []
               if (categoryLinks.length === 0) return null
@@ -465,32 +488,32 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
               return (
                 <div 
                   key={category} 
-                  className="bg-[#FFE9DC] rounded-3xl overflow-hidden shadow-[0_8px_30px_rgba(255,100,70,0.2)] border border-white/60 relative"
+                  className="bg-[#FFE9DC] rounded-2xl overflow-hidden shadow-[0_8px_30px_rgba(255,100,70,0.2)] border border-white/60 relative"
                 >
                   {/* Category Header */}
-                  <div className="bg-gradient-to-r from-[#FF7E5F]/10 to-[#FEB47B]/10 border-b border-white/50 px-8 py-5">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl bg-white shadow-sm">
+                  <div className="bg-gradient-to-r from-[#FF7E5F]/10 to-[#FEB47B]/10 border-b border-white/50 px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-white shadow-sm">
                         {(() => {
                           // Always show the correct icon based on category
                           switch (category) {
-                            case 'projects': return <Github className="w-6 h-6 text-[#FF6F61]" />
-                            case 'blogs': return <BookOpen className="w-6 h-6 text-[#FF6F61]" />
-                            case 'personal': return <User className="w-6 h-6 text-[#FF6F61]" />
-                            case 'achievements': return <Award className="w-6 h-6 text-[#FF6F61]" />
-                            case 'contact': return <Mail className="w-6 h-6 text-[#FF6F61]" />
-                            case 'custom': return <Link className="w-6 h-6 text-[#FF6F61]" />
-                            case 'social': return <Share2 className="w-6 h-6 text-[#FF6F61]" />
-                            default: return <ExternalLink className="w-6 h-6 text-[#FF6F61]" />
+                            case 'projects': return <Github className="w-5 h-5 text-[#FF6F61]" />
+                            case 'blogs': return <BookOpen className="w-5 h-5 text-[#FF6F61]" />
+                            case 'personal': return <User className="w-5 h-5 text-[#FF6F61]" />
+                            case 'achievements': return <Award className="w-5 h-5 text-[#FF6F61]" />
+                            case 'contact': return <Mail className="w-5 h-5 text-[#FF6F61]" />
+                            case 'custom': return <Link className="w-5 h-5 text-[#FF6F61]" />
+                            case 'social': return <Share2 className="w-5 h-5 text-[#FF6F61]" />
+                            default: return <ExternalLink className="w-5 h-5 text-[#FF6F61]" />
                           }
                         })()}
                       </div>
                       <div>
-                        <h2 className="text-[22px] font-bold leading-[1.3] text-[#2C2C2C]"
+                        <h2 className="text-[20px] font-bold leading-[1.3] text-[#2C2C2C]"
                             style={getTypographyStyle('heading')}>
                           {categoryConfig?.label || category}
                         </h2>
-                        <p className="text-[14px] text-[#6E6E6E] font-medium mt-1"
+                        <p className="text-[12px] text-[#6E6E6E] font-medium mt-1"
                            style={getTypographyStyle('accent')}>
                           {categoryLinks.length} {categoryLinks.length === 1 ? 'link' : 'links'}
                         </p>
@@ -499,15 +522,15 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
                   </div>
 
                   {/* Links Grid */}
-                  <div className="p-6 md:p-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="p-5 md:p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {categoryLinks.map((link) => (
                         <div key={link.id} className="group">
                           <RichLinkPreview
                             link={link}
                             onClick={() => handleLinkClick(link)}
                             onRefresh={handleRefreshPreview}
-                            variant="default"
+                            variant="compact"
                             showRefreshButton={true}
                             className="bg-white border border-gray-200 hover:border-[#FF6F61] rounded-2xl transition-all duration-300 hover:shadow-[0_5px_15px_rgba(255,100,70,0.2)]"
                             isPreviewMode={isPreview} // Pass explicit preview mode prop
@@ -521,12 +544,12 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
             })}
           </div>
         ) : (
-          <div className="bg-[#FFE9DC] rounded-3xl p-10 text-center shadow-[0_8px_30px_rgba(255,100,70,0.2)] border border-white/60">
-            <h2 className="text-[26px] font-bold leading-[1.3] mb-3 text-[#2C2C2C]"
+          <div className="bg-[#FFE9DC] rounded-2xl p-8 text-center shadow-[0_8px_30px_rgba(255,100,70,0.2)] border border-white/60">
+            <h2 className="text-[22px] font-bold leading-[1.3] mb-3 text-[#2C2C2C]"
                 style={getTypographyStyle('heading')}>
               No Links Yet
             </h2>
-            <p className="text-[18px] font-medium leading-[1.6] text-[#444444]"
+            <p className="text-[16px] font-medium leading-[1.5] text-[#444444]"
                style={getTypographyStyle('body')}>
               This developer hasn&apos;t added any links to their profile yet.
             </p>
@@ -535,9 +558,9 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
 
         {/* Powered by Link4Coders Footer */}
         {!user.is_premium && !isPreview && (
-          <div className="mt-10 text-center">
-            <div className="bg-[#FFE9DC] rounded-2xl p-5 inline-block shadow-[0_5px_15px_rgba(255,100,70,0.2)] border border-white/60">
-              <p className="text-[15px] font-semibold text-[#444444] font-inter">
+          <div className="mt-8 text-center">
+            <div className="bg-[#FFE9DC] rounded-2xl p-4 inline-block shadow-[0_5px_15px_rgba(255,100,70,0.2)] border border-white/60">
+              <p className="text-[13px] font-semibold text-[#444444] font-inter">
                 Powered by{' '}
                 <a 
                   href="https://link4coders.in?ref=profile" 
@@ -558,7 +581,7 @@ export function SunsetGradientTemplate({ user, links, appearanceSettings, catego
                 </a>
                 {' '}⭐
               </p>
-              <p className="text-[13px] text-[#6E6E6E] font-medium font-inter mt-2">
+              <p className="text-[11px] text-[#6E6E6E] font-medium font-inter mt-1.5">
                 Create your developer profile for free
               </p>
             </div>

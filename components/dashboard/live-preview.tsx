@@ -8,8 +8,9 @@ import { User as SupabaseUser, UserAppearanceSettings as SupabaseUserAppearanceS
 import { useAppearanceSettings } from '@/contexts/appearance-context'
 import { ExternalLink, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 import { UserLinkWithPreview, isGitHubUrl, isBlogUrl } from '@/lib/types/rich-preview'
-import { useUserLinks, useCategoryOrder, useUserAppearance, useUserTheme } from '@/lib/hooks/use-dashboard-queries'
+import { useUserLinks, useCategoryOrder, useUserAppearance, useUserTheme, useUserProfile } from '@/lib/hooks/use-dashboard-queries'
 import { LinkCategory } from '@/lib/services/link-service'
 
 interface LivePreviewProps {
@@ -68,6 +69,9 @@ export function LivePreview({ profileData, refreshTrigger }: LivePreviewProps) {
       queryClient.invalidateQueries({ queryKey: ['categoryOrder', user.id] })
       queryClient.invalidateQueries({ queryKey: ['appearance', user.id] })
       queryClient.invalidateQueries({ queryKey: ['userTheme', user.id] })
+      queryClient.invalidateQueries({ queryKey: ['profile', user.id] })
+      // Add feedback that refresh was triggered
+      toast.success('Profile data refreshed')
     }
   }
 
@@ -160,31 +164,22 @@ export function LivePreview({ profileData, refreshTrigger }: LivePreviewProps) {
     <div className="h-full flex flex-col">
 
       {/* Preview Controls */}
-      <div className="p-4 border-b border-[#33373b] flex-shrink-0">
+      <div className="p-3 border-b border-[#33373b] flex-shrink-0">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Button
-              onClick={handleRefresh}
+              onClick={handleManualRefresh}
               size="sm"
-              className="bg-transparent border border-[#33373b] text-[#7a7a83] hover:text-white hover:border-[#54E0FF] h-8 px-3"
+              className="bg-transparent border border-[#33373b] text-[#7a7a83] hover:text-white hover:border-[#54E0FF] h-8 px-2"
+              title="Refresh all data including rich previews"
             >
               <RefreshCw className="w-3 h-3" />
             </Button>
 
             <Button
-              onClick={handleManualRefresh}
-              size="sm"
-              className="bg-transparent border border-[#33373b] text-[#7a7a83] hover:text-white hover:border-[#54E0FF] h-8 px-3"
-              title="Refresh rich previews for all links"
-            >
-              <RefreshCw className="w-3 h-3 mr-1" />
-              Rich Preview
-            </Button>
-
-            <Button
               onClick={handleOpenFullPreview}
               size="sm"
-              className="bg-transparent border border-[#33373b] text-[#7a7a83] hover:text-white hover:border-[#54E0FF] h-8 px-3"
+              className="bg-transparent border border-[#33373b] text-[#7a7a83] hover:text-white hover:border-[#54E0FF] h-8 px-2"
               disabled={!user?.profile_slug && !user?.github_username}
             >
               <ExternalLink className="w-3 h-3" />
@@ -238,8 +233,8 @@ export function LivePreview({ profileData, refreshTrigger }: LivePreviewProps) {
       </div>
 
       {/* Preview Info - Improved spacing and styling with rounded bottom corners */}
-      <div className="p-4 border-t border-[#33373b] flex-shrink-0 bg-[#1e1e20] rounded-b-[20px]">
-        <p className="text-[11px] font-medium text-[#54E0FF] font-sharp-grotesk text-center">
+      <div className="p-3 border-t border-[#33373b] flex-shrink-0 bg-[#1e1e20] rounded-b-[20px]">
+        <p className="text-[11px] font-medium text-[#54E0FF] font-sharp-grotesk text-center truncate">
           {user?.profile_slug ? `link4coders.in/${user.profile_slug}` : 'Set up your profile URL to enable preview'}
         </p>
       </div>

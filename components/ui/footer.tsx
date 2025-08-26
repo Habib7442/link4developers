@@ -42,7 +42,7 @@ export function Footer() {
             <div className="flex items-center gap-3 mb-6">
               <ChainLinkIcon width={44} height={44} />
               <span className="text-white text-[18px] font-medium tracking-[-0.54px] font-sharp-grotesk">
-                link for coders
+                link4coders
               </span>
             </div>
             <p className="text-[16px] font-light leading-[24px] tracking-[-0.48px] text-[#7a7a83] font-sharp-grotesk mb-8 max-w-[300px]">

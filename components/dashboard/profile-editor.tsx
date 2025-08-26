@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { AvatarUpload } from '@/components/ui/avatar-upload'
+import { TechStackSelector } from '@/components/dashboard/tech-stack-selector'
 import { toast } from 'sonner'
 import { Lock, Loader2, User } from 'lucide-react'
 import { checkProfileCompletion, getCompletionMessage } from '@/lib/utils/profile-completion'
@@ -25,6 +26,8 @@ interface ProfileFormData {
   twitter_username?: string
   linkedin_url?: string
   profile_title?: string
+  tech_stacks?: string[]
+  [key: string]: string | string[] | boolean | undefined
 }
 
 export function ProfileEditor() {
@@ -41,7 +44,8 @@ export function ProfileEditor() {
     company: '',
     twitter_username: '',
     linkedin_url: '',
-    avatar_url: undefined
+    avatar_url: undefined,
+    tech_stacks: []
   })
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null)
   const [checkingSlug, setCheckingSlug] = useState(false)
@@ -65,7 +69,8 @@ export function ProfileEditor() {
         company: user.company || '',
         twitter_username: user.twitter_username || '',
         linkedin_url: user.linkedin_url || '',
-        avatar_url: user.avatar_url || undefined
+        avatar_url: user.avatar_url || undefined,
+        tech_stacks: (user.tech_stacks as string[]) || []
       })
     }
   }, [user])
@@ -92,7 +97,7 @@ export function ProfileEditor() {
     return () => clearTimeout(timeoutId)
   }, [formData.profile_slug, user?.profile_slug, user?.id])
 
-  const handleInputChange = (field: keyof ProfileFormData, value: string | boolean) => {
+  const handleInputChange = (field: keyof ProfileFormData, value: string | boolean | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -144,9 +149,23 @@ export function ProfileEditor() {
     }
 
     updateProfileMutation.mutate({ userId: user.id, profileData: formData }, {
-      onSuccess: () => {
+      onSuccess: async () => {
         toast.success('Profile updated successfully!')
         setPreviewRefresh(prev => prev + 1)
+        
+        // Trigger revalidation of public profile through API
+        if (user.profile_slug || user.github_username) {
+          const username = user.profile_slug || user.github_username
+          if (username) {
+            try {
+              await fetch(`/api/revalidate?tag=public-profile-${username}`, {
+                method: 'POST',
+              })
+            } catch (error) {
+              console.warn('Warning: Failed to trigger API revalidation for profile:', username)
+            }
+          }
+        }
       },
       onError: (error) => {
         console.error('Error updating profile:', error)
@@ -443,6 +462,17 @@ export function ProfileEditor() {
                   placeholder="City, Country"
                 />
               </div>
+            </div>
+            
+            {/* Tech Stack Selector */}
+            <div className="mt-4">
+              <label className="block text-[12px] sm:text-[14px] font-medium text-white font-sharp-grotesk mb-2">
+                Tech Stack
+              </label>
+              <TechStackSelector
+                selectedTechStacks={formData.tech_stacks || []}
+                onChange={(techStacks) => handleInputChange('tech_stacks', techStacks)}
+              />
             </div>
           </div>
 

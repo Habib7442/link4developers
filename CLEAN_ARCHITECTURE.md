@@ -127,3 +127,4 @@ function MyComponent() {
 - Zustand stores are organized by domain
 - Components use clean hooks and stores
 - Type safety is maintained throughout the stack
+

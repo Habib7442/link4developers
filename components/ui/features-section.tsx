@@ -11,7 +11,7 @@ export function FeaturesSection() {
     {
       icon: Github,
       title: 'GitHub Integration',
-      description: 'Automatically pull repository data, stars, and contributions to showcase your open source work.',
+      description: 'Connect your GitHub account and manually add repository links to showcase your open source work.',
     },
     {
       icon: Layers,
@@ -36,7 +36,7 @@ export function FeaturesSection() {
   ];
 
   return (
-    <section className="relative w-full bg-[#18181a] py-20 overflow-hidden">
+    <section id="features" className="relative w-full bg-[#18181a] py-20 overflow-hidden">
       <div className="relative w-full max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-20">
 
         {/* Section Header */}

@@ -54,3 +54,4 @@ export interface AppearanceUpdateData {
   social_icon_background?: string
   social_icon_hover_color?: string
 }
+

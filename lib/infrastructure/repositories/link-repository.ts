@@ -73,21 +73,40 @@ export class SupabaseLinkRepository implements LinkRepository {
 
   async deleteLink(userId: string, linkId: string): Promise<boolean> {
     try {
+      // First check if the link exists
+      const { data: linkExists, error: checkError } = await supabase
+        .from('user_links')
+        .select('id')
+        .eq('id', linkId)
+        .eq('user_id', userId)
+        .single();
+      
+      if (checkError) {
+        console.error('Error checking link existence:', checkError);
+        return false;
+      }
+      
+      if (!linkExists) {
+        console.error('Link does not exist or already deleted');
+        return true; // Already deleted, so consider it success
+      }
+
+      // Delete the link
       const { error } = await supabase
         .from('user_links')
         .delete()
         .eq('id', linkId)
-        .eq('user_id', userId)
+        .eq('user_id', userId);
 
       if (error) {
-        console.error('Error deleting link:', error)
-        return false
+        console.error('Error deleting link:', error);
+        return false;
       }
 
-      return true
+      return true;
     } catch (error) {
-      console.error('Error in deleteLink:', error)
-      return false
+      console.error('Error in deleteLink:', error);
+      return false;
     }
   }
 

@@ -3,9 +3,9 @@ import { notFound } from 'next/navigation'
 import { PublicProfile } from '@/components/public/public-profile'
 import { PublicProfileService } from '@/lib/services/public-profile-service'
 
-// Enable ISR with revalidation
-export const revalidate = 3600 // Revalidate every hour
-export const dynamic = 'force-static' // Force static generation
+// Set to 0 for on-demand revalidation only
+export const revalidate = 0 
+export const dynamic = 'force-dynamic' // Force dynamic rendering to get latest data
 export const dynamicParams = true // Allow dynamic params not in generateStaticParams
 
 interface PublicProfilePageProps {
@@ -152,6 +152,9 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
     if (!user) {
       notFound()
     }
+
+    // Add debugging log
+    console.log(`🔍 Server: Profile loaded for ${username}. Theme ID: ${user.theme_id}`)
 
     return <PublicProfile user={user} links={links} appearanceSettings={appearanceSettings} categoryOrder={categoryOrder} />
   } catch (error) {

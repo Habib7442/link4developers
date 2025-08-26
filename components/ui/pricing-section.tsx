@@ -113,7 +113,7 @@ export function PricingSection() {
 
   return (
     <>
-      <section className="relative w-full bg-[#18181a] py-20 overflow-hidden">
+      <section id="pricing" className="relative w-full bg-[#18181a] py-20 overflow-hidden">
         <div className="relative w-full max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-20">
 
           {/* Section Header */}

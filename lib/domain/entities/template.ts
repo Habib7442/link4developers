@@ -27,3 +27,4 @@ export interface TemplateConfig {
   category: 'free' | 'premium'
   tags: string[]
 }
+

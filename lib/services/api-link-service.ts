@@ -122,9 +122,16 @@ export class ApiLinkService {
    */
   static async deleteLink(userId: string, linkId: string): Promise<boolean> {
     try {
+      console.log('🗑️ ApiLinkService: Deleting link...', { userId, linkId });
+      
       // Get auth session
       const { data } = await supabase.auth.getSession()
       const accessToken = data.session?.access_token
+      
+      console.log('🗑️ ApiLinkService: Auth session', { 
+        hasSession: !!data.session, 
+        accessTokenLength: accessToken ? accessToken.length : 0 
+      });
       
       const response = await fetch(`/api/links/${linkId}`, {
         method: 'DELETE',
@@ -135,9 +142,15 @@ export class ApiLinkService {
         body: JSON.stringify({ userId }),
       })
   
+      console.log('🗑️ ApiLinkService: Delete response', { 
+        status: response.status, 
+        statusText: response.statusText 
+      });
+      
       if (!response.ok) {
-        console.error('Error deleting link:', await response.text())
-        throw new Error(`Failed to delete link (${response.status})`)
+        const errorText = await response.text();
+        console.error('Error deleting link:', errorText);
+        throw new Error(`Failed to delete link (${response.status}): ${errorText}`)
       }
   
       return true

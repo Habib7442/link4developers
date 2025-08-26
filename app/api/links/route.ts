@@ -7,6 +7,7 @@ import { SocialMediaValidator } from '@/lib/validation/social-media-validation'
 import { RichPreviewService } from '@/lib/services/rich-preview-service'
 import { isGitHubUrl, isBlogUrl } from '@/lib/types/rich-preview'
 
+
 // Create a server-side Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -477,53 +478,4 @@ export const GET = createProtectedRoute(getLinksHandler, {
   allowedMethods: ['GET']
 })
 
-// Protected DELETE route for deleting links
-const deleteLinkHandler = async (request: NextRequest, { userId }: { userId: string }) => {
-  try {
-    console.log('🗑️ API: Deleting link...')
 
-    const body = await request.json()
-    const { linkId } = body
-
-    console.log('API: Received delete data:', { userId, linkId })
-
-    // Validate required fields
-    if (!linkId || typeof linkId !== 'string' || linkId.trim() === '') {
-      return NextResponse.json(
-        { error: 'Missing or invalid linkId' },
-        { status: 400 }
-      )
-    }
-
-    // Delete the link (with user_id check for security)
-    const { error } = await supabase
-      .from('user_links')
-      .delete()
-      .eq('id', linkId.trim())
-      .eq('user_id', userId)
-
-    if (error) {
-      console.error('API: Database error:', error)
-      return NextResponse.json(
-        { error: `Failed to delete link: ${error.message}` },
-        { status: 500 }
-      )
-    }
-
-    console.log('API: Link deleted successfully')
-    return NextResponse.json({ success: true })
-
-  } catch (error) {
-    console.error('API: Unexpected error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
-
-// Export the protected DELETE route
-export const DELETE = createProtectedRoute(deleteLinkHandler, {
-  requireAuth: true,
-  allowedMethods: ['DELETE']
-})

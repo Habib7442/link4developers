@@ -81,7 +81,10 @@ const createLinkHandler = async (request: NextRequest, { userId }: { userId: str
     if (linkData.category !== 'social' && !validationSuccess) {
       console.error('API: Validation failed')
       // Error already handled above
-      return
+      return NextResponse.json(
+        { error: 'Validation failed' },
+        { status: 400 }
+      )
     }
     
     // Get next position for the category
@@ -197,14 +200,15 @@ const createLinkHandler = async (request: NextRequest, { userId }: { userId: str
       // Don't fail the request if cache invalidation fails
     }
 
-    // Trigger rich preview fetching for supported URLs (async, don't wait)
+    // Trigger rich preview fetching for supported URLs
     try {
       const shouldFetchPreview = (insertData.category !== 'social') &&
-                                (isGitHubUrl(insertData.url) || isBlogUrl(insertData.url).isBlog)
+                              (isGitHubUrl(insertData.url) || isBlogUrl(insertData.url).isBlog)
 
       if (shouldFetchPreview) {
         console.log('🔍 API: Triggering rich preview fetch for:', insertData.url)
-        // Don't await this - let it run in background
+        // Start the preview process but don't block the response
+        // This allows the UI to show a placeholder while the preview is being generated
         RichPreviewService.refreshLinkPreview(data.id, insertData.url).catch(error => {
           console.warn('API: Rich preview fetch failed:', error)
         })
@@ -381,7 +385,7 @@ const updateLinkHandler = async (request: NextRequest, { userId }: { userId: str
       // Don't fail the request if cache invalidation fails
     }
 
-    // Trigger rich preview refresh if URL was updated (async, don't wait)
+    // Trigger rich preview refresh if URL was updated
     try {
       if (updateData.url) {
         const shouldFetchPreview = (data.category !== 'social') &&
@@ -389,7 +393,8 @@ const updateLinkHandler = async (request: NextRequest, { userId }: { userId: str
 
         if (shouldFetchPreview) {
           console.log('🔍 API: Triggering rich preview refresh for updated URL:', updateData.url)
-          // Don't await this - let it run in background
+          // Start the preview process but don't block the response
+          // This allows the UI to show a placeholder while the preview is being generated
           RichPreviewService.refreshLinkPreview(data.id, updateData.url).catch(error => {
             console.warn('API: Rich preview refresh failed:', error)
           })
@@ -421,12 +426,23 @@ export const PUT = createProtectedRoute(updateLinkHandler, {
 // Protected GET route for fetching links
 const getLinksHandler = async (request: NextRequest, { userId }: { userId: string }) => {
   try {
-    console.log('📖 API: Fetching links for user:', userId)
+    // Check if this is a request for the live preview
+    const url = new URL(request.url)
+    const isPreviewRequest = url.searchParams.get('preview') === 'true'
 
-    const { data, error } = await supabase
+    // For preview requests, only get active links
+    let query = supabase
       .from('user_links')
       .select('*')
       .eq('user_id', userId)
+    
+    // Filter by is_active for preview requests
+    if (isPreviewRequest) {
+      query = query.eq('is_active', true)
+    }
+    
+    // Complete the query with ordering
+    const { data, error } = await query
       .order('category')
       .order('position')
       .order('created_at')

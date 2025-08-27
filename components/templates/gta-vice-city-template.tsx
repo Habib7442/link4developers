@@ -293,15 +293,36 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
     return style
   }
 
-  const handleLinkClick = (link: UserLinkWithPreview) => {
+  const handleLinkClick = async (link: UserLinkWithPreview) => {
+    try {
+      // Track the click for analytics
+      const response = await fetch('/api/public/track-click', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ linkId: link.id }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to track click:', response.statusText);
+      }
+      
+      // Get the response data
+      const result = await response.json();
+      console.log('Template link click tracked:', result);
+    } catch (error) {
+      console.error('Error tracking link click:', error);
+    }
+
     // Open link
-    window.open(link.url, '_blank', 'noopener,noreferrer')
-  }
+    window.open(link.url, '_blank', 'noopener,noreferrer');
+  };
 
   const handleRefreshPreview = async (linkId: string) => {
     try {
       // Use API service to refresh preview data
-      await ApiLinkService.refreshLinkPreview(user.id, linkId);
+      await ApiLinkService.refreshRichPreview(user.id, linkId);
       toast.success('Preview refreshed successfully');
       
       // Use toast to inform user instead of reloading the whole page
@@ -509,6 +530,7 @@ export function GTAViceCityTemplate({ user, links, appearanceSettings, categoryO
                             onRefresh={handleRefreshPreview}
                             isPreviewMode={isPreview}
                             variant="compact"
+                            linkHoverColor={appearanceSettings?.link_hover_color} // Pass link hover color from appearance settings
                           />
                         </div>
                       </div>

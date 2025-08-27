@@ -19,6 +19,10 @@ import {
   Globe,
   ExternalLink,
   RotateCcw,
+  ArrowUp,
+  ArrowDown,
+  ArrowBigUp,
+  ArrowBigDown,
 } from "lucide-react";
 import Image from "next/image";
 import { AddLinkModal } from "@/components/dashboard/add-link-modal";
@@ -27,7 +31,7 @@ import {
   LinkService,
   UserLink,
 } from "@/lib/services/link-service";
-import { LinkCategory, LinkWithPreview } from '@/lib/domain/entities';
+import { LinkCategory } from '@/lib/domain/entities';
 import { LINK_CATEGORIES } from "@/lib/services/link-constants";
 import { ApiLinkService } from "@/lib/services/api-link-service";
 import { CategoryOrderService } from "@/lib/services/category-order-service";
@@ -43,8 +47,132 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { UserLinkWithPreview } from '@/lib/types/rich-preview';
+import { supabase } from '@/lib/supabase';
+
+// Import dnd-kit libraries instead of @hello-pangea/dnd
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+// Add this new component for sortable link items
+interface SortableLinkItemProps {
+  id: string;
+  link: UserLinkWithPreview;
+  index: number;
+  category: LinkCategory;
+  onToggleStatus: (linkId: string) => Promise<void>;
+  onEditLink: (link: UserLinkWithPreview) => void;
+  onDeleteLink: (linkId: string, linkTitle: string) => void;
+}
+
+const SortableLinkItem = ({
+  id,
+  link,
+  index,
+  category,
+  onToggleStatus,
+  onEditLink,
+  onDeleteLink,
+}: SortableLinkItemProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 1,
+    opacity: isDragging ? 0.8 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 md:p-5 rounded-lg border border-[#33373b] bg-[#1a1a1a]/50 ${
+        isDragging ? "shadow-lg z-10" : ""
+      } ${!link.is_active ? "opacity-50" : ""} overflow-hidden`}
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="text-[#7a7a83] hover:text-white cursor-grab active:cursor-grabbing flex-shrink-0"
+      >
+        <GripVertical className="w-3 h-3 sm:w-4 sm:h-4" />
+      </div>
+
+      {/* Link Icon */}
+      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-r from-[#54E0FF]/20 to-[#29ADFF]/20 flex items-center justify-center flex-shrink-0">
+        {getLinkIcon(link)}
+      </div>
+
+      <div className="flex-1 min-w-0 overflow-hidden">
+        <div className="flex items-center gap-2 mb-0.5 sm:mb-1">
+          <h4 className="text-xs sm:text-sm font-medium text-white truncate flex-1">
+            {link.title}
+          </h4>
+          <span className="text-xs text-[#7a7a83] flex-shrink-0 whitespace-nowrap hidden sm:inline">
+            {link.click_count || 0} clicks
+          </span>
+        </div>
+        <p className="text-xs text-[#7a7a83] truncate">
+          {link.url}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-1 flex-shrink-0">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => onToggleStatus(link.id)}
+          className="text-[#7a7a83] hover:text-white h-6 w-6 sm:h-8 sm:w-8 p-0 rounded-md flex-shrink-0"
+        >
+          {link.is_active ? (
+            <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+          ) : (
+            <EyeOff className="w-3 h-3 sm:w-4 sm:h-4" />
+          )}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => onEditLink(link)}
+          className="text-[#7a7a83] hover:text-white h-6 w-6 sm:h-8 sm:w-8 p-0 rounded-md flex-shrink-0"
+        >
+          <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => onDeleteLink(link.id, link.title)}
+          className="text-red-400 hover:text-red-300 h-6 w-6 sm:h-8 sm:w-8 p-0 rounded-md flex-shrink-0"
+        >
+          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 // Function to get the appropriate icon for a link
 const getLinkIcon = (link: UserLinkWithPreview) => {
@@ -155,6 +283,81 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
     linkId: "",
     linkTitle: "",
   });
+  
+  // Set up sensors for dnd-kit
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px movement before activation
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Add the new reordering functions here
+  const moveLink = async (category: LinkCategory, fromIndex: number, toIndex: number) => {
+    if (!user?.id || fromIndex === toIndex) return;
+
+    try {
+      // Update local state immediately for instant feedback
+      setLinks(prev => moveLinkInCategory(prev, category, fromIndex, toIndex));
+      
+      // Get the updated link order
+      const categoryLinks = links[category];
+      const updatedLinks = [...categoryLinks];
+      const [movedLink] = updatedLinks.splice(fromIndex, 1);
+      updatedLinks.splice(toIndex, 0, movedLink);
+      
+      // Send the new order to the API
+      const linkIds = updatedLinks.map(link => link.id);
+      await LinkService.reorderLinks(user.id, category, linkIds);
+      
+      // Invalidate cache to ensure public profile shows the changes
+      try {
+        const username = user?.profile_slug || user?.github_username;
+        if (username) {
+          await fetch(`/api/revalidate?tag=public-profile-${username}`, {
+            method: "POST",
+          });
+          console.log("✅ Cache invalidated for profile:", username);
+        }
+      } catch (cacheError) {
+        console.warn("Failed to invalidate cache:", cacheError);
+      }
+      
+      onPreviewRefresh();
+      toast.success("Link moved successfully");
+    } catch (error) {
+      console.error("Error moving link:", error);
+      toast.error("Failed to move link");
+      // Reload to revert changes
+      loadLinks();
+    }
+  };
+
+  const moveLinkToTop = async (category: LinkCategory, index: number) => {
+    if (index === 0) return; // Already at top
+    await moveLink(category, index, 0);
+  };
+
+  const moveLinkToBottom = async (category: LinkCategory, index: number) => {
+    const categoryLinks = links[category];
+    if (index === categoryLinks.length - 1) return; // Already at bottom
+    await moveLink(category, index, categoryLinks.length - 1);
+  };
+
+  const moveLinkUp = async (category: LinkCategory, index: number) => {
+    if (index === 0) return; // Already at top
+    await moveLink(category, index, index - 1);
+  };
+
+  const moveLinkDown = async (category: LinkCategory, index: number) => {
+    const categoryLinks = links[category];
+    if (index === categoryLinks.length - 1) return; // Already at bottom
+    await moveLink(category, index, index + 1);
+  };
 
   useEffect(() => {
     if (user?.id) {
@@ -179,11 +382,10 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
   const loadLinks = async () => {
     try {
       setLoading(true);
-      console.log("🔄 Loading links for user:", user!.id);
       const userLinks = await ApiLinkService.getUserLinks(user!.id);
-      console.log("✅ Links loaded successfully:", userLinks);
 
-      setLinks(userLinks);
+      // Cast the returned data to the correct type
+      setLinks(userLinks as Record<LinkCategory, UserLinkWithPreview[]>);
     } catch (error) {
       console.error("❌ Error loading links:", error);
       toast.error("Failed to load links");
@@ -203,7 +405,6 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
 
   const handleToggleStatus = async (linkId: string) => {
     try {
-      console.log("🔄 Toggling link status:", linkId);
       await ApiLinkService.toggleLinkStatus(user!.id, linkId);
       await loadLinks();
       onPreviewRefresh();
@@ -232,7 +433,6 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
 
   const handleDeleteLink = async () => {
     try {
-      console.log("🗑️ Deleting link:", deleteDialog.linkId);
       await ApiLinkService.deleteLink(user!.id, deleteDialog.linkId);
       await loadLinks();
       onPreviewRefresh();
@@ -270,78 +470,69 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
     setShowAddModal(true);
   };
 
-  const handleDragEnd = async (result: {
-    destination?: { droppableId: string; index: number } | null;
-    source: { droppableId: string; index: number };
-    type?: string;
-  }) => {
-    if (!result.destination) return;
-
-    const { source, destination } = result;
-
-    // Handle section reordering
-    if (
-      source.droppableId === "category-sections" &&
-      destination.droppableId === "category-sections"
-    ) {
-      const newCategoryOrder = [...categoryOrder];
-      const [reorderedCategory] = newCategoryOrder.splice(source.index, 1);
-      newCategoryOrder.splice(destination.index, 0, reorderedCategory);
-
-      // Update local state immediately
-      setCategoryOrder(newCategoryOrder);
-
-      try {
-        // Update the category order in the database
-        await CategoryOrderService.updateCategoryOrder(
-          user!.id,
-          newCategoryOrder
-        );
-
-        // Invalidate cache to ensure public profile shows the changes
-        try {
-          const username = user?.profile_slug || user?.github_username;
-          if (username) {
-            await fetch(`/api/revalidate?tag=public-profile-${username}`, {
-              method: "POST",
-            });
-            console.log("✅ Cache invalidated for profile:", username);
-          }
-        } catch (cacheError) {
-          console.warn("Failed to invalidate cache:", cacheError);
-          // Don't fail the operation if cache invalidation fails
-        }
-
-        onPreviewRefresh();
-        toast.success("Category sections reordered successfully");
-      } catch (error) {
-        console.error("Error reordering category sections:", error);
-        toast.error("Failed to reorder category sections");
-        // Revert to previous order
-        loadCategoryOrder();
-      }
+  // Replace the old handleDragEnd with this new one for dnd-kit
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!active || !over || active.id === over.id) {
       return;
     }
-
-    // Handle link reordering within categories
-    const category = source.droppableId as LinkCategory;
-
-    if (source.droppableId !== destination.droppableId) return;
-
+    
+    // Extract category and link ID from the combined ID
+    const activeIdParts = String(active.id).split('::');
+    const category = activeIdParts[0] as LinkCategory;
+    const linkId = activeIdParts[1];
+    
+    // Find the indices for reordering
     const categoryLinks = [...links[category]];
-    const [reorderedItem] = categoryLinks.splice(source.index, 1);
-    categoryLinks.splice(destination.index, 0, reorderedItem);
-
-    // Update local state immediately
-    setLinks((prev) => ({
-      ...prev,
-      [category]: categoryLinks,
-    }));
-
+    const oldIndex = categoryLinks.findIndex(link => link.id === linkId);
+    const newIndex = categoryLinks.findIndex(link => link.id === String(over.id).split('::')[1]);
+    
+    if (oldIndex === -1 || newIndex === -1) {
+      return;
+    }
+    
     try {
-      const linkIds = categoryLinks.map((link) => link.id);
-      await LinkService.reorderLinks(user!.id, category, linkIds);
+      // Update local state immediately for better UX
+      setLinks(prev => {
+        const newLinks = { ...prev };
+        newLinks[category] = arrayMove(categoryLinks, oldIndex, newIndex);
+        return newLinks;
+      });
+      
+      // Get the updated link order
+      const updatedLinks = arrayMove(categoryLinks, oldIndex, newIndex);
+      const linkIds = updatedLinks.map(link => link.id);
+      
+      // Check if the reorderLinks method exists in ApiLinkService, otherwise fall back to LinkService
+      if (typeof ApiLinkService.reorderLinks === 'function') {
+        await ApiLinkService.reorderLinks(user!.id, category, linkIds);
+      } else {
+        // Fallback to a direct API call if the method isn't available
 
+        // Get auth session for manual API call
+        const { data } = await supabase.auth.getSession();
+        const accessToken = data.session?.access_token;
+        
+        if (!accessToken) {
+          throw new Error('Authentication required');
+        }
+        
+        const response = await fetch('/api/links/reorder', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({ category, linkIds }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to reorder links');
+        }
+      }
+      
       // Invalidate cache to ensure public profile shows the changes
       try {
         const username = user?.profile_slug || user?.github_username;
@@ -349,18 +540,16 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
           await fetch(`/api/revalidate?tag=public-profile-${username}`, {
             method: "POST",
           });
-          console.log("✅ Cache invalidated for profile:", username);
         }
       } catch (cacheError) {
         console.warn("Failed to invalidate cache:", cacheError);
-        // Don't fail the operation if cache invalidation fails
       }
-
+      
       onPreviewRefresh();
       toast.success("Links reordered successfully");
     } catch (error) {
       console.error("Error reordering links:", error);
-      toast.error("Failed to reorder links");
+      toast.error("Failed to reorder links: " + (error instanceof Error ? error.message : "An unknown error occurred"));
       // Reload to revert changes
       loadLinks();
     }
@@ -390,6 +579,157 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
     } catch (error) {
       console.error("Error resetting category order:", error);
       toast.error("Failed to reset category order");
+    }
+  };
+
+  // Add these new functions to handle section reordering
+  const moveSectionUp = async (index: number) => {
+    if (index === 0) return; // Already at top
+    
+    try {
+      // Create new order by swapping positions
+      const newCategoryOrder = [...categoryOrder];
+      const temp = newCategoryOrder[index];
+      newCategoryOrder[index] = newCategoryOrder[index - 1];
+      newCategoryOrder[index - 1] = temp;
+      
+      // Update local state immediately
+      setCategoryOrder(newCategoryOrder);
+      
+      // Update in database
+      await CategoryOrderService.updateCategoryOrder(user!.id, newCategoryOrder);
+      
+      // Invalidate cache to ensure public profile shows the changes
+      try {
+        const username = user?.profile_slug || user?.github_username;
+        if (username) {
+          await fetch(`/api/revalidate?tag=public-profile-${username}`, {
+            method: "POST",
+          });
+        }
+      } catch (cacheError) {
+        console.warn("Failed to invalidate cache:", cacheError);
+      }
+      
+      onPreviewRefresh();
+      toast.success("Section moved up successfully");
+    } catch (error) {
+      console.error("Error moving section up:", error);
+      toast.error("Failed to move section");
+      // Reload to revert changes
+      loadCategoryOrder();
+    }
+  };
+  
+  const moveSectionDown = async (index: number) => {
+    if (index === categoryOrder.length - 1) return; // Already at bottom
+    
+    try {
+      // Create new order by swapping positions
+      const newCategoryOrder = [...categoryOrder];
+      const temp = newCategoryOrder[index];
+      newCategoryOrder[index] = newCategoryOrder[index + 1];
+      newCategoryOrder[index + 1] = temp;
+      
+      // Update local state immediately
+      setCategoryOrder(newCategoryOrder);
+      
+      // Update in database
+      await CategoryOrderService.updateCategoryOrder(user!.id, newCategoryOrder);
+      
+      // Invalidate cache to ensure public profile shows the changes
+      try {
+        const username = user?.profile_slug || user?.github_username;
+        if (username) {
+          await fetch(`/api/revalidate?tag=public-profile-${username}`, {
+            method: "POST",
+          });
+        }
+      } catch (cacheError) {
+        console.warn("Failed to invalidate cache:", cacheError);
+      }
+      
+      onPreviewRefresh();
+      toast.success("Section moved down successfully");
+    } catch (error) {
+      console.error("Error moving section down:", error);
+      toast.error("Failed to move section");
+      // Reload to revert changes
+      loadCategoryOrder();
+    }
+  };
+  
+  const moveSectionToTop = async (index: number) => {
+    if (index === 0) return; // Already at top
+    
+    try {
+      // Create new order by moving the selected category to the top
+      const newCategoryOrder = [...categoryOrder];
+      const [category] = newCategoryOrder.splice(index, 1);
+      newCategoryOrder.unshift(category);
+      
+      // Update local state immediately
+      setCategoryOrder(newCategoryOrder);
+      
+      // Update in database
+      await CategoryOrderService.updateCategoryOrder(user!.id, newCategoryOrder);
+      
+      // Invalidate cache to ensure public profile shows the changes
+      try {
+        const username = user?.profile_slug || user?.github_username;
+        if (username) {
+          await fetch(`/api/revalidate?tag=public-profile-${username}`, {
+            method: "POST",
+          });
+        }
+      } catch (cacheError) {
+        console.warn("Failed to invalidate cache:", cacheError);
+      }
+      
+      onPreviewRefresh();
+      toast.success("Section moved to top successfully");
+    } catch (error) {
+      console.error("Error moving section to top:", error);
+      toast.error("Failed to move section");
+      // Reload to revert changes
+      loadCategoryOrder();
+    }
+  };
+  
+  const moveSectionToBottom = async (index: number) => {
+    if (index === categoryOrder.length - 1) return; // Already at bottom
+    
+    try {
+      // Create new order by moving the selected category to the bottom
+      const newCategoryOrder = [...categoryOrder];
+      const [category] = newCategoryOrder.splice(index, 1);
+      newCategoryOrder.push(category);
+      
+      // Update local state immediately
+      setCategoryOrder(newCategoryOrder);
+      
+      // Update in database
+      await CategoryOrderService.updateCategoryOrder(user!.id, newCategoryOrder);
+      
+      // Invalidate cache to ensure public profile shows the changes
+      try {
+        const username = user?.profile_slug || user?.github_username;
+        if (username) {
+          await fetch(`/api/revalidate?tag=public-profile-${username}`, {
+            method: "POST",
+          });
+        }
+      } catch (cacheError) {
+        console.warn("Failed to invalidate cache:", cacheError);
+      }
+      
+      onPreviewRefresh();
+      toast.success("Section moved to bottom successfully");
+    } catch (error) {
+      console.error("Error moving section to bottom:", error);
+      toast.error("Failed to move section");
+      // Reload to revert changes
+      loadCategoryOrder();
     }
   };
 
@@ -507,224 +847,142 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
               Manage Your Links
             </h2>
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto flex-shrink-0 mt-2 sm:mt-0">
-            <Button
-              onClick={handleResetCategoryOrder}
-              size="sm"
-              variant="outline"
-              className="w-full sm:w-auto border-[#54E0FF]/20 text-[#54E0FF] hover:bg-[#54E0FF]/10 text-xs sm:text-sm h-8 sm:h-9 py-1 px-2 sm:px-3"
-            >
-              <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              <span className="hidden xs:inline">Reset Order</span>
-            </Button>
-            <Button
-              onClick={() => handleAddLink()}
-              className="w-full sm:w-auto bg-gradient-to-r from-[#54E0FF] to-[#29ADFF] text-[#18181a] hover:opacity-90 text-xs sm:text-sm h-8 sm:h-9 py-1 px-2 sm:px-3"
-            >
-              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              <span className="hidden xs:inline">Add Link</span>
-            </Button>
-          </div>
         </div>
 
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="category-sections" type="CATEGORY" direction="vertical">
-            {(provided) => (
+        <div className="space-y-3 sm:space-y-4 md:space-y-5 overflow-visible relative">
+          {categoryOrder.map((category, index) => {
+            const categoryConfig = LINK_CATEGORIES[category];
+            const categoryLinks = links[category] || [];
+
+            return (
               <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className="space-y-3 sm:space-y-4 md:space-y-5 overflow-visible relative"
+                key={category}
+                className={`bg-[#28282b] border border-[#33373b] rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 transition-all duration-150 overflow-hidden`}
               >
-                {categoryOrder.map((category, index) => {
-                  const categoryConfig = LINK_CATEGORIES[category];
-                  const categoryLinks = links[category] || [];
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 mb-2 sm:mb-3 md:mb-4">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-gradient-to-r from-[#54E0FF]/20 to-[#29ADFF]/20 flex items-center justify-center flex-shrink-0">
+                      <div className="text-[#54E0FF]">
+                        {getCategoryIcon(
+                          category,
+                          categoryConfig.icon
+                        )}
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <h3 className="text-sm sm:text-base font-medium text-white truncate">
+                        {categoryConfig.label}
+                      </h3>
+                      <p className="text-xs text-[#7a7a83] truncate hidden sm:block">
+                        {categoryConfig.description}
+                      </p>
+                    </div>
+                  </div>
 
-                  return (
-                    <Draggable
-                      key={category}
-                      draggableId={category}
-                      index={index}
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-0 sm:ml-0 mt-2 sm:mt-0">
+                    {/* Section reordering buttons */}
+                    <div className="flex flex-col gap-0.5 mr-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => moveSectionToTop(index)}
+                        className="text-[#7a7a83] hover:text-white h-5 w-5 p-0 rounded-md flex-shrink-0"
+                        disabled={index === 0}
+                        title="Move section to top"
+                      >
+                        <ArrowBigUp className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => moveSectionUp(index)}
+                        className="text-[#7a7a83] hover:text-white h-5 w-5 p-0 rounded-md flex-shrink-0"
+                        disabled={index === 0}
+                        title="Move section up"
+                      >
+                        <ArrowUp className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    
+                    <span className="text-xs text-[#7a7a83]">
+                      {categoryLinks.length}/{categoryConfig.maxLinks}
+                    </span>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleAddLink(category)}
+                      className="border-[#54E0FF]/20 text-[#54E0FF] hover:bg-[#54E0FF]/10 h-7 sm:h-8 text-xs px-2 sm:px-3"
+                      disabled={
+                        categoryLinks.length >=
+                        categoryConfig.maxLinks
+                      }
                     >
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          style={{
-                            ...provided.draggableProps.style,
-                            transition: snapshot.isDragging ? 'transform 0.1s' : 'transform 0.2s',
-                          }}
-                          className={`bg-[#28282b] border border-[#33373b] rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 ${
-                            snapshot.isDragging
-                              ? "shadow-2xl scale-[1.01] z-50"
-                              : ""
-                          } transition-all duration-150 overflow-hidden`}
-                        >
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 mb-2 sm:mb-3 md:mb-4">
-                            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden">
-                              <div
-                                {...provided.dragHandleProps}
-                                className="text-[#7a7a83] hover:text-white hover:bg-white/10 cursor-grab active:cursor-grabbing p-1.5 rounded transition-colors flex-shrink-0"
-                                title="Drag to reorder"
-                              >
-                                <GripVertical className="w-4 h-4 sm:w-5 sm:h-5" />
-                              </div>
-                              <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-gradient-to-r from-[#54E0FF]/20 to-[#29ADFF]/20 flex items-center justify-center flex-shrink-0">
-                                <div className="text-[#54E0FF]">
-                                  {getCategoryIcon(
-                                    category,
-                                    categoryConfig.icon
-                                  )}
-                                </div>
-                              </div>
-                              <div className="min-w-0 flex-1 overflow-hidden">
-                                <h3 className="text-sm sm:text-base font-medium text-white truncate">
-                                  {categoryConfig.label}
-                                </h3>
-                                <p className="text-xs text-[#7a7a83] truncate hidden sm:block">
-                                  {categoryConfig.description}
-                                </p>
-                              </div>
-                            </div>
+                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                      <span className="hidden xs:inline">Add</span>
+                    </Button>
+                    
+                    <div className="flex flex-col gap-0.5 ml-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => moveSectionDown(index)}
+                        className="text-[#7a7a83] hover:text-white h-5 w-5 p-0 rounded-md flex-shrink-0"
+                        disabled={index === categoryOrder.length - 1}
+                        title="Move section down"
+                      >
+                        <ArrowDown className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => moveSectionToBottom(index)}
+                        className="text-[#7a7a83] hover:text-white h-5 w-5 p-0 rounded-md flex-shrink-0"
+                        disabled={index === categoryOrder.length - 1}
+                        title="Move section to bottom"
+                      >
+                        <ArrowBigDown className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
 
-                            <div className="flex items-center gap-2 flex-shrink-0 ml-0 sm:ml-0 mt-2 sm:mt-0">
-                              <span className="text-xs text-[#7a7a83]">
-                                {categoryLinks.length}/{categoryConfig.maxLinks}
-                              </span>
-
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleAddLink(category)}
-                                className="border-[#54E0FF]/20 text-[#54E0FF] hover:bg-[#54E0FF]/10 h-7 sm:h-8 text-xs px-2 sm:px-3"
-                                disabled={
-                                  categoryLinks.length >=
-                                  categoryConfig.maxLinks
-                                }
-                              >
-                                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                                <span className="hidden xs:inline">Add</span>
-                              </Button>
-                            </div>
-                          </div>
-
-                          <Droppable droppableId={category} direction="vertical">
-                            {(provided) => (
-                              <div
-                                {...provided.droppableProps}
-                                ref={provided.innerRef}
-                                className="space-y-3 sm:space-y-4 min-h-[40px] relative overflow-hidden"
-                              >
-                                {categoryLinks.length === 0 ? (
-                                  <div className="text-center py-3 sm:py-4 text-xs sm:text-sm text-[#7a7a83]">
-                                    No links in this category yet. Add your first link!
-                                  </div>
-                                ) : (
-                                  categoryLinks.map((link, index) => (
-                                    <Draggable
-                                      key={link.id}
-                                      draggableId={link.id}
-                                      index={index}
-                                    >
-                                      {(provided, snapshot) => (
-                                        <div
-                                          ref={provided.innerRef}
-                                          {...provided.draggableProps}
-                                          style={{
-                                            ...provided.draggableProps.style,
-                                            transition: snapshot.isDragging ? 'transform 0.1s' : 'transform 0.2s'
-                                          }}
-                                          className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 md:p-5 rounded-lg border border-[#33373b] bg-[#1a1a1a]/50 ${
-                                            snapshot.isDragging
-                                              ? "shadow-lg z-10"
-                                              : ""
-                                          } ${
-                                            !link.is_active ? "opacity-50" : ""
-                                          } overflow-hidden`}
-                                        >
-                                          <div
-                                            {...provided.dragHandleProps}
-                                            className="text-[#7a7a83] hover:text-white cursor-grab flex-shrink-0"
-                                          >
-                                            <GripVertical className="w-3 h-3 sm:w-4 sm:h-4" />
-                                          </div>
-
-                                          {/* Link Icon */}
-                                          <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-r from-[#54E0FF]/20 to-[#29ADFF]/20 flex items-center justify-center flex-shrink-0">
-                                            {getLinkIcon(link)}
-                                          </div>
-
-                                          <div className="flex-1 min-w-0 overflow-hidden">
-                                            <div className="flex items-center gap-2 mb-0.5 sm:mb-1">
-                                              <h4 className="text-xs sm:text-sm font-medium text-white truncate flex-1">
-                                                {link.title}
-                                              </h4>
-                                              <span className="text-xs text-[#7a7a83] flex-shrink-0 whitespace-nowrap hidden sm:inline">
-                                                {link.click_count || 0} clicks
-                                              </span>
-                                            </div>
-                                            <p className="text-xs text-[#7a7a83] truncate">
-                                              {link.url}
-                                            </p>
-                                          </div>
-
-                                          <div className="flex items-center gap-1 flex-shrink-0">
-                                            <Button
-                                              size="sm"
-                                              variant="ghost"
-                                              onClick={() =>
-                                                handleToggleStatus(link.id)
-                                              }
-                                              className="text-[#7a7a83] hover:text-white h-6 w-6 sm:h-8 sm:w-8 p-0 rounded-md flex-shrink-0"
-                                            >
-                                              {link.is_active ? (
-                                                <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
-                                              ) : (
-                                                <EyeOff className="w-3 h-3 sm:w-4 sm:h-4" />
-                                              )}
-                                            </Button>
-                                            <Button
-                                              size="sm"
-                                              variant="ghost"
-                                              onClick={() =>
-                                                handleEditLink(link)
-                                              }
-                                              className="text-[#7a7a83] hover:text-white h-6 w-6 sm:h-8 sm:w-8 p-0 rounded-md flex-shrink-0"
-                                            >
-                                              <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
-                                            </Button>
-                                            <Button
-                                              size="sm"
-                                              variant="ghost"
-                                              onClick={() =>
-                                                openDeleteDialog(
-                                                  link.id,
-                                                  link.title
-                                                )
-                                              }
-                                              className="text-red-400 hover:text-red-300 h-6 w-6 sm:h-8 sm:w-8 p-0 rounded-md flex-shrink-0"
-                                            >
-                                              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                                            </Button>
-                                          </div>
-                                        </div>
-                                      )}
-                                    </Draggable>
-                                  ))
-                                )}
-                                {provided.placeholder}
-                              </div>
-                            )}
-                          </Droppable>
-                        </div>
-                      )}
-                    </Draggable>
-                  );
-                })}
-                {provided.placeholder}
+                {/* Link items with dnd-kit */}
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={(event) => handleDragEnd(event)}
+                >
+                  <div className="space-y-3 sm:space-y-4 min-h-[40px] relative overflow-hidden">
+                    {categoryLinks.length === 0 ? (
+                      <div className="text-center py-3 sm:py-4 text-xs sm:text-sm text-[#7a7a83]">
+                        No links in this category yet. Add your first link!
+                      </div>
+                    ) : (
+                      <SortableContext
+                        items={categoryLinks.map(link => `${category}::${link.id}`)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        {categoryLinks.map((link, linkIndex) => (
+                          <SortableLinkItem
+                            key={link.id}
+                            id={`${category}::${link.id}`}
+                            link={link}
+                            index={linkIndex}
+                            category={category}
+                            onToggleStatus={handleToggleStatus}
+                            onEditLink={handleEditLink}
+                            onDeleteLink={openDeleteDialog}
+                          />
+                        ))}
+                      </SortableContext>
+                    )}
+                  </div>
+                </DndContext>
               </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+            );
+          })}
+        </div>
       </div>
 
       {/* Add/Edit Link Modal */}
@@ -771,3 +1029,18 @@ export function LinkManager({ onPreviewRefresh }: LinkManagerProps) {
     </div>
   );
 }
+
+// Add this helper function before the LinkManager component
+const moveLinkInCategory = (
+  links: Record<LinkCategory, UserLinkWithPreview[]>,
+  category: LinkCategory,
+  fromIndex: number,
+  toIndex: number
+): Record<LinkCategory, UserLinkWithPreview[]> => {
+  const newLinks = { ...links };
+  const categoryLinks = [...newLinks[category]];
+  const [movedLink] = categoryLinks.splice(fromIndex, 1);
+  categoryLinks.splice(toIndex, 0, movedLink);
+  newLinks[category] = categoryLinks;
+  return newLinks;
+};

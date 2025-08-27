@@ -124,11 +124,29 @@ export class RichPreviewService {
       console.log('💾 Rich Preview: Updating database for link:', linkId)
       console.log('💾 Rich Preview: Metadata to save:', JSON.stringify(metadata, null, 2))
 
+      // First, get the current link data to preserve custom icon information
+      const { data: currentLink, error: fetchError } = await supabase
+        .from('user_links')
+        .select('custom_icon_url, uploaded_icon_url, icon_variant, use_custom_icon, icon_selection_type, platform_detected')
+        .eq('id', linkId)
+        .single()
+
+      if (fetchError) {
+        console.error('❌ Rich Preview: Error fetching current link data:', fetchError)
+        throw new Error(`Failed to fetch current link data: ${fetchError.message}`)
+      }
+
       const { error } = await supabase
         .rpc('update_link_preview', {
           p_link_id: linkId,
           p_metadata: metadata,
-          p_status: 'success'
+          p_status: 'success',
+          p_custom_icon_url: currentLink?.custom_icon_url || null,
+          p_uploaded_icon_url: currentLink?.uploaded_icon_url || null,
+          p_icon_variant: currentLink?.icon_variant || 'default',
+          p_use_custom_icon: currentLink?.use_custom_icon || false,
+          p_icon_selection_type: currentLink?.icon_selection_type || 'default',
+          p_platform_detected: currentLink?.platform_detected || null
         })
 
       if (error) {
@@ -153,6 +171,39 @@ export class RichPreviewService {
   ): Promise<void> {
     try {
       console.log('❌ Rich Preview: Marking preview as failed for link:', linkId)
+
+      // First, get the current link data to check its type
+      const { data: currentLink, error: fetchError } = await supabase
+        .from('user_links')
+        .select('metadata')
+        .eq('id', linkId)
+        .single()
+
+      if (fetchError) {
+        console.error('❌ Rich Preview: Error fetching current link data:', fetchError)
+        throw new Error(`Failed to fetch current link data: ${fetchError.message}`)
+      }
+
+      // Create error metadata that complies with constraints
+      let errorMetadata = {}
+      
+      if (currentLink?.metadata?.type) {
+        // Preserve the type but add error information
+        errorMetadata = {
+          ...currentLink.metadata,
+          error: errorMessage,
+          fetched_at: new Date().toISOString()
+        }
+      } else {
+        // For links without metadata or type, create a basic error structure
+        errorMetadata = {
+          type: 'webpage',
+          title: 'Preview Failed',
+          description: errorMessage,
+          error: errorMessage,
+          fetched_at: new Date().toISOString()
+        }
+      }
 
       const { error } = await supabase
         .rpc('mark_preview_failed', {
@@ -439,6 +490,85 @@ export class RichPreviewService {
     } catch (error) {
       console.error('❌ Rich Preview: Error getting stats:', error)
       throw error
+    }
+  }
+
+  /**
+   * Fetch metadata immediately and return updated link data
+   */
+  static async fetchMetadataImmediately(linkId: string, url: string): Promise<any> {
+    try {
+      console.log('🔄 Rich Preview: Fetching metadata immediately for link:', linkId)
+
+      // Check if this link should have rich preview
+      const linkData = await this.getLinkData(linkId)
+      if (linkData && !this.shouldHaveRichPreview({ category: linkData.category, url: linkData.url })) {
+        console.log('🔄 Rich Preview: Skipping social media link:', linkId)
+        throw new Error('Social media links do not support rich previews')
+      }
+
+      // Fetch new metadata
+      const result = await this.fetchPreviewMetadata(url)
+
+      if (result.success && result.metadata) {
+        // Update database with new metadata
+        await this.updateLinkPreview(linkId, result.metadata)
+
+        // Get the updated link data
+        const { data: updatedLink, error: fetchError } = await supabase
+          .from('user_links')
+          .select('*')
+          .eq('id', linkId)
+          .single()
+
+        if (fetchError) {
+          console.error('❌ Rich Preview: Error fetching updated link data:', fetchError)
+          throw new Error(`Failed to fetch updated link data: ${fetchError.message}`)
+        }
+
+        // Invalidate related caches
+        try {
+          if (linkData) {
+            let type = 'webpage'
+            if (isGitHubUrl(linkData.url)) {
+              type = 'github'
+            } else {
+              const blogCheck = isBlogUrl(linkData.url)
+              if (blogCheck.isBlog) {
+                type = 'blog'
+              }
+            }
+            await CacheInvalidationService.invalidateRichPreview(linkData.url, type)
+          }
+        } catch (cacheError) {
+          console.warn('Rich Preview: Cache invalidation failed:', cacheError)
+        }
+
+        return {
+          success: true,
+          data: updatedLink,
+          metadata: result.metadata
+        }
+      } else {
+        // Mark as failed in database
+        await this.markPreviewFailed(linkId, result.error || 'Unknown error')
+        
+        return {
+          success: false,
+          error: result.error
+        }
+      }
+
+    } catch (error) {
+      console.error('❌ Rich Preview: Error fetching metadata immediately:', error)
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      await this.markPreviewFailed(linkId, errorMessage)
+      
+      return {
+        success: false,
+        error: errorMessage
+      }
     }
   }
 }

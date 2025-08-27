@@ -28,16 +28,57 @@ export class ApiLinkService {
     
     return headers
   }
+
   /**
-   * Get all links for a user grouped by category
+   * Reorder links within a category
    */
-  static async getUserLinks(userId: string): Promise<Record<LinkCategory, LinkWithPreview[]>> {
+  static async reorderLinks(userId: string, category: LinkCategory, linkIds: string[]): Promise<boolean> {
     try {
       // Get auth session
       const { data } = await supabase.auth.getSession()
       const accessToken = data.session?.access_token
       
-      const response = await fetch(`/api/links?userId=${userId}`, {
+      if (!accessToken) {
+        console.error('Authentication required for reordering links');
+        throw new Error('Authentication required');
+      }
+      
+      const response = await fetch('/api/links/reorder', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ category, linkIds }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error reordering links:', errorData);
+        throw new Error(errorData.error || 'Failed to reorder links');
+      }
+
+      const result = await response.json();
+      return result.data?.success || false;
+    } catch (error) {
+      console.error('API client error reordering links:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get all links for a user grouped by category
+   */
+  static async getUserLinks(userId: string, isPreview: boolean = false): Promise<Record<LinkCategory, LinkWithPreview[]>> {
+    try {
+      // Get auth session
+      const { data } = await supabase.auth.getSession()
+      const accessToken = data.session?.access_token
+      
+      // Add preview parameter for preview requests
+      const previewParam = isPreview ? '&preview=true' : ''
+      
+      const response = await fetch(`/api/links?userId=${userId}${previewParam}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -122,16 +163,9 @@ export class ApiLinkService {
    */
   static async deleteLink(userId: string, linkId: string): Promise<boolean> {
     try {
-      console.log('🗑️ ApiLinkService: Deleting link...', { userId, linkId });
-      
       // Get auth session
       const { data } = await supabase.auth.getSession()
       const accessToken = data.session?.access_token
-      
-      console.log('🗑️ ApiLinkService: Auth session', { 
-        hasSession: !!data.session, 
-        accessTokenLength: accessToken ? accessToken.length : 0 
-      });
       
       const response = await fetch(`/api/links/${linkId}`, {
         method: 'DELETE',
@@ -142,11 +176,6 @@ export class ApiLinkService {
         body: JSON.stringify({ userId }),
       })
   
-      console.log('🗑️ ApiLinkService: Delete response', { 
-        status: response.status, 
-        statusText: response.statusText 
-      });
-      
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Error deleting link:', errorText);
@@ -169,18 +198,32 @@ export class ApiLinkService {
       const { data } = await supabase.auth.getSession()
       const accessToken = data.session?.access_token
       
-      const response = await fetch(`/api/links/${linkId}/toggle`, {
-        method: 'PUT',
+      // Fix: Call the correct endpoint with POST method and include both userId and linkId in the body
+      const response = await fetch(`/api/links/toggle`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
         },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ userId, linkId }),
       })
   
       if (!response.ok) {
-        console.error('Error toggling link status:', await response.text())
-        throw new Error(`Failed to toggle link status (${response.status})`)
+        const errorText = await response.text()
+        console.error('Error toggling link status:', errorText)
+        
+        // Try to parse the error as JSON to get details
+        try {
+          const errorData = JSON.parse(errorText)
+          if (errorData.error && (errorData.retryAfter || errorData.resetTime)) {
+            // This is a rate limit error
+            throw new Error(errorText)
+          }
+        } catch (parseError) {
+          // Not JSON or parse error, continue with normal error handling
+        }
+        
+        throw new Error(`Failed to toggle link status (${response.status}): ${errorText}`)
       }
   
       return response.json()
@@ -213,10 +256,36 @@ export class ApiLinkService {
         throw new Error(`Failed to refresh rich preview (${response.status})`)
       }
   
-      return response.json()
+      const result = await response.json()
+      return result.data
     } catch (error) {
       console.error('API client error refreshing rich preview:', error)
       throw error
+    }
+  }
+
+  /**
+   * Track a link click for analytics
+   */
+  static async trackLinkClick(linkId: string): Promise<boolean> {
+    try {
+      const response = await fetch('/api/public/track-click', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ linkId }),
+      });
+
+      if (!response.ok) {
+        console.error('Error tracking link click:', await response.text());
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('API client error tracking link click:', error);
+      return false;
     }
   }
 }

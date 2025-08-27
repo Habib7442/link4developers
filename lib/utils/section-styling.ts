@@ -6,6 +6,7 @@ export interface SectionStyleOverride {
   card_border_radius?: number
   card_border_width?: number
   link_hover_color?: string
+  link_color?: string
 }
 
 export type SectionStyleOverrides = Partial<Record<'profile' | LinkCategory, SectionStyleOverride>>

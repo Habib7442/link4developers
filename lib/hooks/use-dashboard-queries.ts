@@ -8,6 +8,7 @@ import { UserService } from '@/lib/services/user-service'
 import { TemplateService } from '@/lib/services/template-service'
 import { LinkCategory, TemplateId } from '@/lib/domain/entities'
 import { toast } from 'sonner'
+import { handleApiError, parseRateLimitError } from '@/lib/utils/rate-limit-handler'
 
 // Query Keys - Centralized and type-safe
 export const queryKeys = {
@@ -21,16 +22,16 @@ export const queryKeys = {
 } as const
 
 // User Links Query
-export function useUserLinks(userId: string) {
+export function useUserLinks(userId: string, isPreview: boolean = false) {
   const queryClient = useQueryClient();
   const { session } = useAuthStore();
   
   return useQuery({
-    queryKey: queryKeys.links(userId),
+    queryKey: [...queryKeys.links(userId), isPreview],
     queryFn: async () => {
       try {
         // Make authenticated API request
-        const result = await ApiLinkService.getUserLinks(userId);
+        const result = await ApiLinkService.getUserLinks(userId, isPreview);
         return result;
       } catch (error) {
         console.error('Error fetching links:', error);
@@ -197,6 +198,22 @@ export function useToggleLinkStatus() {
     },
     onError: (error) => {
       console.error('Failed to toggle link status:', error)
+      
+      // Check if this is a rate limit error
+      if (error instanceof Error) {
+        const rateLimitData = parseRateLimitError(error.message)
+        if (rateLimitData) {
+          // Show specific rate limit error message
+          // This will trigger the event that shows the alert dialog
+          const event = new CustomEvent('show-rate-limit-error', { 
+            detail: rateLimitData 
+          })
+          window.dispatchEvent(event)
+          return
+        }
+      }
+      
+      // Default error message for non-rate-limit errors
       toast.error('Failed to update link status: ' + (error as Error).message)
     },
   })

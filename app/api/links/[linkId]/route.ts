@@ -72,7 +72,7 @@ export async function DELETE(
 // PUT /api/links/[linkId] - Update a specific link
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { linkId: string } }
+  { params }: { params: Promise<{ linkId: string }> | { linkId: string } }
 ) {
   try {
     const { user, error } = await getUserFromRequest(request)
@@ -80,7 +80,9 @@ export async function PUT(
       return NextResponse.json({ error: error || 'Unauthorized' }, { status: 401 })
     }
 
-    const { linkId } = params
+    // Fix: Properly await params if it's a Promise
+    const resolvedParams = params instanceof Promise ? await params : params;
+    const { linkId } = resolvedParams;
     const body = await request.json()
 
     console.log('✏️ API: Updating link...', { userId: user.id, linkId, body })
@@ -93,10 +95,39 @@ export async function PUT(
       )
     }
 
+    // Extract only the fields that should be updated
+    let fieldsToUpdate = {}
+    
+    // Handle different body structures
+    if (body.updates) {
+      // If body has updates field (from ApiLinkService.updateLink)
+      fieldsToUpdate = body.updates
+    } else if (body.userId && Object.keys(body).length > 1) {
+      // If body has userId and other fields, extract the other fields
+      const { userId, id, user_id, created_at, updated_at, ...rest } = body
+      fieldsToUpdate = rest
+    } else {
+      // Direct fields
+      fieldsToUpdate = body
+    }
+
+    // Remove any fields that shouldn't be updated
+    const sanitizedUpdates: Record<string, any> = {}
+    const disallowedFields = ['id', 'user_id', 'userId', 'created_at', 'updated_at']
+    
+    for (const [key, value] of Object.entries(fieldsToUpdate)) {
+      // Only include fields that exist in the user_links table and are not disallowed
+      if (!disallowedFields.includes(key)) {
+        sanitizedUpdates[key] = value
+      }
+    }
+
+    console.log('✏️ API: Sanitized updates...', sanitizedUpdates)
+
     // Update the link (with user_id check for security)
     const { data, error: updateError } = await supabase
       .from('user_links')
-      .update(body)
+      .update(sanitizedUpdates)
       .eq('id', linkId.trim())
       .eq('user_id', user.id)
       .select()

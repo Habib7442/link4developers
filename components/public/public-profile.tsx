@@ -1,14 +1,15 @@
-﻿'use client'
+﻿﻿﻿﻿'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { User, TemplateId, UserAppearanceSettings } from '@/lib/supabase'
-import { UserLink, LinkCategory } from '@/lib/services/link-service'
+import { User, TemplateId, UserAppearanceSettings } from '@/lib/types/supabase-types'
+import { LinkCategory } from '@/lib/domain/entities'
+import { UserLinkWithPreview } from '@/lib/types/rich-preview'
 import { TemplateRenderer } from '@/components/templates/template-renderer'
 import { isValidTemplateId } from '@/lib/templates/template-config'
 
 interface PublicProfileProps {
   user: User
-  links: Record<LinkCategory, UserLink[]>
+  links: Record<LinkCategory, UserLinkWithPreview[]>
   appearanceSettings?: UserAppearanceSettings | null
   categoryOrder?: LinkCategory[]
 }
@@ -38,9 +39,10 @@ export function PublicProfile({ user, links, appearanceSettings, categoryOrder }
     <TemplateRenderer
       user={user}
       links={links}
-      templateId={templateId || user.theme_id}
+      templateId={(templateId || user.theme_id) as TemplateId | undefined}
       appearanceSettings={appearanceSettings}
       categoryOrder={categoryOrder}
+      isPreview={true} // Explicitly set isPreview to true to ensure consistent rendering
     />
   )
 }

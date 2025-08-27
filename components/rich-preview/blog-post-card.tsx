@@ -14,6 +14,7 @@ interface BlogPostCardProps {
   className?: string
   variant?: 'default' | 'compact' | 'detailed'
   theme?: 'dark' | 'light'
+  linkHoverColor?: string // Add link hover color prop
 }
 
 export function BlogPostCard({
@@ -23,7 +24,8 @@ export function BlogPostCard({
   onRefresh,
   className,
   variant = 'default',
-  theme = 'dark'
+  theme = 'dark',
+  linkHoverColor = '#ffc0cb' // Default to pink if not provided
 }: BlogPostCardProps) {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [imageError, setImageError] = useState(false)
@@ -322,7 +324,13 @@ export function BlogPostCard({
           "flex items-center gap-1 text-xs",
           isLight ? "text-gray-500" : "text-white/60"
         )}>
-          <ExternalLink className="w-3 h-3" />
+          <ExternalLink 
+            className="w-3 h-3" 
+            style={{
+              transition: 'color 0.3s ease'
+              // Don't force linkHoverColor - let the parent text color apply naturally
+            }}
+          />
           <span>Read on {metadata.platform}</span>
         </div>
 

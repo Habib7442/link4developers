@@ -29,7 +29,7 @@ export function LivePreview({ profileData, refreshTrigger }: LivePreviewProps) {
     data: links = {} as Record<LinkCategory, UserLinkWithPreview[]>, 
     isLoading: linksLoading, 
     error: linksError 
-  } = useUserLinks(user?.id || '')
+  } = useUserLinks(user?.id || '', true) // Pass true to indicate this is for preview
 
   const { 
     data: categoryOrder = [], 

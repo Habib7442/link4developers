@@ -7,6 +7,8 @@ import { GitHubRepoCard } from './github-repo-card'
 import { WebpagePreviewCard, BasicLinkCard } from './webpage-preview-card'
 import { BlogPostCard } from './blog-post-card'
 import { cn } from '@/lib/utils'
+import { ApiLinkService } from '@/lib/services/api-link-service'
+import { useAuthStore } from '@/stores/auth-store'
 
 interface RichLinkPreviewProps {
   link: UserLinkWithPreview
@@ -17,6 +19,7 @@ interface RichLinkPreviewProps {
   showRefreshButton?: boolean
   theme?: 'dark' | 'light'
   isPreviewMode?: boolean // Add explicit preview mode prop
+  linkHoverColor?: string // Add link hover color prop
 }
 
 export function RichLinkPreview({
@@ -27,24 +30,47 @@ export function RichLinkPreview({
   variant = 'default',
   showRefreshButton = false,
   theme = 'dark',
-  isPreviewMode: explicitPreviewMode // Accept explicit preview mode prop
+  isPreviewMode: explicitPreviewMode, // Accept explicit preview mode prop
+  linkHoverColor = '#ffc0cb' // Default to pink if not provided
 }: RichLinkPreviewProps) {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState<string | null>(null)
+  const { user } = useAuthStore()
 
-  const handleClick = () => {
-    if (onClick) {
-      onClick()
-    } else {
-      window.open(link.url, '_blank', 'noopener,noreferrer')
+  const handleClick = async () => {
+    try {
+      // Track the click before opening the link
+      const response = await fetch('/api/public/track-click', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ linkId: link.id }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to track click:', response.statusText);
+      }
+      
+      // Get the response data
+      const result = await response.json();
+      console.log('Click tracked:', result);
+    } catch (error) {
+      console.error('Error tracking click:', error);
     }
-  }
 
-  // For preview mode, if we're inside a LivePreview component, 
-  // we should always show rich previews regardless of loading state
-  const isPreviewMode = explicitPreviewMode || (typeof window !== 'undefined' && 
-    (window.location.pathname.includes('/dashboard/preview') || 
-     window.location.pathname.includes('/dashboard/links')));
+    // Open the link regardless of tracking success
+    if (onClick) {
+      onClick();
+    } else {
+      window.open(link.url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  // For preview mode detection, use the prop directly to avoid hydration mismatches
+  // Server-side rendering will always use the explicitPreviewMode prop
+  // Avoid client-side detection with window.location to prevent hydration errors
+  const isPreviewMode = explicitPreviewMode;
   
   const handleRefresh = async () => {
     if (!onRefresh || isRefreshing) return
@@ -60,6 +86,34 @@ export function RichLinkPreview({
       setIsRefreshing(false)
     }
   }
+
+  // Immediately fetch metadata for new links that don't have metadata yet
+  useEffect(() => {
+    const fetchMetadataImmediately = async () => {
+      // Only fetch for links without metadata in preview mode
+      if (isPreviewMode && (!link.metadata || Object.keys(link.metadata).length === 0)) {
+        try {
+          console.log('🔄 Immediately fetching metadata for link:', link.id)
+          // Use a slight delay to avoid overwhelming the API
+          await new Promise(resolve => setTimeout(resolve, 100))
+          
+          if (user?.id) {
+            await ApiLinkService.refreshRichPreview(user.id, link.id)
+            
+            // If there's an onRefresh callback, call it to update the parent component
+            if (onRefresh) {
+              await onRefresh(link.id)
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to immediately fetch metadata:', error)
+          // Don't show error to user as this is a background operation
+        }
+      }
+    }
+
+    fetchMetadataImmediately()
+  }, [link.id, link.metadata, isPreviewMode, user?.id, onRefresh])
 
   // Loading state - only show loading in non-preview mode when there's no metadata
   // In preview mode, prioritize showing cards over loading indicators
@@ -180,7 +234,7 @@ export function RichLinkPreview({
   // Rich preview with metadata
   // Show rich preview for links with metadata, regardless of preview status
   // This ensures links with metadata show as rich cards even if status is pending or failed
-  if (link.metadata && Object.keys(link.metadata).length > 0) {
+  if (link.metadata && typeof link.metadata === 'object' && Object.keys(link.metadata).length > 0) {
     const metadata = link.metadata as RichPreviewMetadata
 
     // Always try to use rich previews for better user experience
@@ -199,6 +253,7 @@ export function RichLinkPreview({
           className={className}
           variant={variant}
           theme={theme}
+          linkHoverColor={linkHoverColor} // Pass link hover color
         />
       )
     }
@@ -215,6 +270,7 @@ export function RichLinkPreview({
           className={className}
           variant={variant}
           theme={theme}
+          linkHoverColor={linkHoverColor} // Pass link hover color
         />
       )
     }
@@ -231,6 +287,7 @@ export function RichLinkPreview({
         className={className}
         variant={variant}
         theme={theme}
+        linkHoverColor={linkHoverColor} // Pass link hover color
       />
     )
   }
@@ -247,16 +304,29 @@ export function RichLinkPreview({
       domain = link.url;
     }
     
+    // Always create a minimal metadata object for preview mode
+    // This ensures we don't show loading states in preview mode
+    // Use a static timestamp to avoid hydration mismatches
     const minimalMetadata: WebpageMetadata = {
       type: 'webpage',
       title: link.title || 'Untitled Link',
       description: link.description || 'No description available',
-      image: link.image_url || null,
+      image: null,
       url: link.url,
       site_name: '',
       favicon: '',
       domain: domain,
-      fetched_at: new Date().toISOString()
+      fetched_at: '2023-01-01T00:00:00.000Z', // Use static timestamp to avoid hydration mismatches
+      // Add custom icon data to ensure it's always visible
+      icon_data: {
+        icon_selection_type: link.icon_selection_type,
+        custom_icon_url: link.custom_icon_url,
+        uploaded_icon_url: link.uploaded_icon_url,
+        use_custom_icon: link.use_custom_icon,
+        icon_variant: link.icon_variant,
+        platform_detected: link.platform_detected,
+        category: link.category
+      }
     };
     
     return (
@@ -268,11 +338,13 @@ export function RichLinkPreview({
         className={className}
         variant={variant}
         theme={theme}
+        linkHoverColor={linkHoverColor} // Pass link hover color
       />
     )
   }
 
-  // Fallback to basic link card only when not in preview mode and no metadata is available
+  // Fallback to basic link card when not in preview mode and no metadata is available
+  // In preview mode, we should never reach this point as we create minimal metadata above
   return (
     <BasicLinkCard
       link={link}
@@ -280,6 +352,7 @@ export function RichLinkPreview({
       className={className}
       variant={variant === 'detailed' ? 'default' : variant}
       theme={theme}
+      linkHoverColor={linkHoverColor} // Pass link hover color
     />
   )
 }

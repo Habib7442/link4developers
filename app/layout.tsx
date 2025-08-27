@@ -5,6 +5,7 @@ import { AuthProvider } from "@/components/providers/auth-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ToastProvider } from "@/components/ui/toast-provider";
 import { ConsoleFilterProvider } from "@/components/providers/console-filter-provider";
+import { RateLimitErrorProvider } from "@/components/providers/rate-limit-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,8 +25,10 @@ export default function RootLayout({
         <ConsoleFilterProvider>
           <QueryProvider>
             <AuthProvider>
-              <ToastProvider />
-              {children}
+              <RateLimitErrorProvider>
+                <ToastProvider />
+                {children}
+              </RateLimitErrorProvider>
             </AuthProvider>
           </QueryProvider>
         </ConsoleFilterProvider>

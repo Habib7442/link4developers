@@ -1,6 +1,7 @@
 import { LinkUseCaseImpl } from '@/lib/application/use-cases'
 import { SupabaseLinkRepository } from '@/lib/infrastructure/repositories'
 import { Link, LinkWithPreview, LinkCategory } from '@/lib/domain/entities'
+import { supabase } from '@/lib/supabase'
 
 // Create singleton instances
 const linkRepository = new SupabaseLinkRepository()
@@ -75,10 +76,15 @@ export class LinkService {
     linksByCategory: Record<LinkCategory, number>;
     topLinks: Array<{ title: string; clicks: number; url: string }>;
   }> {
-    // This would typically come from a different use case, but for now we'll mock the data
-    return {
-      totalClicks: 0,
-      linksByCategory: {
+    try {
+      // Import the AnalyticsService
+      const { AnalyticsService } = await import('@/lib/database');
+      
+      // Get the actual analytics data
+      const analyticsData = await AnalyticsService.getLinkAnalytics(userId);
+      
+      // Transform the data to match the expected format
+      const linksByCategory: Record<LinkCategory, number> = {
         personal: 0,
         projects: 0,
         blogs: 0,
@@ -86,8 +92,43 @@ export class LinkService {
         contact: 0,
         custom: 0,
         social: 0
-      },
-      topLinks: []
+      };
+      
+      // We'll need to fetch links with categories to calculate category-specific clicks
+      const { data: links } = await supabase
+        .from('user_links')
+        .select('category, click_count')
+        .eq('user_id', userId);
+      
+      // Calculate clicks by category
+      if (links) {
+        links.forEach(link => {
+          if (link.category && link.category in linksByCategory) {
+            linksByCategory[link.category as LinkCategory] += link.click_count || 0;
+          }
+        });
+      }
+      
+      return {
+        totalClicks: analyticsData.totalClicks,
+        linksByCategory,
+        topLinks: analyticsData.topLinks
+      };
+    } catch (error) {
+      console.error('Error fetching link analytics:', error);
+      return {
+        totalClicks: 0,
+        linksByCategory: {
+          personal: 0,
+          projects: 0,
+          blogs: 0,
+          achievements: 0,
+          contact: 0,
+          custom: 0,
+          social: 0
+        },
+        topLinks: []
+      };
     }
   }
   

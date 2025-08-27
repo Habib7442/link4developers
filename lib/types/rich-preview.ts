@@ -47,6 +47,16 @@ export interface WebpageMetadata extends BasePreviewMetadata {
   site_name: string | null
   domain: string
   url: string
+  // Add icon_data field for custom icons in preview mode
+  icon_data?: {
+    icon_selection_type?: 'default' | 'platform' | 'upload' | 'url'
+    custom_icon_url?: string
+    uploaded_icon_url?: string
+    use_custom_icon?: boolean
+    icon_variant?: string
+    platform_detected?: string
+    category?: string
+  }
 }
 
 // Blog platform metadata interfaces

@@ -11,13 +11,13 @@ const supabase = createClient(
 // Protected PUT route for reordering links within a category
 const reorderLinksHandler = async (request: NextRequest, { userId }: { userId: string }) => {
   try {
-    console.log('🔄 API: Reordering links for user:', userId)
+    // Remove console.log
 
     const body = await request.json()
     const { category, linkIds } = body
 
     if (!category || !linkIds || !Array.isArray(linkIds)) {
-      console.error('❌ API: Invalid reorder data:', { category, linkIds })
+      // Remove console.error
       return NextResponse.json(
         { error: 'Invalid reorder data. Category and linkIds array are required.' },
         { status: 400 }
@@ -27,7 +27,7 @@ const reorderLinksHandler = async (request: NextRequest, { userId }: { userId: s
     // Validate category
     const validCategories = ['personal', 'projects', 'blogs', 'achievements', 'contact', 'social', 'custom']
     if (!validCategories.includes(category)) {
-      console.error('❌ API: Invalid category:', category)
+      // Remove console.error
       return NextResponse.json(
         { error: 'Invalid category' },
         { status: 400 }
@@ -43,7 +43,7 @@ const reorderLinksHandler = async (request: NextRequest, { userId }: { userId: s
       .in('id', linkIds)
 
     if (validationError) {
-      console.error('❌ API: Error validating links:', validationError)
+      console.error('API: Error validating links:', validationError)
       return NextResponse.json(
         { error: `Failed to validate links: ${validationError.message}` },
         { status: 500 }
@@ -51,10 +51,7 @@ const reorderLinksHandler = async (request: NextRequest, { userId }: { userId: s
     }
 
     if (existingLinks.length !== linkIds.length) {
-      console.error('❌ API: Some links not found or don\'t belong to user/category:', {
-        requested: linkIds.length,
-        found: existingLinks.length
-      })
+      // Remove console.error
       return NextResponse.json(
         { error: 'Some links not found or don\'t belong to the specified category' },
         { status: 400 }
@@ -76,18 +73,14 @@ const reorderLinksHandler = async (request: NextRequest, { userId }: { userId: s
     // Check for any errors
     const errors = updateResults.filter(result => result.error)
     if (errors.length > 0) {
-      console.error('❌ API: Errors updating link positions:', errors)
+      console.error('API: Errors updating link positions:', errors)
       return NextResponse.json(
         { error: 'Failed to update some link positions' },
         { status: 500 }
       )
     }
 
-    console.log('✅ API: Links reordered successfully:', {
-      category,
-      linkCount: linkIds.length,
-      newOrder: linkIds
-    })
+    // Remove console.log
 
     return NextResponse.json({ 
       data: { 
@@ -98,7 +91,7 @@ const reorderLinksHandler = async (request: NextRequest, { userId }: { userId: s
     })
 
   } catch (error) {
-    console.error('❌ API: Unexpected error reordering links:', error)
+    console.error('API: Unexpected error reordering links:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

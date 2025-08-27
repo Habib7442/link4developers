@@ -22,6 +22,7 @@ interface GitHubRepoCardProps {
   className?: string
   variant?: 'default' | 'compact' | 'detailed'
   theme?: 'dark' | 'light'
+  linkHoverColor?: string // Add link hover color prop
 }
 
 export function GitHubRepoCard({
@@ -31,7 +32,8 @@ export function GitHubRepoCard({
   onRefresh,
   className,
   variant = 'default',
-  theme = 'dark'
+  theme = 'dark',
+  linkHoverColor = '#ffc0cb' // Default to pink if not provided
 }: GitHubRepoCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageError, setImageError] = useState(false)
@@ -145,10 +147,13 @@ export function GitHubRepoCard({
                   target="_blank" 
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className={cn(
-                    "inline-flex items-center gap-1 text-xs",
-                    isLight ? "text-blue-600 hover:text-blue-700" : "text-blue-400 hover:text-blue-300"
-                  )}
+                  className="inline-flex items-center gap-1 text-xs"
+                  style={{
+                    color: isLight ? '#2563eb' : '#60a5fa',
+                    transition: 'color 0.3s ease',
+                    // Override with the user's selected link color if in hover state
+                    ...(isHovered && { color: linkHoverColor })
+                  }}
                 >
                   <ExternalLink className="w-3 h-3" />
                   Live Demo
@@ -156,10 +161,16 @@ export function GitHubRepoCard({
               </div>
             )}
           </div>
-          <ExternalLink className={cn(
-            "w-4 h-4 group-hover:text-blue-400 transition-colors flex-shrink-0",
-            isLight ? "text-gray-500" : "text-gray-400"
-          )} />
+          <ExternalLink 
+            className={cn(
+              "w-4 h-4 transition-colors flex-shrink-0",
+              isLight ? "text-gray-500" : "text-gray-400"
+            )}
+            style={{
+              transition: 'color 0.3s ease',
+              color: isHovered ? linkHoverColor : undefined
+            }}
+          />
         </div>
       </button>
     )
@@ -250,10 +261,16 @@ export function GitHubRepoCard({
                 )} />
               </div>
             )}
-            <ExternalLink className={cn(
-              "w-5 h-5 group-hover:text-blue-400 transition-colors",
-              isLight ? "text-gray-500" : "text-gray-400"
-            )} />
+            <ExternalLink 
+              className={cn(
+                "w-5 h-5 transition-colors",
+                isLight ? "text-gray-500" : "text-gray-400"
+              )}
+              style={{
+                transition: 'color 0.3s ease',
+                color: isHovered ? linkHoverColor : undefined
+              }}
+            />
           </div>
         </div>
 
@@ -275,12 +292,21 @@ export function GitHubRepoCard({
               target="_blank" 
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className={cn(
-                "inline-flex items-center gap-1 text-sm font-medium",
-                isLight ? "text-blue-600 hover:text-blue-700" : "text-blue-400 hover:text-blue-300"
-              )}
+              className="inline-flex items-center gap-1 text-sm font-medium"
+              style={{
+                color: isLight ? '#2563eb' : '#60a5fa',
+                transition: 'color 0.3s ease',
+                // Override with the user's selected link color if in hover state
+                ...(isHovered && { color: linkHoverColor })
+              }}
             >
-              <ExternalLink className="w-4 h-4" />
+              <ExternalLink 
+                className="w-4 h-4" 
+                style={{
+                  transition: 'color 0.3s ease',
+                  color: isHovered ? linkHoverColor : undefined
+                }}
+              />
               Live Demo
             </a>
           </div>

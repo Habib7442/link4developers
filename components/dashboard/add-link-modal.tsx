@@ -324,7 +324,8 @@ export function AddLinkModal({ isOpen, onClose, onSuccess, defaultCategory, edit
         // Log the data being sent to help with debugging
         console.log('📤 Sending update data to API:', JSON.stringify(updateData, null, 2))
         
-        const result = await ApiLinkService.updateLink(user.id, updateData)
+        // Fix: Pass the correct parameters to updateLink (userId, linkId, updates)
+        const result = await ApiLinkService.updateLink(user.id, editLink.id, updateData)
         console.log('✅ Update successful:', result)
         toast.success('Link updated successfully!')
         isSubmissionSuccessful = true

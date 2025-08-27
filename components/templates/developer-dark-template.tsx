@@ -267,14 +267,17 @@ export function DeveloperDarkTemplate({ user, links, appearanceSettings, categor
   }
 
   const handleLinkClick = async (link: UserLinkWithPreview) => {
+    // Track the click for analytics
+    await ApiLinkService.trackLinkClick(link.id);
+
     // For now, just open the link (analytics will be handled by the new clean architecture)
-    window.open(link.url, '_blank', 'noopener,noreferrer')
-  }
+    window.open(link.url, '_blank', 'noopener,noreferrer');
+  };
 
   const handleRefreshPreview = async (linkId: string) => {
     try {
       // Use API service to refresh preview data
-      await ApiLinkService.refreshLinkPreview(user.id, linkId);
+      await ApiLinkService.refreshRichPreview(user.id, linkId);
       toast.success('Preview refreshed successfully');
       
       // Use toast to inform user instead of reloading the whole page
@@ -521,6 +524,7 @@ export function DeveloperDarkTemplate({ user, links, appearanceSettings, categor
                           variant="default"
                           showRefreshButton={true}
                           isPreviewMode={isPreview} // Pass explicit preview mode prop
+                          linkHoverColor={appearanceSettings?.link_hover_color} // Pass link hover color from appearance settings
                         />
                       </div>
                     ))}

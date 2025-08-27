@@ -257,20 +257,20 @@ export class AnalyticsService {
     try {
       const { data: links, error } = await supabase
         .from('user_links')
-        .select('title, url, click_count, is_active')
+        .select('title, url, click_count, is_active, category')
         .eq('user_id', userId)
 
       if (error) throw error
 
-      const totalClicks = links?.reduce((sum, link) => sum + link.click_count, 0) || 0
+      const totalClicks = links?.reduce((sum, link) => sum + (link.click_count || 0), 0) || 0
       const totalLinks = links?.length || 0
       const activeLinks = links?.filter(link => link.is_active).length || 0
       const topLinks = links
-        ?.sort((a, b) => b.click_count - a.click_count)
+        ?.sort((a, b) => (b.click_count || 0) - (a.click_count || 0))
         .slice(0, 5)
         .map(link => ({
           title: link.title,
-          clicks: link.click_count,
+          clicks: link.click_count || 0,
           url: link.url
         })) || []
 

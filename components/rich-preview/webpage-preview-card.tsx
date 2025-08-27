@@ -20,8 +20,52 @@ import { UserLinkWithPreview } from '@/lib/types/rich-preview'
 import { cn } from '@/lib/utils'
 
 // Function to get the appropriate icon for a link
-const getLinkIcon = (link: UserLinkWithPreview) => {
-  // Check for uploaded icon
+const getLinkIcon = (link: UserLinkWithPreview, metadata?: WebpageMetadata) => {
+  // Check for icon_data in metadata (for preview mode)
+  if (metadata?.icon_data) {
+    const iconData = metadata.icon_data;
+    
+    // Check for uploaded icon
+    if (iconData.icon_selection_type === 'upload' && iconData.uploaded_icon_url) {
+      return (
+        <Image
+          src={iconData.uploaded_icon_url}
+          alt={`${link.title} icon`}
+          width={16}
+          height={16}
+          className="w-4 h-4 object-contain"
+        />
+      )
+    }
+
+    // Check for custom URL icon
+    if (iconData.icon_selection_type === 'url' && iconData.custom_icon_url) {
+      return (
+        <Image
+          src={iconData.custom_icon_url}
+          alt={`${link.title} icon`}
+          width={16}
+          height={16}
+          className="w-4 h-4 object-contain"
+        />
+      )
+    }
+
+    // Check for platform icon (social media)
+    if (iconData.icon_selection_type === 'platform' && iconData.category === 'social' && iconData.platform_detected) {
+      return (
+        <Image
+          src={`/icons/${iconData.platform_detected}/${iconData.icon_variant || 'default'}.png`}
+          alt={`${iconData.platform_detected} icon`}
+          width={16}
+          height={16}
+          className="w-4 h-4 object-contain"
+        />
+      )
+    }
+  }
+  
+  // Check for uploaded icon in link object (fallback)
   if (link.icon_selection_type === 'upload' && link.uploaded_icon_url) {
     return (
       <Image
@@ -34,7 +78,7 @@ const getLinkIcon = (link: UserLinkWithPreview) => {
     )
   }
 
-  // Check for custom URL icon
+  // Check for custom URL icon in link object (fallback)
   if (link.icon_selection_type === 'url' && link.custom_icon_url) {
     return (
       <Image
@@ -47,7 +91,7 @@ const getLinkIcon = (link: UserLinkWithPreview) => {
     )
   }
 
-  // Check for platform icon (social media)
+  // Check for platform icon (social media) in link object (fallback)
   if (link.icon_selection_type === 'platform' && link.category === 'social' && link.platform_detected) {
     return (
       <Image
@@ -84,6 +128,7 @@ interface WebpagePreviewCardProps {
   className?: string
   variant?: 'default' | 'compact' | 'detailed'
   theme?: 'dark' | 'light'
+  linkHoverColor?: string // Add this prop
 }
 
 export function WebpagePreviewCard({
@@ -93,7 +138,8 @@ export function WebpagePreviewCard({
   onRefresh,
   className,
   variant = 'default',
-  theme = 'dark'
+  theme = 'dark',
+  linkHoverColor = '#ffc0cb' // Default to pink if not provided
 }: WebpagePreviewCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageError, setImageError] = useState(false)
@@ -120,7 +166,7 @@ export function WebpagePreviewCard({
         )}
       >
         <div className="flex items-center gap-2">
-          {/* Favicon */}
+          {/* Favicon or custom icon */}
           <div className={cn(
             "relative w-6 h-6 rounded-md overflow-hidden flex-shrink-0",
             isLight ? "bg-gray-100 border border-gray-200" : "bg-white/5"
@@ -136,10 +182,7 @@ export function WebpagePreviewCard({
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <Globe className={cn(
-                  "w-3 h-3",
-                  isLight ? "text-gray-500" : "text-gray-400"
-                )} />
+                {getLinkIcon(link, metadata)}
               </div>
             )}
           </div>
@@ -159,10 +202,16 @@ export function WebpagePreviewCard({
             </p>
           </div>
 
-          <ExternalLink className={cn(
-            "w-3.5 h-3.5 group-hover:text-blue-400 transition-colors flex-shrink-0",
-            isLight ? "text-gray-500" : "text-gray-400"
-          )} />
+          <ExternalLink 
+            className={cn(
+              "w-3.5 h-3.5 transition-colors flex-shrink-0",
+              isLight ? "text-gray-500" : "text-gray-400"
+            )}
+            style={{
+              transition: 'color 0.3s ease',
+              color: isHovered ? linkHoverColor : undefined
+            }}
+          />
         </div>
       </div>
     )
@@ -207,12 +256,21 @@ export function WebpagePreviewCard({
       <div className="p-4">
         {/* Title and icon */}
         <div className="flex justify-between items-start gap-4 mb-2">
-          <h3 className={cn(
-            "text-base font-bold font-['Sharp_Grotesk'] leading-tight",
-            isLight ? "text-gray-900" : "text-white"
-          )}>
-            {displayTitle}
-          </h3>
+          <div className="flex items-center gap-2">
+            {/* Custom icon */}
+            <div className={cn(
+              "w-5 h-5 flex items-center justify-center flex-shrink-0",
+              isLight ? "text-gray-500" : "text-gray-400"
+            )} style={{ color: isLight ? '#6b7280' : undefined }}>
+              {getLinkIcon(link, metadata)}
+            </div>
+            <h3 className={cn(
+              "text-base font-bold font-['Sharp_Grotesk'] leading-tight",
+              isLight ? "text-gray-900" : "text-white"
+            )}>
+              {displayTitle}
+            </h3>
+          </div>
           <div className="flex items-center gap-2">
             {onRefresh && (
               <button
@@ -233,10 +291,16 @@ export function WebpagePreviewCard({
                 )} />
               </button>
             )}
-            <ExternalLink className={cn(
-              "w-5 h-5 group-hover:text-blue-400 transition-colors",
-              isLight ? "text-gray-500" : "text-gray-400"
-            )} />
+            <ExternalLink 
+              className={cn(
+                "w-5 h-5 transition-colors",
+                isLight ? "text-gray-500" : "text-gray-400"
+              )}
+              style={{
+                transition: 'color 0.3s ease',
+                color: isHovered ? linkHoverColor : undefined
+              }}
+            />
           </div>
         </div>
 
@@ -285,19 +349,23 @@ export function WebpagePreviewCard({
 }
 
 // Fallback component for when preview data is not available
-export function BasicLinkCard({
-  link,
-  onClick,
-  className,
-  variant = 'default',
-  theme = 'dark'
-}: {
+interface BasicLinkCardProps {
   link: UserLinkWithPreview
   onClick?: () => void
   className?: string
   variant?: 'default' | 'compact'
   theme?: 'dark' | 'light'
-}) {
+  linkHoverColor?: string // Add this prop
+}
+
+export function BasicLinkCard({
+  link,
+  onClick,
+  className,
+  variant = 'default',
+  theme = 'dark',
+  linkHoverColor = '#ffc0cb' // Default to pink if not provided
+}: BasicLinkCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   
   const domain = new URL(link.url).hostname
@@ -343,10 +411,16 @@ export function BasicLinkCard({
               {domain}
             </p>
           </div>
-          <ExternalLink className={cn(
-            "w-3.5 h-3.5 group-hover:text-blue-400 transition-colors flex-shrink-0",
-            isLight ? "text-gray-500" : "text-gray-400"
-          )} />
+          <ExternalLink 
+            className={cn(
+              "w-3.5 h-3.5 transition-colors flex-shrink-0",
+              isLight ? "text-gray-500" : "text-gray-400"
+            )}
+            style={{
+              transition: 'color 0.3s ease',
+              color: isHovered ? linkHoverColor : undefined
+            }}
+          />
         </div>
       </div>
     )
@@ -403,10 +477,16 @@ export function BasicLinkCard({
             {domain}
           </p>
         </div>
-        <ExternalLink className={cn(
-          "w-4 h-4 group-hover:text-blue-400 transition-colors flex-shrink-0",
-          isLight ? "text-gray-500" : "text-gray-400"
-        )} />
+        <ExternalLink 
+          className={cn(
+            "w-4 h-4 transition-colors flex-shrink-0",
+            isLight ? "text-gray-500" : "text-gray-400"
+          )}
+          style={{
+            transition: 'color 0.3s ease',
+            color: isHovered ? linkHoverColor : undefined
+          }}
+        />
       </div>
     </div>
   )

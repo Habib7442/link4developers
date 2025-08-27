@@ -16,6 +16,7 @@ import { ExternalLink, Share2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { getFontFamilyWithFallbacks } from '@/lib/utils/font-loader'
 import { getSectionStyles, getSectionTypographyStyle } from '@/lib/utils/section-styling'
+import { ApiLinkService } from '@/lib/services/api-link-service'
 
 interface SocialMediaSectionProps {
   links?: UserLinkWithPreview[]
@@ -59,19 +60,27 @@ function SocialIcon({ link, onClick, variant, appearanceSettings }: SocialIconPr
       }
     }
     
+    if (variant === 'github') {
+      // For GitHub Focus theme, use white icon color to match other section icons
+      return {
+        platformColor: '#ffffff', // White icon color to match other section icons
+        hoverColor: appearanceSettings?.link_hover_color || '#58A6FF' // Use appearance setting or default GitHub hover blue
+      }
+    }
+    
     if (variant === 'gta-vice-city') {
       // For GTA Vice City theme, use consistent neon colors
       return {
-        platformColor: '#ffffff', // White for all icons
-        hoverColor: '#ffc0cb' // Pink for hover
+        platformColor: '#ffffff', // White for all icons to match other section icons
+        hoverColor: '#ffc0cb' // Pink for hover to match theme
       }
     }
     
     if (variant === 'cyberpunk') {
       // For Cyberpunk theme, use neon colors
       return {
-        platformColor: '#00F5FF', // Neon cyan for all icons
-        hoverColor: '#FF00FF' // Neon magenta for hover
+        platformColor: '#FF00FF', // Neon magenta for all icons (matches other section icons)
+        hoverColor: '#00F5FF' // Neon cyan for hover (swapped colors)
       }
     }
     
@@ -111,13 +120,13 @@ function SocialIcon({ link, onClick, variant, appearanceSettings }: SocialIconPr
       case 'gta-vice-city':
         return {
           container: 'hover:bg-white/10 border-white/20',
-          text: 'text-white',
+          text: 'text-white text-xs', // Ensure small text size to match other sections
           icon: 'bg-white/10 border-white/20'
         }
       case 'cyberpunk':
         return {
           container: 'hover:bg-[#00F5FF]/20 border-[#00F5FF]/30',
-          text: 'text-[#00F5FF] font-orbitron',
+          text: 'text-[#00F5FF] font-orbitron text-xs', // Ensure small text size and consistent font/color
           icon: 'bg-[#1A1A1A] border-[#00F5FF]/30'
         }
       case 'sunset':
@@ -139,6 +148,12 @@ function SocialIcon({ link, onClick, variant, appearanceSettings }: SocialIconPr
 
   // Get typography styles from section-specific styling system
   const getTypographyStyle = (type: 'heading' | 'body' | 'subheading' = 'body'): React.CSSProperties => {
+    // If appearance settings are provided, use them for consistent styling
+    if (appearanceSettings) {
+      return getSectionTypographyStyle('social', type, appearanceSettings);
+    }
+
+    // Theme-specific fallbacks
     if (variant === 'light') {
       // For Minimalist Light theme, ensure text is dark and visible
       if (type === 'heading') {
@@ -158,28 +173,32 @@ function SocialIcon({ link, onClick, variant, appearanceSettings }: SocialIconPr
       if (type === 'heading') {
         return {
           fontFamily: 'Rajdhani, sans-serif',
-          color: '#ffffff'
+          color: '#ffffff',
+          fontSize: '13px' // Small text size to match other sections
         }
       }
       return {
         fontFamily: 'Rajdhani, sans-serif',
-        color: '#ffffff'
+        color: '#ffffff',
+        fontSize: '13px' // Small text size to match other sections
       }
     }
     
     if (variant === 'cyberpunk') {
-      // For Cyberpunk theme, use futuristic fonts and neon colors
-      if (type === 'heading') {
+      // For Cyberpunk theme, use futuristic fonts and neon colors with consistent sizing
+      if (type === 'heading' || type === 'body') {
         return {
           fontFamily: 'Orbitron, sans-serif',
-          color: '#00F5FF', // Neon cyan
-          textShadow: '0 0 5px rgba(0, 245, 255, 0.6)' // Neon glow
+          color: '#FF00FF', // Neon magenta to match section headers
+          fontSize: '13px', // Small text size to match other sections
+          textShadow: '0 0 5px rgba(255, 0, 255, 0.6)' // Neon glow
         }
       }
       return {
         fontFamily: 'Orbitron, sans-serif',
-        color: '#00F5FF', // Neon cyan
-        textShadow: '0 0 5px rgba(0, 245, 255, 0.6)' // Neon glow
+        color: '#FF00FF', // Neon magenta to match section headers
+        fontSize: '13px', // Small text size to match other sections
+        textShadow: '0 0 5px rgba(255, 0, 255, 0.6)' // Neon glow
       }
     }
     
@@ -223,7 +242,7 @@ function SocialIcon({ link, onClick, variant, appearanceSettings }: SocialIconPr
               : variant === 'gta-vice-city'
                 ? 'bg-gradient-to-br from-white/20 to-white/10 border-2 border-white/30 backdrop-blur-sm'
                 : variant === 'cyberpunk'
-                  ? 'bg-gradient-to-br from-[#00F5FF]/20 to-[#FF00FF]/20 border-2 border-[#00F5FF]/30 backdrop-blur-sm'
+                  ? 'bg-gradient-to-br from-[#00F5FF]/20 to-[#00F5FF]/10 border-2 border-[#00F5FF]/30 backdrop-blur-sm'
                   : variant === 'sunset'
                     ? 'bg-gradient-to-br from-white to-white border-2 border-[#FF6F61]'
                     : detectedPlatform 
@@ -259,26 +278,26 @@ function SocialIcon({ link, onClick, variant, appearanceSettings }: SocialIconPr
                   className="w-10 h-10 md:w-12 md:h-12 transition-transform duration-200 transition-colors"
                   style={{
                     color: variant === 'light' ? '#374151' : 
-                           variant === 'github' ? '#e6edf3' : 
+                           variant === 'github' ? platformColor : 
                            variant === 'gta-vice-city' ? '#ffffff' : 
-                           variant === 'cyberpunk' ? '#00F5FF' : 
+                           variant === 'cyberpunk' ? '#FF00FF' : 
                            variant === 'sunset' ? '#FF6F61' : platformColor,
                     '--hover-color': variant === 'light' ? '#1f2937' : 
-                                   variant === 'github' ? '#58a6ff' : 
+                                   variant === 'github' ? hoverColor : 
                                    variant === 'gta-vice-city' ? '#ffc0cb' : 
                                    variant === 'cyberpunk' ? '#FF00FF' : 
                                    variant === 'sunset' ? '#E55B50' : hoverColor
                   } as React.CSSProperties}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.color = variant === 'light' ? '#1f2937' : 
-                                                 variant === 'github' ? '#58a6ff' : 
+                                                 variant === 'github' ? hoverColor : 
                                                  variant === 'gta-vice-city' ? '#ffc0cb' : 
                                                  variant === 'cyberpunk' ? '#FF00FF' : 
                                                  variant === 'sunset' ? '#E55B50' : hoverColor
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.color = variant === 'light' ? '#374151' : 
-                                                 variant === 'github' ? '#e6edf3' : 
+                                                 variant === 'github' ? platformColor : 
                                                  variant === 'gta-vice-city' ? '#ffffff' : 
                                                  variant === 'cyberpunk' ? '#00F5FF' : 
                                                  variant === 'sunset' ? '#FF6F61' : platformColor
@@ -304,21 +323,21 @@ function SocialIcon({ link, onClick, variant, appearanceSettings }: SocialIconPr
             className="w-8 h-8 md:w-10 md:h-10 transition-transform duration-200 transition-colors"
             style={{ 
               color: variant === 'light' ? '#374151' : 
-                     variant === 'github' ? '#e6edf3' : 
+                     variant === 'github' ? platformColor : 
                      variant === 'gta-vice-city' ? '#ffffff' : 
-                     variant === 'cyberpunk' ? '#00F5FF' : 
+                     variant === 'cyberpunk' ? '#FF00FF' : 
                      variant === 'sunset' ? '#FF6F61' : platformColor
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = variant === 'light' ? '#1f2937' : 
-                                          variant === 'github' ? '#58a6ff' : 
+                                          variant === 'github' ? hoverColor : 
                                           variant === 'gta-vice-city' ? '#ffc0cb' : 
                                           variant === 'cyberpunk' ? '#FF00FF' : 
                                           variant === 'sunset' ? '#E55B50' : hoverColor
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.color = variant === 'light' ? '#374151' : 
-                                         variant === 'github' ? '#e6edf3' : 
+                                         variant === 'github' ? platformColor : 
                                          variant === 'gta-vice-city' ? '#ffffff' : 
                                          variant === 'cyberpunk' ? '#00F5FF' : 
                                          variant === 'sunset' ? '#FF6F61' : platformColor
@@ -329,12 +348,13 @@ function SocialIcon({ link, onClick, variant, appearanceSettings }: SocialIconPr
 
       {/* Platform Name */}
       <span
-        className="mt-2 md:mt-3 text-xs font-medium text-center leading-tight"
+        className={`mt-2 md:mt-3 text-xs font-medium text-center leading-tight ${variant === 'cyberpunk' ? 'font-orbitron' : ''}`}
         style={{
           ...getTypographyStyle('body'),
-          color: variant === 'light' ? '#374151' : 
-                 variant === 'github' ? '#e6edf3' : 
-                 variant === 'gta-vice-city' ? '#ffffff' : getTypographyStyle('body').color
+          ...(variant === 'cyberpunk' && {
+            color: '#FF00FF', // Force magenta color for cyberpunk theme
+            textShadow: '0 0 5px rgba(255, 0, 255, 0.6)'
+          })
         }}
       >
         {displayName}
@@ -357,17 +377,33 @@ export function SocialMediaSection({
   const actualLinks = socialLinks || links || []
   const handleLinkClick = async (link: UserLinkWithPreview) => {
     try {
-      // Call the provided click handler if available
-      if (onLinkClick) {
-        await onLinkClick(link)
+      // Track the click for analytics
+      const response = await fetch('/api/public/track-click', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ linkId: link.id }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to track click:', response.statusText);
       }
       
-      // Open the link
-      window.open(link.url, '_blank', 'noopener,noreferrer')
+      // Get the response data
+      const result = await response.json();
+      console.log('Social link click tracked:', result);
     } catch (error) {
-      console.error('Error handling social link click:', error)
-      toast.error('Failed to open link')
+      console.error('Error tracking social link click:', error);
     }
+
+    // Call the provided click handler if available
+    if (onLinkClick) {
+      await onLinkClick(link);
+    }
+    
+    // Open the link
+    window.open(link.url, '_blank', 'noopener,noreferrer');
   }
   
   // Don't render if no social links
@@ -382,14 +418,16 @@ export function SocialMediaSection({
         <div className="bg-[#161b22] border border-[#30363d] rounded-[12px] overflow-hidden">
           <div className="bg-[#21262d] border-b border-[#30363d] px-4 py-3">
             <div className="flex items-center gap-2">
-              <Share2 
-                className="w-4 h-4"
-                style={{ color: '#2ea043' }}
-              />
-              <h2 className="text-[14px] font-semibold leading-[18px] font-sharp-grotesk text-[#f0f6fc]">
+              <div className="p-1 rounded bg-[#238636]/20 border border-[#238636]/30">
+                <Share2 
+                  className="w-3.5 h-3.5" 
+                  style={{ color: '#ffffff' }}
+                />
+              </div>
+              <h2 className="text-[13px] font-semibold leading-[16px] font-inter" style={getTypographyStyle ? getTypographyStyle('subheading') : getSectionTypographyStyle('social', 'subheading', appearanceSettings)}>
                 Social Media
               </h2>
-              <span className="text-[12px] text-[#8b949e] font-sharp-grotesk">
+              <span className="text-[11px] font-inter ml-auto" style={getTypographyStyle ? getTypographyStyle('accent') : getSectionTypographyStyle('social', 'accent', appearanceSettings)}>
                 {actualLinks.length}
               </span>
             </div>
@@ -410,7 +448,8 @@ export function SocialMediaSection({
             
             {/* Optional: Show count if many links */}
             {actualLinks.length > 8 && (
-              <div className="mt-4 text-center text-xs text-[#8b949e]">
+              <div className="mt-4 text-center text-xs"
+                   style={getTypographyStyle ? getTypographyStyle('accent') : getSectionTypographyStyle('social', 'accent', appearanceSettings)}>
                 {actualLinks.length} social platforms
               </div>
             )}
@@ -424,8 +463,9 @@ export function SocialMediaSection({
               style={{ color: '#54E0FF' }}
             />
             <h2
-              className="font-medium tracking-[-0.6px] text-white"
+              className="font-medium tracking-[-0.6px]"
               style={{
+                ...getSectionTypographyStyle('social', 'heading', appearanceSettings),
                 fontSize: `${(appearanceSettings?.font_size_heading || 32) * 0.625}px` // 20px when base is 32px
               }}
             >
@@ -519,7 +559,10 @@ export function SocialMediaSection({
             
             {/* Optional: Show count if many links */}
             {actualLinks.length > 8 && (
-              <div className="mt-4 text-center text-xs text-white/70">
+              <div 
+                className="mt-4 text-center text-xs"
+                style={getSectionTypographyStyle('social', 'accent', appearanceSettings)}
+              >
                 {actualLinks.length} social platforms
               </div>
             )}
@@ -540,7 +583,8 @@ export function SocialMediaSection({
               />
             </div>
             <h2 
-              className="text-xl sm:text-2xl font-bold text-[#FF6F61] bg-white px-4 py-2 rounded-xl shadow-sm border border-orange-200"
+              className="text-xl sm:text-2xl font-bold bg-white px-4 py-2 rounded-xl shadow-sm border border-orange-200"
+              style={getTypographyStyle ? getTypographyStyle('heading') : getSectionTypographyStyle('social', 'heading', appearanceSettings)}
             >
               Social Media
             </h2>
@@ -564,7 +608,8 @@ export function SocialMediaSection({
             
             {/* Optional: Show count if many links */}
             {actualLinks.length > 8 && (
-              <div className="mt-4 text-center text-xs text-[#6E6E6E] font-medium">
+              <div className="mt-4 text-center text-xs font-medium"
+                   style={getTypographyStyle ? getTypographyStyle('accent') : getSectionTypographyStyle('social', 'accent', appearanceSettings)}>
                 {actualLinks.length} social platforms
               </div>
             )}
@@ -610,7 +655,8 @@ export function SocialMediaSection({
             
             {/* Optional: Show count if many links */}
             {actualLinks.length > 8 && (
-              <div className="mt-4 text-center text-xs text-[#6B7280] font-inter font-medium">
+              <div className="mt-4 text-center text-xs font-inter font-medium"
+                   style={getTypographyStyle ? getTypographyStyle('accent') : getSectionTypographyStyle('social', 'accent', appearanceSettings)}>
                 {actualLinks.length} social platforms
               </div>
             )}
@@ -621,19 +667,23 @@ export function SocialMediaSection({
           {/* Category Header - Outside the card like other sections */}
           <div className="flex items-center gap-3 sm:gap-4 mb-6">
             <div 
-              className="p-2 sm:p-3 rounded-xl bg-[#00F5FF]/20 border border-[#00F5FF]/30"
-              style={{ boxShadow: '0 0 10px rgba(0, 245, 255, 0.3)' }}
+              className="p-2 sm:p-3 rounded-xl bg-[#FF00FF]/20 border border-[#FF00FF]/30"
+              style={{ boxShadow: '0 0 10px rgba(255, 0, 255, 0.3)' }}
             >
               <Share2 
                 className="w-5 h-5 sm:w-6 sm:h-6" 
                 style={{ 
-                  color: '#00F5FF'  // Neon cyan to match cyberpunk theme
+                  color: '#FF00FF'  // Neon magenta to match cyberpunk theme header
                 }} 
               />
             </div>
             <h2 
-              className="text-xl sm:text-2xl font-bold text-[#00F5FF] font-orbitron"
-              style={{ textShadow: '0 0 8px rgba(0, 245, 255, 0.6)' }}
+              className="text-xl sm:text-2xl font-bold font-orbitron"
+              style={{ 
+                color: '#FF00FF', // Override to ensure magenta color matching other sections
+                fontFamily: 'Orbitron, sans-serif',
+                textShadow: '0 0 8px rgba(255, 0, 255, 0.6)' 
+              }}
             >
               Social Media
             </h2>
@@ -658,8 +708,13 @@ export function SocialMediaSection({
             
             {/* Optional: Show count if many links */}
             {actualLinks.length > 8 && (
-              <div className="mt-4 text-center text-xs text-[#39FF14] font-inter font-medium"
-                   style={{ textShadow: '0 0 5px rgba(57, 255, 20, 0.6)' }}>
+              <div 
+                className="mt-4 text-center text-xs font-orbitron"
+                style={{ 
+                  color: '#00F5FF',
+                  textShadow: '0 0 5px rgba(0, 245, 255, 0.6)' 
+                }}
+              >
                 {actualLinks.length} social platforms
               </div>
             )}
@@ -686,12 +741,7 @@ export function SocialMediaSection({
             </div>
             <h2 
               className="font-medium tracking-[-0.6px]"
-              style={getTypographyStyle ? getTypographyStyle('heading') : {
-                fontFamily: 'Sharp Grotesk, system-ui, sans-serif',
-                fontSize: '20px',
-                color: '#ffffff',
-                lineHeight: '24px'
-              }}
+              style={getTypographyStyle ? getTypographyStyle('heading') : getSectionTypographyStyle('social', 'heading', appearanceSettings)}
             >
               Social Media
             </h2>
@@ -721,10 +771,7 @@ export function SocialMediaSection({
             {/* Optional: Show count if many links */}
             {actualLinks.length > 8 && (
               <div className="mt-4 text-center text-xs font-light tracking-[-0.48px]"
-                   style={getTypographyStyle ? getTypographyStyle('accent') : {
-                     fontFamily: 'Sharp Grotesk, system-ui, sans-serif',
-                     color: '#7a7a83'
-                   }}>
+                   style={getTypographyStyle ? getTypographyStyle('accent') : getSectionTypographyStyle('social', 'accent', appearanceSettings)}>
                 {actualLinks.length} social platforms
               </div>
             )}
@@ -740,7 +787,10 @@ export function SocialMediaSection({
               />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-bold text-white">
+              <h2 
+                className="text-lg sm:text-xl font-bold"
+                style={getTypographyStyle ? getTypographyStyle('heading') : getSectionTypographyStyle('social', 'heading', appearanceSettings)}
+              >
                 Social Media
               </h2>
             </div>
@@ -761,7 +811,8 @@ export function SocialMediaSection({
             
             {/* Optional: Show count if many links */}
             {actualLinks.length > 8 && (
-              <div className="mt-4 text-center text-xs text-gray-600">
+              <div className="mt-4 text-center text-xs"
+                   style={getTypographyStyle ? getTypographyStyle('accent') : getSectionTypographyStyle('social', 'accent', appearanceSettings)}>
                 {actualLinks.length} social platforms
               </div>
             )}
